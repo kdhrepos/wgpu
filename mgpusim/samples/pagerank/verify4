@@ -1,4 +1,0 @@
-#/bin/bash
-go build
-
-./pagerank -timing -verify -verbose -report-all -iterations=1 -no-progress-bar -platform-type=ideal -mem-allocator-type lasp -use-lasp-mem-alloc -scheduling lasp -sched-partition Xdiv

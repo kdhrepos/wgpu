@@ -1,1 +1,0 @@
-./pagerank -timing -report-all -verify -node=2048 -sparsity=0.5 -iterations=1 -no-progress-bar -platform-type mesh -mem-allocator-type lasp -use-lasp-mem-alloc -scheduling lasp -sched-partition Xdiv -xDim=4 -yDim=4
