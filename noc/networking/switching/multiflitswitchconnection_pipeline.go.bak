@@ -1,0 +1,373 @@
+package switching
+
+import (
+	"fmt"
+	"os"
+
+	"gitlab.com/akita/akita"
+	"gitlab.com/akita/noc"
+	"gitlab.com/akita/protocol"
+	"gitlab.com/akita/util"
+	"gitlab.com/akita/util/pipelining"
+)
+
+// deadlockWatchdogThreshold: cycles of stalled drain on a single end before
+// the connection declares a deadlock. 100k cycles ≈ 100µs at 1GHz — orders
+// of magnitude above any reasonable transient stall (full DRAM queue, cache
+// miss train, etc.). Anything past this is a structural cyclic dependency.
+const deadlockWatchdogThreshold = uint64(100000)
+
+// MultiFlitSwitchConnectionEnd models one direction of the wire. The
+// pipeline holds at most pipelineWidth × pipelineStages flits in transit
+// (the shift-register slots), and drains into outBuf which feeds dst.Recv.
+type MultiFlitSwitchConnectionEnd struct {
+	port     akita.Port
+	pipeline pipelining.Pipeline
+	outBuf   util.Buffer
+	busy     bool
+
+	admittedCycle uint64
+	admittedCount int
+
+	admittedTotal uint64
+
+	// lastProgressCycle is the most recent cycle in which the watchdog
+	// considers this end to have made progress: a successful drain to dst,
+	// or a fresh admit that pushed a flit into the pipeline. When outBuf
+	// has flits but this counter falls too far behind the current cycle,
+	// the connection declares a deadlock.
+	lastProgressCycle uint64
+}
+
+func newMultiFlitSwitchConnectionEnd(
+	name string,
+	port akita.Port,
+	outBufSize int,
+	pipelineWidth int,
+	pipelineStages int,
+) *MultiFlitSwitchConnectionEnd {
+	// For switch↔switch (stages>=1): W × D matches the original
+	// event-based bufferCapacity so the elastic absorption that the
+	// system was tuned around is preserved. For device↔switch
+	// (stages==0) the product collapses to 0, which would block every
+	// admit, so fall back to one cycle's worth (W).
+	bufCap := pipelineWidth * pipelineStages
+	if bufCap < 1 {
+		bufCap = pipelineWidth
+	}
+	end := &MultiFlitSwitchConnectionEnd{
+		port:   port,
+		outBuf: util.NewBuffer(bufCap),
+	}
+	end.pipeline = pipelining.MakeBuilder().
+		WithPipelineWidth(pipelineWidth).
+		WithNumStage(pipelineStages).
+		WithCyclePerStage(1).
+		WithPostPipelineBuffer(end.outBuf).
+		Build(name)
+	return end
+}
+
+type MultiFlitSwitchConnection struct {
+	*akita.TickingComponent
+
+	leftPort  akita.Port
+	leftEnd   *MultiFlitSwitchConnectionEnd
+	rightPort akita.Port
+	rightEnd  *MultiFlitSwitchConnectionEnd
+
+	row int
+	col int
+
+	pipelineWidth  int
+	pipelineStages int
+}
+
+func (c *MultiFlitSwitchConnection) PlugIn(
+	port akita.Port,
+	sourceSideBufSize int,
+) {
+	c.Lock()
+	defer c.Unlock()
+	switch {
+	case c.leftPort == nil:
+		c.leftPort = port
+		c.leftEnd = newMultiFlitSwitchConnectionEnd(
+			c.Name()+".LR",
+			port, sourceSideBufSize,
+			c.pipelineWidth, c.pipelineStages)
+	case c.rightPort == nil:
+		c.rightPort = port
+		c.rightEnd = newMultiFlitSwitchConnectionEnd(
+			c.Name()+".RL",
+			port, sourceSideBufSize,
+			c.pipelineWidth, c.pipelineStages)
+	default:
+		panic("multiflit switch connection already has two ports")
+	}
+	port.SetConnection(c)
+}
+
+func (c *MultiFlitSwitchConnection) Unplug(port akita.Port) {
+	panic("not implemented")
+}
+
+func (c *MultiFlitSwitchConnection) NotifyAvailable(
+	now akita.VTimeInSec, port akita.Port,
+) {
+	c.TickNow(now)
+}
+
+func (c *MultiFlitSwitchConnection) Send(
+	msg akita.Msg,
+) *akita.SendError {
+	c.Lock()
+	defer c.Unlock()
+	c.msgMustBeValid(msg)
+
+	srcPort, payload := c.unwrapSendArgs(msg)
+	srcEnd := c.endByPort(srcPort)
+	if !c.tryAdmit(srcEnd, msg.Meta().SendTime) {
+		srcEnd.busy = true
+		return akita.NewSendError()
+	}
+
+	item := connectionPipelineItem{
+		taskID: akita.GetIDGenerator().Generate(),
+		msg:    payload,
+	}
+	srcEnd.pipeline.Accept(msg.Meta().SendTime, item)
+	c.TickNow(msg.Meta().SendTime)
+	return nil
+}
+
+func (c *MultiFlitSwitchConnection) unwrapSendArgs(
+	msg akita.Msg,
+) (akita.Port, akita.Msg) {
+	if flit, ok := msg.(*noc.Flit); ok {
+		return flit.Src, flit
+	}
+	if nm, ok := msg.(*protocol.NetworkMsg); ok {
+		return nm.SrcPort, nm.Msg
+	}
+	panic("expected *noc.Flit or *protocol.NetworkMsg")
+}
+
+func (c *MultiFlitSwitchConnection) endByPort(
+	p akita.Port,
+) *MultiFlitSwitchConnectionEnd {
+	switch p {
+	case c.leftPort:
+		return c.leftEnd
+	case c.rightPort:
+		return c.rightEnd
+	}
+	panic("source port unknown")
+}
+
+func (c *MultiFlitSwitchConnection) dstPortFor(
+	end *MultiFlitSwitchConnectionEnd,
+) akita.Port {
+	if end == c.leftEnd {
+		return c.rightPort
+	}
+	return c.leftPort
+}
+
+// tryAdmit enforces per-cycle width even if Tick fires mid-cycle and frees
+// stage[0] slots: without this, a source could push 2W flits in the same
+// cycle (W before Tick, W after).
+func (c *MultiFlitSwitchConnection) tryAdmit(
+	end *MultiFlitSwitchConnectionEnd,
+	now akita.VTimeInSec,
+) bool {
+	cycle := c.Freq.Cycle(now)
+	if cycle != end.admittedCycle {
+		end.admittedCycle = cycle
+		end.admittedCount = 0
+	}
+	if end.admittedCount >= c.pipelineWidth {
+		return false
+	}
+	if !end.pipeline.CanAccept() {
+		return false
+	}
+	end.admittedCount++
+	end.admittedTotal++
+	end.lastProgressCycle = cycle
+	return true
+}
+
+func (c *MultiFlitSwitchConnection) LeftPortName() string {
+	return c.leftPort.Name()
+}
+
+func (c *MultiFlitSwitchConnection) RightPortName() string {
+	return c.rightPort.Name()
+}
+
+func (c *MultiFlitSwitchConnection) PipelineWidth() int {
+	return c.pipelineWidth
+}
+
+func (c *MultiFlitSwitchConnection) AdmittedLeftToRight() uint64 {
+	return c.leftEnd.admittedTotal
+}
+
+func (c *MultiFlitSwitchConnection) AdmittedRightToLeft() uint64 {
+	return c.rightEnd.admittedTotal
+}
+
+func (c *MultiFlitSwitchConnection) Cycles(now akita.VTimeInSec) uint64 {
+	return c.Freq.Cycle(now)
+}
+
+// Tick advances both directions one cycle. Order matters: drain outBuf
+// first so flits that emerged last cycle reach dst this cycle, then
+// pipeline.Tick shifts everything one stage forward. With this ordering
+// the end-to-end latency from Send to dst.Recv is exactly pipelineStages
+// cycles (including stages==0 = same-cycle delivery).
+func (c *MultiFlitSwitchConnection) Tick(
+	now akita.VTimeInSec,
+) bool {
+	madeProgress := false
+	c.Lock()
+	defer c.Unlock()
+	madeProgress = c.drainEnd(c.leftEnd, now) || madeProgress
+	madeProgress = c.drainEnd(c.rightEnd, now) || madeProgress
+	madeProgress = c.leftEnd.pipeline.Tick(now) || madeProgress
+	madeProgress = c.rightEnd.pipeline.Tick(now) || madeProgress
+	madeProgress = c.notifyIfBusyReady(c.leftEnd, now) || madeProgress
+	madeProgress = c.notifyIfBusyReady(c.rightEnd, now) || madeProgress
+	c.checkDeadlock(c.leftEnd, now)
+	c.checkDeadlock(c.rightEnd, now)
+	return madeProgress
+}
+
+// drainEnd pops up to pipelineWidth flits from outBuf and delivers them
+// to dst.Recv. The explicit cap matches the link physical bandwidth (W
+// flits/cycle) — without it a long-stalled outBuf would empty as a
+// single-cycle burst, breaking the bandwidth model.
+func (c *MultiFlitSwitchConnection) drainEnd(
+	end *MultiFlitSwitchConnectionEnd,
+	now akita.VTimeInSec,
+) bool {
+	madeProgress := false
+	dst := c.dstPortFor(end)
+	for i := 0; i < c.pipelineWidth; i++ {
+		head := end.outBuf.Peek()
+		if head == nil {
+			break
+		}
+		item := head.(connectionPipelineItem)
+		msg := item.msg
+		msg.Meta().RecvTime = now
+		if err := dst.Recv(msg); err != nil {
+			break
+		}
+		end.outBuf.Pop()
+		end.lastProgressCycle = c.Freq.Cycle(now)
+		if end.busy {
+			end.port.NotifyAvailable(now)
+			end.busy = false
+		}
+		madeProgress = true
+	}
+	return madeProgress
+}
+
+func (c *MultiFlitSwitchConnection) notifyIfBusyReady(
+	end *MultiFlitSwitchConnectionEnd,
+	now akita.VTimeInSec,
+) bool {
+	if !end.busy {
+		return false
+	}
+	cycle := c.Freq.Cycle(now)
+	cycleSaturated := cycle == end.admittedCycle &&
+		end.admittedCount >= c.pipelineWidth
+	if cycleSaturated || !end.pipeline.CanAccept() {
+		return false
+	}
+	end.port.NotifyAvailable(now)
+	end.busy = false
+	return true
+}
+
+// checkDeadlock is the network-level watchdog. When an end's outBuf has
+// held flits past the threshold without any drain progress, it drops the
+// head flit to release the connection-level stall. Best-effort: the
+// downstream component awaiting the dropped flit will still hang at the
+// protocol layer, but other connections caught in the same dependency
+// cycle may now drain. Drop events are logged loudly so the user can see
+// the structural cycle and fix the root cause.
+func (c *MultiFlitSwitchConnection) checkDeadlock(
+	end *MultiFlitSwitchConnectionEnd,
+	now akita.VTimeInSec,
+) {
+	head := end.outBuf.Peek()
+	if head == nil {
+		return
+	}
+	cycle := c.Freq.Cycle(now)
+	if cycle-end.lastProgressCycle < deadlockWatchdogThreshold {
+		return
+	}
+	item := head.(connectionPipelineItem)
+	msg := item.msg
+	dst := c.dstPortFor(end)
+	fmt.Fprintf(os.Stderr,
+		"[noc] deadlock-watchdog drop: connection=%s src-port=%s "+
+			"dst-port=%s stuck=%d cycles outBuf=%d "+
+			"head{id=%s src=%s dst=%s type=%T}\n",
+		c.Name(), end.port.Name(), dst.Name(),
+		cycle-end.lastProgressCycle,
+		end.outBuf.Size(),
+		msg.Meta().ID, msg.Meta().Src.Name(),
+		msg.Meta().Dst.Name(), msg)
+	end.outBuf.Pop()
+	end.lastProgressCycle = cycle
+	if end.busy {
+		end.port.NotifyAvailable(now)
+		end.busy = false
+	}
+}
+
+func (c *MultiFlitSwitchConnection) msgMustBeValid(msg akita.Msg) {
+	if msg.Meta().Src == nil {
+		panic("src is not given")
+	}
+	if msg.Meta().Dst == nil {
+		panic("dst is not given")
+	}
+}
+
+// NewMultiFlitSwitchConnection creates a pipelined switch-to-switch link.
+//
+//	pipelineWidth  = lanes per direction = flits admitted and delivered
+//	                 per cycle per direction.
+//	pipelineStages = end-to-end wire latency in cycles. 0 is supported
+//	                 for device→switch links with no wire delay.
+//
+// Per direction: pipelining.Pipeline of W lanes × stages register slots,
+// draining into a postPipelineBuf whose size is set by PlugIn's
+// sourceSideBufSize argument (typically numReqPerCycle).
+func NewMultiFlitSwitchConnection(
+	name string,
+	engine akita.Engine,
+	freq akita.Freq,
+	pipelineWidth int,
+	pipelineStages int,
+	row, col int,
+) *MultiFlitSwitchConnection {
+	c := new(MultiFlitSwitchConnection)
+	c.TickingComponent = akita.NewSecondaryTickingComponent(
+		name, engine, freq, c)
+	c.Engine = engine
+	c.Freq = freq
+	c.row = row
+	c.col = col
+	c.pipelineWidth = pipelineWidth
+	c.pipelineStages = pipelineStages
+	return c
+}

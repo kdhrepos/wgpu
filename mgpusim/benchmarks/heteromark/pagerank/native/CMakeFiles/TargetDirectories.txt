@@ -1,0 +1,2 @@
+/root/mgvm/mgpusim/benchmarks/heteromark/pagerank/native/CMakeFiles/edit_cache.dir
+/root/mgvm/mgpusim/benchmarks/heteromark/pagerank/native/CMakeFiles/rebuild_cache.dir

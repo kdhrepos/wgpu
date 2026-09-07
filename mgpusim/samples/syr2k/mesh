@@ -1,0 +1,27 @@
+#!/bin/bash
+go build
+
+NI=4096
+NJ=65536
+MAX_INST=100000000
+
+./syr2k \
+    -ni=$NI \
+    -nj=$NJ \
+    -timing \
+    -fast-h2d \
+    -verbose \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -checkpoint=25 \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -data-partitioning="row-based,row-based,col-based" \
+    -data-strides="0,0,16384" \
+    -metric-file-name="syr2k_mesh_6x6" \
+    -xDim=6 \
+    -yDim=6

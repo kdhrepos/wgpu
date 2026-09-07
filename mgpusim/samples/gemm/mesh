@@ -1,0 +1,25 @@
+#!/bin/bash
+go build
+
+NAME=gemm
+
+NI=3500
+NJ=3500
+NK=3500
+
+./$NAME \
+    -i=$NI \
+    -j=$NJ \
+    -k=$NK \
+    -timing \
+    -report-all \
+    -verbose \
+    -fast-h2d \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=6 \
+    -yDim=6

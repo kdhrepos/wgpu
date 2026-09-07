@@ -1,0 +1,17 @@
+#!/bin/bash
+go build
+
+NAME=im2col
+
+./$NAME \
+    -timing \
+    -report-all \
+    -no-progress-bar \
+    -platform-type=direct \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -metric-file-name="${NAME}_6x6_direct" \
+    -xDim=6 \
+    -yDim=6

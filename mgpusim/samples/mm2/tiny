@@ -1,0 +1,28 @@
+#!/bin/bash
+go build
+
+NI=64
+NJ=64
+NK=64
+NL=64
+
+./mm2 \
+    -ni=$NI \
+    -nj=$NJ \
+    -nk=$NK \
+    -nl=$NL \
+    -timing \
+    -report-all \
+    -verify \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="mm2_4x4_tiny_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="mm2_4x4_tiny_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

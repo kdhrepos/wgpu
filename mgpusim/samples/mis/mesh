@@ -1,0 +1,22 @@
+#!/bin/bash
+go build
+
+NUM_NODES=7000000
+NUM_ITEMS=7000000
+
+./mis \
+    -numNodes=$NUM_NODES \
+    -numItems=$NUM_ITEMS \
+    -fast-h2d \
+    -verbose \
+    -timing \
+    -report-all \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=6 \
+    -yDim=6\
+    -metric-file-name=mis_mesh_6x6

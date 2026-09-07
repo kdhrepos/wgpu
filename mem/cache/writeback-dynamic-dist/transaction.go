@@ -1,0 +1,96 @@
+package writeback_dynamic_dist
+
+import (
+	"gitlab.com/akita/akita"
+	"gitlab.com/akita/mem/cache"
+	"gitlab.com/akita/protocol"
+	"gitlab.com/akita/util/ca"
+)
+
+type action int
+
+const (
+	actionInvalid action = iota
+	bankReadHit
+	bankWriteHit
+	bankEvict
+	bankEvictAndWrite
+	bankEvictAndFetch
+	bankWriteFetched
+	writeBufferFetch
+	writeBufferEvictAndFetch
+	writeBufferEvictAndWrite
+	writeBufferFlush
+)
+
+type transaction struct {
+	action
+	read              *protocol.ReadReq
+	write             *protocol.WriteReq
+	flush             *cache.FlushReq
+	block             *Block
+	victim            *Block
+	fetchPID          ca.PID
+	fetchAddress      uint64
+	fetchedData       []byte
+	fetchReadReq      *protocol.ReadReq
+	evictingPID       ca.PID
+	evictingAddr      uint64
+	evictingData      []byte
+	evictingDirtyMask []bool
+	evictionWriteReq  *protocol.WriteReq
+	evictionDone      *protocol.WriteDoneRsp
+	mshrEntry         *MSHREntry
+
+	toRemote  bool
+	fromLocal bool
+
+	isLookup bool
+	peekOnly bool
+
+	// failTraced ensures an MSHR reservation/merge fail is counted at most
+	// once per request (PeekReady re-probes a stalled transaction every
+	// cycle, which would otherwise inflate the count by the stall duration).
+	failTraced bool
+
+	// mshrBlockedAt is the simulation time when this transaction first hit
+	// a full MSHR (mshr-fail). Non-zero iff the transaction stalled waiting
+	// for an MSHR slot; consumed once the slot is finally allocated to emit
+	// the mshr-wait-time metric. Mirrors writeback's pattern.
+	mshrBlockedAt akita.VTimeInSec
+
+	// for bypass
+	oldBlock *Block
+
+	// pipelineReadyCycle: absolute cycle at which this trans becomes
+	// visible to the directory stage (replaces pipelining shift register).
+	pipelineReadyCycle uint64
+
+	// fetchSentTime records when the fetch request (DRAM or RDMA) was sent.
+	fetchSentTime akita.VTimeInSec
+}
+
+func (t transaction) accessReq() protocol.AccessReq {
+	if t.read != nil {
+		return t.read
+	}
+	if t.write != nil {
+		return t.write
+	} else {
+		// for tracing of eviction at distribution
+		if t.evictionWriteReq != nil {
+			return t.evictionWriteReq
+		}
+	}
+	return nil
+}
+
+func (t transaction) req() akita.Msg {
+	if t.accessReq() != nil {
+		return t.accessReq()
+	}
+	if t.flush != nil {
+		return t.flush
+	}
+	return nil
+}

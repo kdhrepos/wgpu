@@ -1,0 +1,21 @@
+#!/bin/bash
+go build
+
+NAME=matrixtranspose
+
+WIDTH=2048
+
+./$NAME \
+    -width=$WIDTH \
+    -timing \
+    -report-all \
+    -verbose \
+    -no-progress-bar \
+    -platform-type=ideal \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -metric-file-name="${NAME}_ideal_4x4" \
+    -xDim=4 \
+    -yDim=4

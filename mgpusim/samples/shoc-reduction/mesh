@@ -1,0 +1,24 @@
+#!/bin/bash
+go build
+
+SIZE=67108864
+ITERATION=2
+
+./shoc-reduction \
+    -Size=$SIZE \
+    -Iterations=$ITERATION \
+    -timing \
+    -report-all \
+    -verify \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="shoc-reduction_4x4_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="shoc-reduction_4x4_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

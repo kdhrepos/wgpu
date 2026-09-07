@@ -1,0 +1,960 @@
+package writebacksac
+
+import (
+	"fmt"
+	"strings"
+
+	"gitlab.com/akita/akita"
+	"gitlab.com/akita/mem/cache"
+	"gitlab.com/akita/protocol"
+	"gitlab.com/akita/util/ca"
+	"gitlab.com/akita/util/global"
+	"gitlab.com/akita/util/tracing"
+)
+
+type directoryStage struct {
+	cache *Cache
+}
+
+func (ds *directoryStage) Tick(now akita.VTimeInSec) bool {
+	lb := ds.cache.lookupBufForLocal.(*LookupBuffer)
+	rb := ds.cache.lookupBufForRemote.(*LookupBuffer)
+
+	ready := ds.readyWithDeadline(now)
+	itemL, idxL, okL := lb.PeekReady(ready)
+	itemR, idxR, okR := rb.PeekReady(ready)
+
+	// Prefer the candidate whose destination is the local chiplet
+	// (toRemote=false). If both candidates have the same toRemote, pick
+	// the one with the lower transaction ID so same-line ordering is
+	// preserved across the two buffers.
+	buf, item, idx, ok := pickPreferred(lb, itemL, idxL, okL, rb, itemR, idxR, okR)
+	if !ok {
+		if lb.Size() != 0 || rb.Size() != 0 {
+			return true
+		}
+		return false
+	}
+
+	trans := item.trans
+	success := false
+	if trans.read != nil {
+		success = ds.doRead(now, trans)
+	} else {
+		success = ds.doWrite(now, trans)
+	}
+
+	if success {
+		buf.RemoveAt(idx)
+	}
+	return true
+}
+
+// pickPreferred returns the buffer + item that should be processed first.
+// Selection is destination-first: toRemote=false beats toRemote=true. Ties
+// fall back to the lower transaction ID (which equals the buffer's own
+// head, since each LookupBuffer is sorted (priority, id)).
+func pickPreferred(
+	lb *LookupBuffer, itemL cachePipelineItem, idxL int, okL bool,
+	rb *LookupBuffer, itemR cachePipelineItem, idxR int, okR bool,
+) (*LookupBuffer, cachePipelineItem, int, bool) {
+	switch {
+	case !okL && !okR:
+		return nil, cachePipelineItem{}, 0, false
+	case okL && !okR:
+		return lb, itemL, idxL, true
+	case !okL && okR:
+		return rb, itemR, idxR, true
+	}
+
+	pL, idL := transPriorityKey(itemL.trans)
+	pR, idR := transPriorityKey(itemR.trans)
+	if pL < pR || (pL == pR && idL <= idR) {
+		return lb, itemL, idxL, true
+	}
+	return rb, itemR, idxR, true
+}
+
+func (ds *directoryStage) transactionReady(t *transaction) bool {
+	if t.isPassThrough {
+		return ds.cache.writeBufferBuffer.CanPush()
+	}
+	if t.read != nil {
+		return ds.readReady(t)
+	}
+	if t.write != nil {
+		return ds.writeReady(t)
+	}
+	return false
+}
+
+// countSACLookup feeds the memory-side hit-rate counters of the EAB model
+// during the profiling window. Called exactly once per lookup, at the same
+// points where the read-hit/read-miss task steps are traced.
+func (ds *directoryStage) countSACLookup(hit bool) {
+	s := global.GetInstance().SAC()
+	if !s.Enabled || !s.Profiling {
+		return
+	}
+	s.LookupsMem++
+	if hit {
+		s.HitsMem++
+	}
+}
+
+// startPassThrough forwards a SAC pass-through transaction straight to the
+// write buffer stage, skipping directory lookup, MSHR and install.
+func (ds *directoryStage) startPassThrough(
+	now akita.VTimeInSec,
+	trans *transaction,
+) bool {
+	if !ds.cache.writeBufferBuffer.CanPush() {
+		return false
+	}
+
+	req := trans.accessReq()
+	addr := req.GetAddress()
+
+	// Same deadlock-avoidance accounting as the regular fetch path: cap
+	// the number of outstanding remote requests.
+	if ds.cache.isReqToRemote(addr) {
+		if !ds.cache.isRemoteReqPossible() {
+			return false
+		}
+		ds.cache.numToRemote++
+		trans.toRemote = true
+	} else {
+		trans.toRemote = false
+	}
+
+	trans.action = writeBufferPassThrough
+	ds.cache.writeBufferBuffer.Push(trans)
+
+	tracing.AddTaskStep(
+		tracing.MsgIDAtReceiver(req, ds.cache),
+		now,
+		ds.cache,
+		"sac-pass-through",
+	)
+
+	if trans.fromLocal {
+		src := req.Meta().Src.Name()
+		isVec := uint64(0)
+		if strings.Contains(src, "L1V") {
+			isVec = 1
+		}
+		code := uint64(2) // read-miss equivalent
+		if trans.write != nil {
+			code = 5 // write-miss equivalent
+		}
+		tracing.StartTask(
+			code,
+			isVec,
+			now,
+			ds.cache,
+			"memory-trace",
+			ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(addr)],
+			req,
+		)
+	}
+
+	return true
+}
+
+// readyWithDeadline wraps transactionReady with the deadline gate that
+// replaces the old pipelining shift register: a transaction admitted at
+// cycle C with pipelineLatency=L is invisible to the directory until
+// cycle C+L.
+func (ds *directoryStage) readyWithDeadline(
+	now akita.VTimeInSec,
+) func(*transaction) bool {
+	nowCycle := ds.cache.Freq.Cycle(now)
+	return func(t *transaction) bool {
+		if nowCycle < t.pipelineReadyCycle {
+			return false
+		}
+		return ds.transactionReady(t)
+	}
+}
+
+// traceFail records an MSHR reservation/merge fail at most once per
+// transaction, so the metric counts distinct blocked requests rather than
+// per-cycle PeekReady re-probes.
+func (ds *directoryStage) traceFail(t *transaction, kind, op string) {
+	if t.failTraced {
+		return
+	}
+	t.failTraced = true
+	tracing.StartTask(0, 0, 0, ds.cache, kind, op, nil)
+}
+
+func (ds *directoryStage) readReady(t *transaction) bool {
+	cacheLineID, _ := cache.GetCacheLineID(
+		t.read.Address, ds.cache.log2BlockSize)
+
+	if e := ds.cache.mshr.Query(t.read.PID, cacheLineID); e != nil {
+		if ds.cache.mshr.CanMerge(e) {
+			return true
+		}
+		// Entry is at its max-merge cap — cannot coalesce another request.
+		// Stall and retry, mirroring the IsFull gate below.
+		ds.traceFail(t, "mshr-merge-fail", "read")
+		return false
+	}
+
+	block := ds.cache.directory.Lookup(t.read.PID, cacheLineID)
+	if block != nil {
+		return !block.IsLocked
+	}
+
+	if ds.cache.mshr.IsFull() {
+		// Record MSHR-full pressure here — this is the actual gate that
+		// stops a missing transaction from advancing.
+		ds.traceFail(t, "mshr-fail", "read")
+		return false
+	}
+	victim := ds.cache.directory.FindVictim(cacheLineID)
+	return !victim.IsLocked && victim.ReadCount == 0
+}
+
+func (ds *directoryStage) writeReady(t *transaction) bool {
+	cacheLineID, _ := cache.GetCacheLineID(
+		t.write.Address, ds.cache.log2BlockSize)
+
+	if e := ds.cache.mshr.Query(t.write.PID, cacheLineID); e != nil {
+		if ds.cache.mshr.CanMerge(e) {
+			return true
+		}
+		// Entry is at its max-merge cap — cannot coalesce another request.
+		ds.traceFail(t, "mshr-merge-fail", "write")
+		return false
+	}
+
+	block := ds.cache.directory.Lookup(t.write.PID, cacheLineID)
+	if block != nil {
+		return !block.IsLocked && block.ReadCount == 0
+	}
+
+	if ds.isWritingFullLine(t.write) {
+		victim := ds.cache.directory.FindVictim(cacheLineID)
+		return !victim.IsLocked && victim.ReadCount == 0
+	}
+
+	if ds.cache.mshr.IsFull() {
+		// Record MSHR-full pressure here — see readReady for rationale.
+		ds.traceFail(t, "mshr-fail", "write")
+		return false
+	}
+	victim := ds.cache.directory.FindVictim(cacheLineID)
+	return !victim.IsLocked && victim.ReadCount == 0
+}
+
+func (ds *directoryStage) Reset(now akita.VTimeInSec) {
+	ds.cache.lookupBufForLocal.Clear()
+	ds.cache.lookupBufForRemote.Clear()
+}
+
+func (ds *directoryStage) doRead(
+	now akita.VTimeInSec,
+	trans *transaction,
+) bool {
+	if trans.isPassThrough {
+		return ds.startPassThrough(now, trans)
+	}
+
+	cachelineID, _ := cache.GetCacheLineID(
+		trans.read.Address, ds.cache.log2BlockSize)
+
+	// Count this transaction once per setID — distinct from getSet's
+	// internal use which fires per PeekReady probe (inflated by stalls).
+	if di, ok := ds.cache.directory.(*cache.DirectoryImpl); ok {
+		di.RecordSetAccess(cachelineID)
+	}
+
+	mshrEntry := ds.cache.mshr.Query(trans.read.PID, cachelineID)
+	if mshrEntry != nil {
+		return ds.handleReadMSHRHit(now, trans, mshrEntry)
+	}
+
+	block := ds.cache.directory.Lookup(
+		trans.read.PID, cachelineID)
+
+	if block != nil {
+		return ds.handleReadHit(now, trans, block)
+	}
+
+	return ds.handleReadMiss(now, trans)
+}
+
+func (ds *directoryStage) handleReadMSHRHit(
+	now akita.VTimeInSec,
+	trans *transaction,
+	mshrEntry *cache.MSHREntry,
+) bool {
+	trans.mshrEntry = mshrEntry
+	mshrEntry.Requests = append(mshrEntry.Requests, trans)
+	// ds.prioritizeLocalReqs(mshrEntry, trans)
+
+	ds.countSACLookup(true)
+
+	tracing.AddTaskStep(
+		tracing.MsgIDAtReceiver(trans.read, ds.cache),
+		now, ds.cache,
+		"read-mshr-hit",
+	)
+
+	src := trans.read.Meta().Src.Name()
+	if strings.Contains(src, "MMU") {
+		tracing.StartTask(
+			0, 0, now,
+			ds.cache,
+			"pte-caching-read-mshr-hit",
+			"", nil)
+	}
+
+	if trans.fromLocal {
+		isVec := uint64(0)
+		if strings.Contains(src, "L1V") {
+			isVec = 1
+		}
+
+		tracing.StartTask(
+			0,
+			isVec,
+			now,
+			ds.cache,
+			"memory-trace",
+			ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.read.Address)],
+			trans.read,
+		)
+	}
+
+	return true
+}
+
+func (ds *directoryStage) handleReadHit(
+	now akita.VTimeInSec,
+	trans *transaction,
+	block *cache.Block,
+) bool {
+	// check if a block is being evicted or written.
+	if block.IsLocked {
+		return false
+	}
+
+	return ds.readFromBank(trans, block, now)
+}
+
+func (ds *directoryStage) readFromBank(
+	trans *transaction,
+	block *cache.Block,
+	now akita.VTimeInSec,
+) bool {
+	numBanks := len(ds.cache.dirToBankBuffers)
+	bank := cache.GetBankID(block, ds.cache.directory.WayAssociativity(), numBanks)
+	bankBuf := ds.cache.dirToBankBuffers[bank]
+
+	if !bankBuf.CanPush() {
+		// return true
+		return false
+	}
+
+	ds.cache.directory.Visit(block) // update LRU list
+	block.ReadCount++
+	trans.block = block
+	trans.action = bankReadHit
+	bankBuf.Push(trans)
+
+	ds.countSACLookup(true)
+
+	tracing.AddTaskStep(
+		tracing.MsgIDAtReceiver(trans.read, ds.cache),
+		now,
+		ds.cache,
+		"read-hit",
+	)
+
+	src := trans.read.Meta().Src.Name()
+	if strings.Contains(src, "MMU") {
+		tracing.StartTask(
+			0, 0, now,
+			ds.cache,
+			"pte-caching-read-hit",
+			"", nil)
+	}
+
+	if trans.fromLocal {
+		isVec := uint64(0)
+		if strings.Contains(src, "L1V") {
+			isVec = 1
+		}
+
+		tracing.StartTask(
+			1,
+			isVec,
+			now,
+			ds.cache,
+			"memory-trace",
+			ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.read.Address)],
+			trans.read,
+		)
+	}
+
+	return true
+}
+
+func (ds *directoryStage) handleReadMiss(
+	now akita.VTimeInSec,
+	trans *transaction,
+) bool {
+	req := trans.read
+	cacheLineID, _ := cache.GetCacheLineID(req.Address, ds.cache.log2BlockSize)
+
+	if ds.cache.mshr.IsFull() {
+		ds.traceFail(trans, "mshr-fail", "read")
+		// return true
+		return false
+	}
+
+	victim := ds.cache.directory.FindVictim(cacheLineID)
+	if victim.IsLocked || victim.ReadCount > 0 {
+		return false
+	}
+
+	if ds.needEviction(victim) {
+		ok := ds.evict(now, trans, victim)
+		if ok {
+			ds.countSACLookup(false)
+
+			tracing.AddTaskStep(
+				tracing.MsgIDAtReceiver(trans.read, ds.cache),
+				now,
+				ds.cache,
+				"read-miss",
+			)
+
+			// if ds.cache.isReqToRemote(req.Address) {
+			// 	tracing.StartTask(
+			// 		0,
+			// 		0,
+			// 		now,
+			// 		ds.cache,
+			// 		"l2-miss-trace",
+			// 		ds.cache.selfChipletIDString,
+			// 		ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(req.Address)])
+			// }
+
+			src := trans.read.Meta().Src.Name()
+			if strings.Contains(src, "MMU") {
+				tracing.StartTask(
+					0, 0, now,
+					ds.cache,
+					"pte-caching-read-miss",
+					"", nil)
+			}
+
+			if trans.fromLocal {
+				isVec := uint64(0)
+				if strings.Contains(src, "L1V") {
+					isVec = 1
+				}
+
+				tracing.StartTask(
+					2,
+					isVec,
+					now,
+					ds.cache,
+					"memory-trace",
+					ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.read.Address)],
+					trans.read,
+				)
+			}
+		}
+		return ok
+	}
+
+	ok := ds.fetch(now, trans, victim)
+	if ok {
+		ds.countSACLookup(false)
+
+		tracing.AddTaskStep(
+			tracing.MsgIDAtReceiver(trans.read, ds.cache),
+			now,
+			ds.cache,
+			"read-miss",
+		)
+		// if ds.cache.isReqToRemote(req.Address) {
+		// 	tracing.StartTask(
+		// 		0,
+		// 		0,
+		// 		now,
+		// 		ds.cache,
+		// 		"l2-miss-trace",
+		// 		ds.cache.selfChipletIDString,
+		// 		ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(req.Address)])
+		// }
+
+		src := trans.read.Meta().Src.Name()
+		if strings.Contains(src, "MMU") {
+			tracing.StartTask(
+				0, 0, now,
+				ds.cache,
+				"pte-caching-read-miss",
+				"", nil)
+		}
+
+		if trans.fromLocal {
+			isVec := uint64(0)
+			if strings.Contains(src, "L1V") {
+				isVec = 1
+			}
+
+			tracing.StartTask(
+				2,
+				isVec,
+				now,
+				ds.cache,
+				"memory-trace",
+				ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.read.Address)],
+				trans.read,
+			)
+		}
+	}
+	return ok
+}
+
+func (ds *directoryStage) doWrite(
+	now akita.VTimeInSec,
+	trans *transaction,
+) bool {
+	if trans.isPassThrough {
+		return ds.startPassThrough(now, trans)
+	}
+
+	write := trans.write
+	cachelineID, _ := cache.GetCacheLineID(write.Address, ds.cache.log2BlockSize)
+
+	if di, ok := ds.cache.directory.(*cache.DirectoryImpl); ok {
+		di.RecordSetAccess(cachelineID)
+	}
+
+	mshrEntry := ds.cache.mshr.Query(write.PID, cachelineID)
+	if mshrEntry != nil {
+		ok := ds.doWriteMSHRHit(now, trans, mshrEntry)
+		ds.countSACLookup(true)
+		tracing.AddTaskStep(
+			tracing.MsgIDAtReceiver(trans.write, ds.cache),
+			now, ds.cache,
+			"write-mshr-hit",
+		)
+
+		src := trans.write.Meta().Src.Name()
+		if trans.fromLocal {
+			isVec := uint64(0)
+			if strings.Contains(src, "L1V") {
+				isVec = 1
+			}
+
+			tracing.StartTask(
+				3,
+				isVec,
+				now,
+				ds.cache,
+				"memory-trace",
+				ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.write.Address)],
+				trans.write,
+			)
+		}
+
+		return ok
+	}
+
+	block := ds.cache.directory.Lookup(trans.write.PID, cachelineID)
+	if block != nil {
+		ok := ds.doWriteHit(trans, block)
+		if ok {
+			ds.countSACLookup(true)
+			tracing.AddTaskStep(
+				tracing.MsgIDAtReceiver(trans.write, ds.cache),
+				now, ds.cache,
+				"write-hit",
+			)
+
+			src := trans.write.Meta().Src.Name()
+			if trans.fromLocal {
+				isVec := uint64(0)
+				if strings.Contains(src, "L1V") {
+					isVec = 1
+				}
+
+				tracing.StartTask(
+					4,
+					isVec,
+					now,
+					ds.cache,
+					"memory-trace",
+					ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.write.Address)],
+					trans.write,
+				)
+			}
+		}
+
+		return ok
+	}
+
+	ok := ds.doWriteMiss(now, trans)
+	if ok {
+		ds.countSACLookup(false)
+		tracing.AddTaskStep(
+			tracing.MsgIDAtReceiver(trans.write, ds.cache),
+			now, ds.cache,
+			"write-miss",
+		)
+		// if ds.cache.isReqToRemote(write.Address) {
+		// 	tracing.StartTask(
+		// 		0,
+		// 		0,
+		// 		now,
+		// 		ds.cache,
+		// 		"l2-miss-trace",
+		// 		ds.cache.selfChipletIDString,
+		// 		ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(write.Address)])
+		// }
+
+		src := trans.write.Meta().Src.Name()
+		if trans.fromLocal {
+			isVec := uint64(0)
+			if strings.Contains(src, "L1V") {
+				isVec = 1
+			}
+
+			tracing.StartTask(
+				5,
+				isVec,
+				now,
+				ds.cache,
+				"memory-trace",
+				ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.write.Address)],
+				trans.write,
+			)
+		}
+	}
+
+	return ok
+}
+
+func (ds *directoryStage) doWriteMSHRHit(
+	now akita.VTimeInSec,
+	trans *transaction,
+	mshrEntry *cache.MSHREntry,
+) bool {
+	trans.mshrEntry = mshrEntry
+	mshrEntry.Requests = append(mshrEntry.Requests, trans)
+	// ds.prioritizeLocalReqs(mshrEntry, trans)
+
+	return true
+}
+
+func (ds *directoryStage) doWriteHit(
+	trans *transaction,
+	block *cache.Block,
+) bool {
+	if block.IsLocked || block.ReadCount > 0 {
+		return false
+	}
+
+	return ds.writeToBank(trans, block)
+}
+
+func (ds *directoryStage) doWriteMiss(
+	now akita.VTimeInSec,
+	trans *transaction,
+) bool {
+	write := trans.write
+
+	if ds.isWritingFullLine(write) {
+		return ds.writeFullLineMiss(now, trans)
+	}
+	return ds.writePartialLineMiss(now, trans)
+}
+
+func (ds *directoryStage) writeFullLineMiss(
+	now akita.VTimeInSec,
+	trans *transaction,
+) bool {
+	write := trans.write
+	cachelineID, _ := cache.GetCacheLineID(write.Address, ds.cache.log2BlockSize)
+
+	victim := ds.cache.directory.FindVictim(cachelineID)
+	if victim.IsLocked || victim.ReadCount > 0 {
+		return false
+	}
+
+	if ds.needEviction(victim) {
+		return ds.evict(now, trans, victim)
+	}
+
+	return ds.writeToBank(trans, victim)
+}
+
+func (ds *directoryStage) writePartialLineMiss(
+	now akita.VTimeInSec,
+	trans *transaction,
+) bool {
+	write := trans.write
+	cachelineID, _ := cache.GetCacheLineID(write.Address, ds.cache.log2BlockSize)
+
+	if ds.cache.mshr.IsFull() {
+		ds.traceFail(trans, "mshr-fail", "write")
+		return false
+	}
+
+	victim := ds.cache.directory.FindVictim(cachelineID)
+	if victim.IsLocked || victim.ReadCount > 0 {
+		return false
+	}
+
+	if ds.needEviction(victim) {
+		return ds.evict(now, trans, victim)
+	}
+
+	return ds.fetch(now, trans, victim)
+}
+
+func (ds *directoryStage) writeToBank(
+	trans *transaction,
+	block *cache.Block,
+) bool {
+	numBanks := len(ds.cache.dirToBankBuffers)
+	bank := cache.GetBankID(block, ds.cache.directory.WayAssociativity(), numBanks)
+	bankBuf := ds.cache.dirToBankBuffers[bank]
+
+	if !bankBuf.CanPush() {
+		// return true
+		return false
+	}
+
+	addr := trans.write.Address
+	cachelineID, _ := cache.GetCacheLineID(addr, ds.cache.log2BlockSize)
+
+	ds.cache.directory.Visit(block)
+	block.IsLocked = true
+	block.Tag = cachelineID
+	block.IsValid = true
+	block.PID = trans.write.PID
+	trans.block = block
+	trans.action = bankWriteHit
+	bankBuf.Push(trans)
+
+	return true
+}
+
+func (ds *directoryStage) evict(
+	now akita.VTimeInSec,
+	trans *transaction,
+	victim *cache.Block,
+) bool {
+	bankNum := cache.GetBankID(victim,
+		ds.cache.directory.WayAssociativity(), len(ds.cache.dirToBankBuffers))
+	bankBuf := ds.cache.dirToBankBuffers[bankNum]
+
+	if !bankBuf.CanPush() {
+		// return true
+		return false
+	}
+
+	var addr uint64
+	var pid ca.PID
+	var req protocol.AccessReq
+	if trans.read != nil {
+		addr = trans.read.Address
+		pid = trans.read.PID
+		req = trans.read
+	} else {
+		addr = trans.write.Address
+		pid = trans.write.PID
+		req = trans.write
+	}
+
+	cacheLineID, _ := cache.GetCacheLineID(addr, ds.cache.log2BlockSize)
+
+	trans.action = bankEvictAndFetch
+	trans.victim = &cache.Block{
+		PID:          victim.PID,
+		Tag:          victim.Tag,
+		CacheAddress: victim.CacheAddress,
+		DirtyMask:    victim.DirtyMask,
+	}
+
+	trans.block = victim
+	trans.evictingPID = trans.victim.PID
+	trans.evictingAddr = trans.victim.Tag
+	trans.evictingDirtyMask = victim.DirtyMask
+
+	if ds.evictionNeedFetch(trans) {
+		// if the request goes to remote chiplet, it can make deadlock
+		if ds.cache.isReqToRemote(addr) {
+			if !ds.cache.isRemoteReqPossible() {
+				return false
+			}
+			ds.cache.numToRemote++
+			trans.toRemote = true
+		}
+		mshrEntry := ds.cache.mshr.Add(pid, cacheLineID)
+		mshrEntry.Block = victim
+		mshrEntry.Requests = append(mshrEntry.Requests, trans)
+
+		trans.mshrEntry = mshrEntry
+		trans.fetchPID = pid
+		trans.fetchAddress = cacheLineID
+		trans.action = bankEvictAndFetch
+	} else {
+		trans.action = bankEvictAndWrite
+	}
+
+	victim.Tag = cacheLineID
+	victim.PID = pid
+	victim.IsLocked = true
+	victim.IsDirty = false
+
+	bankBuf.Push(trans)
+
+	tracing.StartTask(
+		0, 0, now, ds.cache,
+		"evict",
+		ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.evictingAddr)],
+		req)
+
+	tracing.StartTask(
+		6,
+		1,
+		now,
+		ds.cache,
+		"memory-trace",
+		ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(trans.evictingAddr)],
+		req,
+	)
+
+	return true
+}
+
+func (ds *directoryStage) evictionNeedFetch(
+	t *transaction,
+) bool {
+	if t.write == nil {
+		return true
+	}
+
+	if ds.isWritingFullLine(t.write) {
+		return false
+	}
+
+	return true
+}
+
+func (ds *directoryStage) fetch(
+	now akita.VTimeInSec,
+	trans *transaction,
+	block *cache.Block,
+) bool {
+
+	var addr uint64
+	var pid ca.PID
+	var req protocol.AccessReq
+	if trans.read != nil {
+		req = trans.read
+		addr = trans.read.Address
+		pid = trans.read.PID
+	} else {
+		req = trans.write
+		addr = trans.write.Address
+		pid = trans.write.PID
+	}
+	cacheLineID, _ := cache.GetCacheLineID(addr, ds.cache.log2BlockSize)
+
+	bankNum := cache.GetBankID(block,
+		ds.cache.directory.WayAssociativity(), len(ds.cache.dirToBankBuffers))
+	bankBuf := ds.cache.dirToBankBuffers[bankNum]
+
+	if !bankBuf.CanPush() {
+		// return true
+		return false
+	}
+
+	// if the request goes to remote chiplet, it could make deadlock
+	if ds.cache.isReqToRemote(addr) {
+		if !ds.cache.isRemoteReqPossible() {
+			return false
+		}
+		ds.cache.numToRemote++
+	}
+
+	// need to do if block is not dirty but previous cacheline is ovewritten.
+	if block.IsValid && !block.IsDirty {
+		tracing.StartTask(
+			0, 0, now, ds.cache,
+			"overwrite",
+			ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(block.Tag)], // address of overwritten cacheline
+			req)
+
+		tracing.StartTask(
+			7,
+			1,
+			now,
+			ds.cache,
+			"memory-trace",
+			ds.cache.chipletIDStrings[ds.cache.HomeNodeFinder.GetChipletId(block.Tag)],
+			req,
+		)
+	}
+
+	mshrEntry := ds.cache.mshr.Add(pid, cacheLineID)
+	trans.mshrEntry = mshrEntry
+	trans.block = block
+	block.IsLocked = true
+	block.Tag = cacheLineID
+	block.PID = pid
+	block.IsValid = true
+	ds.cache.directory.Visit(block)
+
+	tracing.AddTaskStep(
+		tracing.MsgIDAtReceiver(req, ds.cache),
+		now,
+		ds.cache,
+		fmt.Sprintf("add-mshr-entry-0x%x-0x%x", mshrEntry.Address, block.Tag),
+	)
+
+	trans.action = writeBufferFetch
+	trans.fetchPID = pid
+	trans.fetchAddress = cacheLineID
+	bankBuf.Push(trans)
+
+	mshrEntry.Block = block
+	mshrEntry.Requests = append(mshrEntry.Requests, trans)
+
+	return true
+}
+
+func (ds *directoryStage) isWritingFullLine(
+	write *protocol.WriteReq,
+) bool {
+	if len(write.Data) != (1 << ds.cache.log2BlockSize) {
+		return false
+	}
+
+	if write.DirtyMask != nil {
+		for _, dirty := range write.DirtyMask {
+			if !dirty {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func (ds *directoryStage) needEviction(
+	victim *cache.Block,
+) bool {
+	return victim.IsValid && victim.IsDirty
+}

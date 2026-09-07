@@ -1,0 +1,109 @@
+package writebackrcr
+
+import (
+	"gitlab.com/akita/akita"
+	"gitlab.com/akita/mem/idealmemcontroller"
+	"gitlab.com/akita/protocol"
+	"gitlab.com/akita/util/tracing"
+)
+
+type topParser struct {
+	cache *Cache
+}
+
+// Source priority: RDMAPort (external data → always local-served) →
+// LookupPort (external lookup → always local-served) → TopPort (local
+// CU traffic, may forward). Drains the highest-priority non-empty port
+// each tick.
+const (
+	srcRDMA   = 0
+	srcLookup = 1
+	srcLocal  = 2
+)
+
+func (p *topParser) Tick(now akita.VTimeInSec) bool {
+	if p.cache.state != cacheStateRunning {
+		return false // return false
+	}
+
+	var req akita.Msg
+	src := srcRDMA
+	pipeline := p.cache.pipelineForRemote
+	if r := p.cache.RDMAPort.Peek(); r != nil {
+		req = r
+	} else if r := p.cache.LookupPort.Peek(); r != nil {
+		req = r
+		src = srcLookup
+		pipeline = p.cache.pipelineForLookup
+	} else if r := p.cache.TopPort.Peek(); r != nil {
+		req = r
+		src = srcLocal
+		pipeline = p.cache.pipelineForLocal
+	}
+
+	if req == nil {
+		return false
+	}
+
+	// instead wrap in pipeline object and push into pipeline
+	if !pipeline.CanAccept() {
+		return false // return false
+	}
+
+	trans := &transaction{}
+	var addr uint64
+	switch req := req.(type) {
+	case *idealmemcontroller.ToDramMsg:
+		// if the type of msg is ToDramMsg,
+		// this request is from mmu to find pte cached in l2 cache.
+		trans.read = req.Msg.(*protocol.ReadReq)
+		addr = trans.read.Address
+		trans.toRemote = p.cache.isReqToRemote(addr)
+	case *protocol.ReadReq:
+		trans.read = req
+		addr = trans.read.Address
+		trans.toRemote = p.cache.isReqToRemote(addr)
+	case *protocol.LookupReq:
+		trans.read = protocol.ReadReqBuilder{}.
+			WithSendTime(req.SendTime).
+			WithSrc(req.Meta().Src).
+			WithDst(req.Meta().Dst).
+			WithAddress(req.Address).
+			WithByteSize(req.AccessByteSize).
+			WithInfo(req.Info).
+			Build()
+		trans.read.Meta().ID = req.Meta().ID
+		trans.isLookup = true
+
+		if req.CornerNodeId == p.cache.ChipletId {
+			trans.isCornerNode = true
+			trans.toRemote = true
+		}
+	case *protocol.WriteReq:
+		trans.write = req
+		addr = trans.write.Address
+		trans.toRemote = p.cache.isReqToRemote(addr)
+	}
+
+	// pipeline
+	pipelineItem := cachePipelineItem{
+		taskID: akita.GetIDGenerator().Generate(),
+		trans:  trans,
+	}
+	pipeline.Accept(now, pipelineItem)
+
+	p.cache.inFlightTransactions = append(p.cache.inFlightTransactions, trans)
+
+	tracing.TraceReqReceive(req, now, p.cache)
+
+	switch src {
+	case srcRDMA:
+		p.cache.RDMAPort.Retrieve(now)
+	case srcLookup:
+		p.cache.LookupPort.Retrieve(now)
+	case srcLocal:
+		p.cache.TopPort.Retrieve(now)
+	}
+
+	return true
+}

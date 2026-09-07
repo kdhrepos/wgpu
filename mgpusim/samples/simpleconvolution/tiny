@@ -1,0 +1,21 @@
+#!/bin/bash
+go build
+
+WIDTH=256 
+HEIGHT=256
+
+./simpleconvolution \
+    -timing \
+    -report-all \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="simpleconvolution_4x4_tiny_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="simpleconvolution_4x4_tiny_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

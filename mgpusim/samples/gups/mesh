@@ -1,0 +1,27 @@
+#!/bin/bash
+go build
+
+THREAD_BLOCK_SIZE=64
+NTHREAD_BLOCKS=8192
+TABLE_PARAM=64
+
+MAX_INST=10000000
+
+./gups \
+    -thread-block-size=$THREAD_BLOCK_SIZE \
+    -nthread-blocks=$NTHREAD_BLOCKS \
+    -table-param=$TABLE_PARAM \
+    -max-inst=$MAX_INST \
+    -timing \
+    -report-all \
+    -fast-h2d \
+    -verbose \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=6 \
+    -yDim=6 \
+    "$@"

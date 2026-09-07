@@ -1,0 +1,24 @@
+#!/bin/bash
+go build
+
+NAME=matrixtranspose
+
+WIDTH=2048
+
+./$NAME \
+    -width=$WIDTH \
+    -timing \
+    -report-all \
+    -no-progress-bar \
+    -verbose \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="${NAME}_4x4_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="${NAME}_4x4_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

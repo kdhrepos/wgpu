@@ -1,0 +1,16 @@
+#!/bin/bash
+go build
+
+NAME=gups
+
+./$NAME \
+    -timing \
+    -report-all \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=6 \
+    -yDim=6

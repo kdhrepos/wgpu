@@ -1,0 +1,28 @@
+#!/bin/bash
+go build
+
+NAME=correlation
+
+NUM_M=9000
+NUM_N=9000
+
+MAX_INST=100000000
+
+./$NAME \
+    -num_m=$NUM_M \
+    -num_n=$NUM_N \
+    -timing \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="${NAME}_4x4_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="${NAME}_4x4_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

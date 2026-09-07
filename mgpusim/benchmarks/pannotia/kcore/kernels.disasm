@@ -1,0 +1,328 @@
+
+kernels.hsaco:	file format elf64-amdgpu
+
+
+Disassembly of section .text:
+
+0000000000003000 <init_degree_kernel$local>:
+; init_degree_kernel():
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:34
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000003000: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000003004: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000003008: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000300C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000003010: 00000100
+		...
+	v_cndmask_b32_e32 v86, s65, v0, vcc                        // 000000003030: 00AC0041
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000003034: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000003038: 000A000B
+		...
+	v_cndmask_b32_e32 v0, s88, v0, vcc                         // 000000003048: 00000058
+		...
+	v_cndmask_b32_e32 v3, s11, v128, vcc                       // 000000003054: 0007000B
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000003064: 06040404
+	.long 0xffffffff                                           // 000000003068: FFFFFFFF
+		...
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:35
+;     int v = get_global_id(0);
+	s_load_dword s0, s[4:5], 0x4                               // 000000003100: C0020002 00000004
+	s_load_dword s2, s[6:7], 0x18                              // 000000003108: C0020083 00000018
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:35
+;     int v = get_global_id(0);
+	s_waitcnt lgkmcnt(0)                                       // 000000003110: BF8C007F
+	s_and_b32 s0, s0, 0xffff                                   // 000000003114: 8600FF00 0000FFFF
+	s_mul_i32 s8, s8, s0                                       // 00000000311C: 92080008
+	s_load_dwordx2 s[0:1], s[6:7], 0x20                        // 000000003120: C0060003 00000020
+	v_add_u32_e32 v0, vcc, s8, v0                              // 000000003128: 32000008
+	s_waitcnt lgkmcnt(0)                                       // 00000000312C: BF8C007F
+	v_add_u32_e32 v0, vcc, s0, v0                              // 000000003130: 32000000
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:36
+;     if (v >= num_nodes) return;
+	v_cmp_gt_i32_e32 vcc, s2, v0                               // 000000003134: 7D880002
+	s_and_saveexec_b64 s[0:1], vcc                             // 000000003138: BE80206A
+	s_cbranch_execz BB0_2                                      // 00000000313C: BF880025
+	s_load_dwordx4 s[0:3], s[6:7], 0x0                         // 000000003140: C00A0003 00000000
+	s_load_dwordx4 s[4:7], s[6:7], 0x10                        // 000000003148: C00A0103 00000010
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:37
+;     active[v] = 1;
+	v_mov_b32_e32 v1, 0                                        // 000000003150: 7E020280
+	v_mov_b32_e32 v2, v0                                       // 000000003154: 7E040300
+	v_ashrrev_i64 v[0:1], 30, v[1:2]                           // 000000003158: D2910000 0002029E
+	s_waitcnt lgkmcnt(0)                                       // 000000003160: BF8C007F
+	v_mov_b32_e32 v4, s3                                       // 000000003164: 7E080203
+	v_add_u32_e32 v3, vcc, s2, v0                              // 000000003168: 32060002
+	v_addc_u32_e32 v4, vcc, v4, v1, vcc                        // 00000000316C: 38080304
+	v_mov_b32_e32 v5, 1                                        // 000000003170: 7E0A0281
+	flat_store_dword v[3:4], v5                                // 000000003174: DC700000 00000503
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:38
+;     degree[v] = row[v + 1] - row[v];
+	v_mov_b32_e32 v3, 0                                        // 00000000317C: 7E060280
+	v_add_u32_e32 v3, vcc, 0, v3                               // 000000003180: 32060680
+	v_addc_u32_e32 v4, vcc, 1, v2, vcc                         // 000000003184: 38080481
+	v_ashrrev_i64 v[2:3], 30, v[3:4]                           // 000000003188: D2910002 0002069E
+	v_mov_b32_e32 v4, s1                                       // 000000003190: 7E080201
+	v_add_u32_e32 v2, vcc, s0, v2                              // 000000003194: 32040400
+	v_addc_u32_e32 v3, vcc, v4, v3, vcc                        // 000000003198: 38060704
+	v_mov_b32_e32 v5, s1                                       // 00000000319C: 7E0A0201
+	v_add_u32_e32 v4, vcc, s0, v0                              // 0000000031A0: 32080000
+	v_addc_u32_e32 v5, vcc, v5, v1, vcc                        // 0000000031A4: 380A0305
+	flat_load_dword v2, v[2:3]                                 // 0000000031A8: DC500000 02000002
+	flat_load_dword v3, v[4:5]                                 // 0000000031B0: DC500000 03000004
+	v_mov_b32_e32 v6, s5                                       // 0000000031B8: 7E0C0205
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000031BC: BF8C0070
+	v_sub_u32_e32 v2, vcc, v2, v3                              // 0000000031C0: 34040702
+	v_add_u32_e32 v0, vcc, s4, v0                              // 0000000031C4: 32000004
+	v_addc_u32_e32 v1, vcc, v6, v1, vcc                        // 0000000031C8: 38020306
+	flat_store_dword v[0:1], v2                                // 0000000031CC: DC700000 00000200
+
+00000000000031d4 <BB0_2>:
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:39
+; }
+	s_endpgm                                                   // 0000000031D4: BF810000
+	s_nop 0                                                    // 0000000031D8: BF800000
+	s_nop 0                                                    // 0000000031DC: BF800000
+	s_nop 0                                                    // 0000000031E0: BF800000
+	s_nop 0                                                    // 0000000031E4: BF800000
+	s_nop 0                                                    // 0000000031E8: BF800000
+	s_nop 0                                                    // 0000000031EC: BF800000
+	s_nop 0                                                    // 0000000031F0: BF800000
+	s_nop 0                                                    // 0000000031F4: BF800000
+	s_nop 0                                                    // 0000000031F8: BF800000
+	s_nop 0                                                    // 0000000031FC: BF800000
+
+0000000000003200 <peel_kernel$local>:
+; peel_kernel():
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:50
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000003200: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000003204: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000003208: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000320C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000003210: 00000100
+		...
+	v_cndmask_b32_e32 v86, s65, v0, vcc                        // 000000003230: 00AC0041
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000003234: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000003238: 000A000B
+		...
+	v_cndmask_b32_e32 v0, s96, v0, vcc                         // 000000003248: 00000060
+		...
+	v_cndmask_b32_e32 v3, s14, v128, vcc                       // 000000003254: 0007000E
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000003264: 06040404
+	.long 0xffffffff                                           // 000000003268: FFFFFFFF
+		...
+	s_load_dwordx2 s[10:11], s[6:7], 0x20                      // 000000003300: C0060283 00000020
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:51
+;     int v = get_global_id(0);
+	s_load_dwordx2 s[0:1], s[6:7], 0x28                        // 000000003308: C0060003 00000028
+	s_waitcnt lgkmcnt(0)                                       // 000000003310: BF8C007F
+	s_load_dword s1, s[4:5], 0x4                               // 000000003314: C0020042 00000004
+	s_waitcnt lgkmcnt(0)                                       // 00000000331C: BF8C007F
+	s_and_b32 s1, s1, 0xffff                                   // 000000003320: 8601FF01 0000FFFF
+	s_mul_i32 s8, s8, s1                                       // 000000003328: 92080108
+	v_add_u32_e32 v0, vcc, s8, v0                              // 00000000332C: 32000008
+	v_add_u32_e32 v0, vcc, s0, v0                              // 000000003330: 32000000
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:52
+;     if (v >= num_nodes) return;
+	v_cmp_gt_i32_e32 vcc, s11, v0                              // 000000003334: 7D88000B
+	s_and_saveexec_b64 s[0:1], vcc                             // 000000003338: BE80206A
+	s_cbranch_execz BB1_4                                      // 00000000333C: BF88002F
+	s_load_dwordx8 s[0:7], s[6:7], 0x0                         // 000000003340: C00E0003 00000000
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:53
+;     if (!active[v]) return;
+	v_mov_b32_e32 v2, 0                                        // 000000003348: 7E040280
+	v_mov_b32_e32 v3, v0                                       // 00000000334C: 7E060300
+	v_ashrrev_i64 v[2:3], 30, v[2:3]                           // 000000003350: D2910002 0002049E
+	v_ashrrev_i32_e32 v1, 31, v0                               // 000000003358: 2202009F
+	s_waitcnt lgkmcnt(0)                                       // 00000000335C: BF8C007F
+	v_mov_b32_e32 v4, s3                                       // 000000003360: 7E080203
+	v_add_u32_e32 v2, vcc, s2, v2                              // 000000003364: 32040402
+	v_addc_u32_e32 v3, vcc, v4, v3, vcc                        // 000000003368: 38060704
+	flat_load_dword v4, v[2:3]                                 // 00000000336C: DC500000 04000002
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000003374: BF8C0070
+	v_cmp_ne_u32_e32 vcc, 0, v4                                // 000000003378: 7D9A0880
+	s_and_b64 exec, exec, vcc                                  // 00000000337C: 86FE6A7E
+	s_cbranch_execz BB1_4                                      // 000000003380: BF88001E
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:55
+;     if (degree[v] < k) {
+	v_lshlrev_b64 v[4:5], 2, v[0:1]                            // 000000003384: D28F0004 00020082
+	v_mov_b32_e32 v6, s1                                       // 00000000338C: 7E0C0201
+	v_add_u32_e32 v4, vcc, s0, v4                              // 000000003390: 32080800
+	v_addc_u32_e32 v5, vcc, v6, v5, vcc                        // 000000003394: 380A0B06
+	flat_load_dword v4, v[4:5]                                 // 000000003398: DC500000 04000004
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000033A0: BF8C0070
+	v_cmp_gt_i32_e32 vcc, s10, v4                              // 0000000033A4: 7D88080A
+	s_and_b64 exec, exec, vcc                                  // 0000000033A8: 86FE6A7E
+	s_cbranch_execz BB1_4                                      // 0000000033AC: BF880013
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:57
+;         to_remove[v] = 1;
+	v_lshlrev_b64 v[0:1], 2, v[0:1]                            // 0000000033B0: D28F0000 00020082
+	v_mov_b32_e32 v4, 0                                        // 0000000033B8: 7E080280
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:56
+;         active[v]    = 0;
+	flat_store_dword v[2:3], v4                                // 0000000033BC: DC700000 00000402
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:57
+;         to_remove[v] = 1;
+	v_mov_b32_e32 v2, s5                                       // 0000000033C4: 7E040205
+	v_add_u32_e32 v0, vcc, s4, v0                              // 0000000033C8: 32000004
+	v_addc_u32_e32 v1, vcc, v2, v1, vcc                        // 0000000033CC: 38020302
+	v_mov_b32_e32 v2, 1                                        // 0000000033D0: 7E040281
+	flat_store_dword v[0:1], v2                                // 0000000033D4: DC700000 00000200
+	v_mov_b32_e32 v0, s6                                       // 0000000033DC: 7E000206
+	v_mov_b32_e32 v1, s7                                       // 0000000033E0: 7E020207
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:59
+;         *changed |= 1;
+	flat_load_dword v2, v[0:1]                                 // 0000000033E4: DC500000 02000000
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000033EC: BF8C0070
+	v_or_b32_e32 v2, 1, v2                                     // 0000000033F0: 28040481
+	flat_store_dword v[0:1], v2                                // 0000000033F4: DC700000 00000200
+
+00000000000033fc <BB1_4>:
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:61
+; }
+	s_endpgm                                                   // 0000000033FC: BF810000
+
+0000000000003400 <update_degree_kernel$local>:
+; update_degree_kernel():
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:72
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000003400: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000003404: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000003408: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000340C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000003410: 00000100
+		...
+	v_cndmask_b32_e32 v86, s67, v0, vcc                        // 000000003430: 00AC0043
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000003434: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000003438: 000A000B
+		...
+	v_cndmask_b32_e32 v0, xnack_mask_lo, v0, vcc               // 000000003448: 00000068
+		...
+	v_cndmask_b32_e32 v6, s12, v128, vcc                       // 000000003454: 000D000C
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000003464: 06040404
+	.long 0xffffffff                                           // 000000003468: FFFFFFFF
+		...
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:73
+;     int u = get_global_id(0);
+	s_load_dword s0, s[4:5], 0x4                               // 000000003500: C0020002 00000004
+	s_load_dword s2, s[6:7], 0x28                              // 000000003508: C0020083 00000028
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:73
+;     int u = get_global_id(0);
+	s_waitcnt lgkmcnt(0)                                       // 000000003510: BF8C007F
+	s_and_b32 s0, s0, 0xffff                                   // 000000003514: 8600FF00 0000FFFF
+	s_mul_i32 s8, s8, s0                                       // 00000000351C: 92080008
+	s_load_dwordx2 s[0:1], s[6:7], 0x30                        // 000000003520: C0060003 00000030
+	v_add_u32_e32 v0, vcc, s8, v0                              // 000000003528: 32000008
+	s_waitcnt lgkmcnt(0)                                       // 00000000352C: BF8C007F
+	v_add_u32_e32 v2, vcc, s0, v0                              // 000000003530: 32040000
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:74
+;     if (u >= num_nodes) return;
+	v_cmp_gt_i32_e32 vcc, s2, v2                               // 000000003534: 7D880402
+	s_and_saveexec_b64 s[0:1], vcc                             // 000000003538: BE80206A
+	s_cbranch_execz BB2_8                                      // 00000000353C: BF88005A
+	s_load_dwordx4 s[0:3], s[6:7], 0x20                        // 000000003540: C00A0003 00000020
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:75
+;     if (!to_remove[u]) return;
+	v_mov_b32_e32 v4, 0                                        // 000000003548: 7E080280
+	v_mov_b32_e32 v5, v2                                       // 00000000354C: 7E0A0302
+	v_ashrrev_i64 v[0:1], 30, v[4:5]                           // 000000003550: D2910000 0002089E
+	v_ashrrev_i32_e32 v3, 31, v2                               // 000000003558: 2206049F
+	s_waitcnt lgkmcnt(0)                                       // 00000000355C: BF8C007F
+	v_mov_b32_e32 v4, s1                                       // 000000003560: 7E080201
+	v_add_u32_e32 v0, vcc, s0, v0                              // 000000003564: 32000000
+	v_addc_u32_e32 v1, vcc, v4, v1, vcc                        // 000000003568: 38020304
+	flat_load_dword v4, v[0:1]                                 // 00000000356C: DC500000 04000000
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000003574: BF8C0070
+	v_cmp_ne_u32_e32 vcc, 0, v4                                // 000000003578: 7D9A0880
+	s_and_b64 exec, exec, vcc                                  // 00000000357C: 86FE6A7E
+	s_cbranch_execz BB2_8                                      // 000000003580: BF880049
+	s_load_dwordx8 s[0:7], s[6:7], 0x0                         // 000000003584: C00E0003 00000000
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:77
+;     for (int e = row[u]; e < row[u + 1]; e++) {
+	v_lshlrev_b64 v[2:3], 2, v[2:3]                            // 00000000358C: D28F0002 00020482
+	s_waitcnt lgkmcnt(0)                                       // 000000003594: BF8C007F
+	v_mov_b32_e32 v4, s1                                       // 000000003598: 7E080201
+	v_add_u32_e32 v6, vcc, s0, v2                              // 00000000359C: 320C0400
+	v_addc_u32_e32 v7, vcc, v4, v3, vcc                        // 0000000035A0: 380E0704
+	v_add_u32_e64 v2, vcc, 0, 0                                // 0000000035A4: D1196A02 00010080
+	v_addc_u32_e32 v3, vcc, 1, v5, vcc                         // 0000000035AC: 38060A81
+	v_ashrrev_i64 v[2:3], 30, v[2:3]                           // 0000000035B0: D2910002 0002049E
+	v_add_u32_e32 v2, vcc, s0, v2                              // 0000000035B8: 32040400
+	v_addc_u32_e32 v3, vcc, v4, v3, vcc                        // 0000000035BC: 38060704
+	flat_load_dword v4, v[6:7]                                 // 0000000035C0: DC500000 04000006
+	flat_load_dword v6, v[2:3]                                 // 0000000035C8: DC500000 06000002
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000035D0: BF8C0070
+	v_cmp_lt_i32_e32 vcc, v4, v6                               // 0000000035D4: 7D820D04
+	s_and_saveexec_b64 s[0:1], vcc                             // 0000000035D8: BE80206A
+	s_cbranch_execz BB2_7                                      // 0000000035DC: BF88002E
+	v_ashrrev_i32_e32 v5, 31, v4                               // 0000000035E0: 220A089F
+	v_lshlrev_b64 v[7:8], 2, v[4:5]                            // 0000000035E4: D28F0007 00020882
+	v_mov_b32_e32 v5, s3                                       // 0000000035EC: 7E0A0203
+	v_add_u32_e32 v7, vcc, s2, v7                              // 0000000035F0: 320E0E02
+	v_addc_u32_e32 v8, vcc, v5, v8, vcc                        // 0000000035F4: 38101105
+	s_mov_b64 s[2:3], 0                                        // 0000000035F8: BE820180
+	s_branch BB2_5                                             // 0000000035FC: BF820009
+
+0000000000003600 <BB2_4>:
+	s_or_b64 exec, exec, s[8:9]                                // 000000003600: 87FE087E
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:77
+;     for (int e = row[u]; e < row[u + 1]; e++) {
+	v_add_u32_e32 v4, vcc, 1, v4                               // 000000003604: 32080881
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000003608: BF8C0070
+	v_cmp_ge_i32_e32 vcc, v4, v6                               // 00000000360C: 7D8C0D04
+	s_or_b64 s[2:3], vcc, s[2:3]                               // 000000003610: 8782026A
+	v_add_u32_e32 v7, vcc, 4, v7                               // 000000003614: 320E0E84
+	v_addc_u32_e32 v8, vcc, 0, v8, vcc                         // 000000003618: 38101080
+	s_andn2_b64 exec, exec, s[2:3]                             // 00000000361C: 89FE027E
+	s_cbranch_execz BB2_7                                      // 000000003620: BF88001D
+
+0000000000003624 <BB2_5>:
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:78
+;         int w = col[e];
+	flat_load_dword v9, v[7:8]                                 // 000000003624: DC500000 09000007
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:79
+;         if (active[w]) {
+	v_mov_b32_e32 v5, s5                                       // 00000000362C: 7E0A0205
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:78
+;         int w = col[e];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000003630: BF8C0070
+	v_ashrrev_i32_e32 v10, 31, v9                              // 000000003634: 2214129F
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:79
+;         if (active[w]) {
+	v_lshlrev_b64 v[11:12], 2, v[9:10]                         // 000000003638: D28F000B 00021282
+	v_add_u32_e32 v11, vcc, s4, v11                            // 000000003640: 32161604
+	v_addc_u32_e32 v12, vcc, v5, v12, vcc                      // 000000003644: 38181905
+	flat_load_dword v5, v[11:12]                               // 000000003648: DC500000 0500000B
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000003650: BF8C0070
+	v_cmp_ne_u32_e32 vcc, 0, v5                                // 000000003654: 7D9A0A80
+	s_and_saveexec_b64 s[8:9], vcc                             // 000000003658: BE88206A
+	s_cbranch_execz BB2_4                                      // 00000000365C: BF88FFE8
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:81
+;             degree[w] -= 1;
+	v_lshlrev_b64 v[5:6], 2, v[9:10]                           // 000000003660: D28F0005 00021282
+	v_mov_b32_e32 v9, s7                                       // 000000003668: 7E120207
+	v_add_u32_e32 v5, vcc, s6, v5                              // 00000000366C: 320A0A06
+	v_addc_u32_e32 v6, vcc, v9, v6, vcc                        // 000000003670: 380C0D09
+	flat_load_dword v9, v[5:6]                                 // 000000003674: DC500000 09000005
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 00000000367C: BF8C0070
+	v_add_u32_e32 v9, vcc, -1, v9                              // 000000003680: 321212C1
+	flat_store_dword v[5:6], v9                                // 000000003684: DC700000 00000905
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:77
+;     for (int e = row[u]; e < row[u + 1]; e++) {
+	flat_load_dword v6, v[2:3]                                 // 00000000368C: DC500000 06000002
+	s_branch BB2_4                                             // 000000003694: BF82FFDA
+
+0000000000003698 <BB2_7>:
+	s_or_b64 exec, exec, s[0:1]                                // 000000003698: 87FE007E
+	v_mov_b32_e32 v2, 0                                        // 00000000369C: 7E040280
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:84
+;     to_remove[u] = 0;   /* clear after processing */
+	flat_store_dword v[0:1], v2                                // 0000000036A0: DC700000 00000200
+
+00000000000036a8 <BB2_8>:
+; /root/mgvm/mgpusim/benchmarks/pannotia/kcore/native/kernel/kcore_kernel.cl:85
+; }
+	s_endpgm                                                   // 0000000036A8: BF810000

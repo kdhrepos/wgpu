@@ -1,0 +1,24 @@
+#!/bin/bash
+go build
+
+ROW=2048
+COL=2048
+
+./stencil2d \
+    -row=$ROW \
+    -col=$COL \
+    -timing \
+    -report-all \
+    -verify \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="stencil2d_4x4_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="stencil2d_4x4_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

@@ -1,0 +1,100 @@
+{
+  "atax": {
+    "1073938856": "Global",
+    "1073938864": "Warm_NonShared",
+    "1073938908": "Hot_NonShared"
+  },
+  "bicg": {
+    "1074004392": "Global",
+    "1074004400": "Warm_NonShared",
+    "1074004444": "Hot_NonShared"
+  },
+  "cc": {
+    "1107300992": "Hot",
+    "1107301048": "Warm",
+    "1107301072": "Warm"
+  },
+  "gemm": {
+    "3221225996": "Global"
+  },
+  "gpt3_175B_gemm": {
+    "2919236068": "Global",
+    "2919236140": "Warm"
+  },
+  "gpt3_175B_mm": {
+    "2919236440": "Global",
+    "2919236544": "Global",
+    "2919236564": "Global",
+    "2919236584": "Global"
+  },
+  "gups": {
+    "272630216": "Warm",
+    "272630268": "Warm"
+  },
+  "kmeans": {
+    "541073784": "Hot_NonShared",
+    "541086164": "Global"
+  },
+  "llama3_70B_gemm": {
+    "1241514468": "Global",
+    "1241514540": "Hot"
+  },
+  "llama3_70B_mm": {
+    "1241514840": "Global",
+    "1241514944": "Global",
+    "1241514964": "Global",
+    "1241514984": "Global"
+  },
+  "lud": {
+    "604000820": "Global",
+    "604002504": "Streaming",
+    "604002512": "Streaming",
+    "604002532": "Streaming",
+    "604002540": "Streaming",
+    "604002560": "Streaming",
+    "604002568": "Streaming",
+    "604002588": "Streaming",
+    "604002596": "Streaming",
+    "604002616": "Streaming",
+    "604002624": "Streaming",
+    "604002644": "Streaming",
+    "604002652": "Streaming",
+    "604002672": "Streaming",
+    "604002680": "Streaming",
+    "604002700": "Streaming",
+    "604021080": "Global"
+  },
+  "matrixmultiplication": {
+    "1811940184": "Global",
+    "1811940288": "Global",
+    "1811940308": "Global",
+    "1811940328": "Global"
+  },
+  "mis": {
+    "196018604": "Global",
+    "196018816": "Hot",
+    "196018860": "Hot",
+    "196031156": "Warm",
+    "196031204": "Warm"
+  },
+  "mvt": {
+    "1074004392": "Warm_NonShared",
+    "1074004400": "Global",
+    "1074004440": "Hot_NonShared"
+  },
+  "pagerank": {
+    "2865091136": "Global"
+  },
+  "spmv": {
+    "377016836": "Hot_NonShared",
+    "377016848": "Hot_NonShared",
+    "377016908": "Global"
+  },
+  "syr2k": {
+    "805306924": "Global",
+    "805306932": "Hot_NonShared",
+    "805306940": "Global",
+    "805306948": "Hot_NonShared",
+    "805307028": "Warm"
+  }
+}

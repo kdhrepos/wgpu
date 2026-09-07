@@ -1,0 +1,90 @@
+package writebackrcr
+
+import (
+	"gitlab.com/akita/akita"
+	"gitlab.com/akita/mem/cache"
+	"gitlab.com/akita/protocol"
+	"gitlab.com/akita/util/ca"
+)
+
+type action int
+
+const (
+	actionInvalid action = iota
+	bankReadHit
+	bankWriteHit
+	bankEvict
+	bankEvictAndWrite
+	bankEvictAndFetch
+	bankWriteFetched
+	writeBufferFetch
+	writeBufferEvictAndFetch
+	writeBufferEvictAndWrite
+	writeBufferFlush
+
+	// MSHR Coalescing, NearFetch
+	bankEvictAndMshrCoalesce
+	bankMshrCoalesceFetched
+	writeBufferMshrCoalesce
+	writeBufferEvictAndMshrCoalesce
+)
+
+type transaction struct {
+	action
+	read              *protocol.ReadReq
+	readRCR           *protocol.RCReq
+	write             *protocol.WriteReq
+	flush             *cache.FlushReq
+	block             *cache.Block
+	victim            *cache.Block
+	fetchPID          ca.PID
+	fetchAddress      uint64
+	fetchedData       []byte
+	fetchReadReq      *protocol.ReadReq
+	evictingPID       ca.PID
+	evictingAddr      uint64
+	evictingData      []byte
+	evictingDirtyMask []bool
+	evictionWriteReq  *protocol.WriteReq
+	evictionDone      *protocol.WriteDoneRsp
+	mshrEntry         *cache.MSHREntry
+
+	toRemote bool
+
+	// MSHR Coalescing for NearFetch
+	// When mshr coalesced request is replied,
+	// it needs to know which l1 cache was a requestor
+	virtualMshrEntry *cache.MSHREntry
+
+	mshrCoalesceReq *protocol.ReadReq
+
+	isLookup     bool
+	isCornerNode bool
+
+	// failTraced ensures an MSHR reservation/merge fail is counted at most
+	// once per request. PeekReady re-probes a stalled transaction every
+	// cycle, so without this flag the count would be inflated by the stall
+	// duration. Mirrors writeback's pattern so nearfetch and the baseline
+	// emit comparable mshr-fail / mshr-merge-fail metrics.
+	failTraced bool
+}
+
+func (t transaction) accessReq() protocol.AccessReq {
+	if t.read != nil {
+		return t.read
+	}
+	if t.write != nil {
+		return t.write
+	}
+	return nil
+}
+
+func (t transaction) req() akita.Msg {
+	if t.accessReq() != nil {
+		return t.accessReq()
+	}
+	if t.flush != nil {
+		return t.flush
+	}
+	return nil
+}

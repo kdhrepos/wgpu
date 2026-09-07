@@ -1,0 +1,26 @@
+#!/bin/bash
+go build
+
+NUM_NODES=4194304
+NUM_EDGES=268435456
+MAX_INST=300000000
+
+./cc \
+    -num-nodes=$NUM_NODES \
+    -num-edges=$NUM_EDGES \
+    -max-inst=$MAX_INST \
+    -timing \
+    -fast-h2d \
+    -verbose \
+    -report-all \
+    -checkpoint=25 \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv,Xdiv \
+    -data-partitioning="kernel-wide,kernel-wide,kernel-wide,kernel-wide" \
+    -metric-file-name="cc_mesh_6x6" \
+    -xDim=6 \
+    -yDim=6

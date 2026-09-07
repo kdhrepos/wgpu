@@ -1,0 +1,27 @@
+#!/bin/bash
+go build
+
+NAME=convolution3d
+
+NI=350
+NJ=350
+NK=350
+
+MAX_INST=100000000
+
+./$NAME \
+    -timing \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="${NAME}_4x4_tiny_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="${NAME}_4x4_tiny_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

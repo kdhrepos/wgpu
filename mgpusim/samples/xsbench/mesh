@@ -1,0 +1,33 @@
+#!/bin/bash
+go build
+
+ISOTOPES=68
+GRIDPOINTS=100000
+LOOKUPS=30000000
+GRID_TYPE=unionized
+
+MAX_INST=100000000
+
+./xsbench \
+    -isotopes=$ISOTOPES \
+    -gridpoints=$GRIDPOINTS \
+    -lookups=$LOOKUPS \
+    -grid-type=$GRID_TYPE \
+    -timing \
+    -max-inst=$MAX_INST \
+    -report-all \
+    -fast-h2d \
+    -verbose \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -data-partitioning=kernel-wide \
+    -metric-file-name=xsbench_mesh_6x6 \
+    -trace-memory-access \
+    -trace-memory-access-filename=xsbench_mesh_6x6_memory_trace \
+    -xDim=6 \
+    -yDim=6 \
+    "$@"

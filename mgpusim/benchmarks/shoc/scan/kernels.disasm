@@ -1,0 +1,751 @@
+
+kernels.hsaco:	file format elf64-amdgpu
+
+
+Disassembly of section .text:
+
+0000000000002000 <reduce$local>:
+; reduce():
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:19
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000002000: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000002004: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000002008: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000200C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000002010: 00000100
+		...
+	v_cndmask_b32_e32 v86, 1, v0, vcc                          // 000000002030: 00AC0081
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000002034: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000002038: 000A000B
+		...
+	v_cndmask_b32_e32 v0, s80, v0, vcc                         // 000000002048: 00000050
+		...
+	v_cndmask_b32_e32 v4, s18, v0, vcc                         // 000000002054: 00080012
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000002064: 06040404
+	.long 0xffffffff                                           // 000000002068: FFFFFFFF
+		...
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:25
+;     int region_size = ((n / 4) / get_num_groups(0)) * 4;
+	s_load_dword s0, s[4:5], 0x4                               // 000000002100: C0020002 00000004
+	s_load_dword s3, s[4:5], 0xc                               // 000000002108: C00200C2 0000000C
+	s_mov_b32 s9, 0                                            // 000000002110: BE890080
+	s_waitcnt lgkmcnt(0)                                       // 000000002114: BF8C007F
+	s_and_b32 s2, s0, 0xffff                                   // 000000002118: 8602FF00 0000FFFF
+	v_cvt_f32_u32_e32 v1, s2                                   // 000000002120: 7E020C02
+	v_rcp_iflag_f32_e32 v1, v1                                 // 000000002124: 7E024701
+	v_mul_f32_e32 v1, 0x4f800000, v1                           // 000000002128: 0A0202FF 4F800000
+	v_cvt_u32_f32_e32 v1, v1                                   // 000000002130: 7E020F01
+	v_mul_lo_u32 v2, v1, s2                                    // 000000002134: D2850002 00000501
+	v_mul_hi_u32 v3, v1, s2                                    // 00000000213C: D2860003 00000501
+	v_sub_u32_e32 v4, vcc, 0, v2                               // 000000002144: 34080480
+	v_cmp_eq_u32_e64 s[0:1], 0, v3                             // 000000002148: D0CA0000 00020680
+	v_cndmask_b32_e64 v2, v2, v4, s[0:1]                       // 000000002150: D1000002 00020902
+	v_mul_hi_u32 v2, v2, v1                                    // 000000002158: D2860002 00020302
+	v_add_u32_e32 v3, vcc, v2, v1                              // 000000002160: 32060302
+	v_subrev_u32_e32 v1, vcc, v2, v1                           // 000000002164: 36020302
+	v_cndmask_b32_e64 v1, v1, v3, s[0:1]                       // 000000002168: D1000001 00020701
+	v_mul_hi_u32 v1, v1, s3                                    // 000000002170: D2860001 00000701
+	v_mul_lo_u32 v2, v1, s2                                    // 000000002178: D2850002 00000501
+	v_add_u32_e32 v3, vcc, 1, v1                               // 000000002180: 32060281
+	v_add_u32_e32 v4, vcc, -1, v1                              // 000000002184: 320802C1
+	v_sub_u32_e32 v5, vcc, s3, v2                              // 000000002188: 340A0403
+	v_cmp_le_u32_e64 s[0:1], s2, v5                            // 00000000218C: D0CB0000 00020A02
+	v_cmp_ge_u32_e32 vcc, s3, v2                               // 000000002194: 7D9C0403
+	s_and_b64 s[0:1], s[0:1], vcc                              // 000000002198: 86806A00
+	v_cndmask_b32_e64 v1, v1, v3, s[0:1]                       // 00000000219C: D1000001 00020701
+	v_cndmask_b32_e32 v1, v4, v1, vcc                          // 0000000021A4: 00020304
+	v_mul_lo_u32 v2, v1, s2                                    // 0000000021A8: D2850002 00000501
+	s_load_dwordx4 s[12:15], s[6:7], 0x0                       // 0000000021B0: C00A0303 00000000
+	s_load_dwordx2 s[0:1], s[6:7], 0x10                        // 0000000021B8: C0060003 00000010
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:29
+;     int block_stop  = (get_group_id(0) == get_num_groups(0) - 1) ?
+	v_mov_b32_e32 v5, 0                                        // 0000000021C0: 7E0A0280
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:25
+;     int region_size = ((n / 4) / get_num_groups(0)) * 4;
+	v_cmp_gt_u32_e32 vcc, s3, v2                               // 0000000021C4: 7D980403
+	v_addc_u32_e32 v1, vcc, 0, v1, vcc                         // 0000000021C8: 38020280
+	s_waitcnt lgkmcnt(0)                                       // 0000000021CC: BF8C007F
+	s_ashr_i32 s4, s0, 31                                      // 0000000021D0: 90049F00
+	v_cvt_f32_u32_e32 v2, v1                                   // 0000000021D4: 7E040D01
+	s_lshr_b32 s4, s4, 30                                      // 0000000021D8: 8F049E04
+	s_add_i32 s3, s0, s4                                       // 0000000021DC: 81030400
+	s_ashr_i32 s3, s3, 2                                       // 0000000021E0: 90038203
+	v_cvt_f32_u32_e32 v3, s3                                   // 0000000021E4: 7E060C03
+	v_rcp_iflag_f32_e32 v4, v2                                 // 0000000021E8: 7E084702
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:29
+;     int block_stop  = (get_group_id(0) == get_num_groups(0) - 1) ?
+	v_mov_b32_e32 v6, s0                                       // 0000000021EC: 7E0C0200
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:25
+;     int region_size = ((n / 4) / get_num_groups(0)) * 4;
+	v_mul_f32_e32 v4, v3, v4                                   // 0000000021F0: 0A080903
+	v_trunc_f32_e32 v4, v4                                     // 0000000021F4: 7E083904
+	v_cvt_u32_f32_e32 v7, v4                                   // 0000000021F8: 7E0E0F04
+	v_mad_f32 v3, -v4, v2, v3                                  // 0000000021FC: D1C10003 240E0504
+	v_cmp_ge_f32_e64 vcc, |v3|, v2                             // 000000002204: D046016A 00020503
+	v_addc_u32_e32 v2, vcc, 0, v7, vcc                         // 00000000220C: 38040E80
+	v_lshlrev_b32_e32 v2, 2, v2                                // 000000002210: 24040482
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:26
+;     int block_start = get_group_id(0) * region_size;
+	v_mul_lo_u32 v7, v2, s8                                    // 000000002214: D2850007 00001102
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:29
+;     int block_stop  = (get_group_id(0) == get_num_groups(0) - 1) ?
+	v_add_u32_e32 v3, vcc, -1, v1                              // 00000000221C: 320602C1
+	v_addc_u32_e32 v4, vcc, -1, v5, vcc                        // 000000002220: 38080AC1
+	v_add_u32_e32 v1, vcc, v7, v2                              // 000000002224: 32020507
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:34
+;     int i = block_start + tid;
+	v_add_u32_e32 v2, vcc, v7, v0                              // 000000002228: 32040107
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:29
+;     int block_stop  = (get_group_id(0) == get_num_groups(0) - 1) ?
+	v_cmp_eq_u64_e32 vcc, s[8:9], v[3:4]                       // 00000000222C: 7DD40608
+	v_cndmask_b32_e32 v4, v1, v6, vcc                          // 000000002230: 00080D01
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:39
+;     while (i < block_stop)
+	v_cmp_lt_i32_e32 vcc, v2, v4                               // 000000002234: 7D820902
+	v_mov_b32_e32 v1, 0                                        // 000000002238: 7E020280
+	s_and_saveexec_b64 s[4:5], vcc                             // 00000000223C: BE84206A
+	s_cbranch_execz BB0_4                                      // 000000002240: BF880012
+	s_mov_b64 s[6:7], 0                                        // 000000002244: BE860180
+	v_mov_b32_e32 v1, 0                                        // 000000002248: 7E020280
+
+000000000000224c <BB0_2>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:41
+;         sum += in[i];
+	v_ashrrev_i32_e32 v3, 31, v2                               // 00000000224C: 2206049F
+	v_lshlrev_b64 v[5:6], 2, v[2:3]                            // 000000002250: D28F0005 00020482
+	v_mov_b32_e32 v3, s13                                      // 000000002258: 7E06020D
+	v_add_u32_e32 v5, vcc, s12, v5                             // 00000000225C: 320A0A0C
+	v_addc_u32_e32 v6, vcc, v3, v6, vcc                        // 000000002260: 380C0D03
+	flat_load_dword v3, v[5:6]                                 // 000000002264: DC500000 03000005
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:42
+;         i += get_local_size(0);
+	v_add_u32_e32 v2, vcc, s2, v2                              // 00000000226C: 32040402
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:39
+;     while (i < block_stop)
+	v_cmp_ge_i32_e32 vcc, v2, v4                               // 000000002270: 7D8C0902
+	s_or_b64 s[6:7], vcc, s[6:7]                               // 000000002274: 8786066A
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:41
+;         sum += in[i];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000002278: BF8C0070
+	v_add_f32_e32 v1, v1, v3                                   // 00000000227C: 02020701
+	s_andn2_b64 exec, exec, s[6:7]                             // 000000002280: 89FE067E
+	s_cbranch_execnz BB0_2                                     // 000000002284: BF89FFF1
+	s_or_b64 exec, exec, s[6:7]                                // 000000002288: 87FE067E
+
+000000000000228c <BB0_4>:
+	s_or_b64 exec, exec, s[4:5]                                // 00000000228C: 87FE047E
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:45
+;     lmem[tid] = sum;
+	v_lshlrev_b32_e32 v2, 2, v0                                // 000000002290: 24040082
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:49
+;     for (unsigned int s = get_local_size(0) / 2; s > 0; s >>= 1)
+	s_lshr_b32 s0, s2, 1                                       // 000000002294: 8F008102
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:45
+;     lmem[tid] = sum;
+	v_add_u32_e32 v2, vcc, s1, v2                              // 000000002298: 32040401
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:49
+;     for (unsigned int s = get_local_size(0) / 2; s > 0; s >>= 1)
+	v_cmp_eq_u16_e64 s[2:3], s0, 0                             // 00000000229C: D0AA0002 00010000
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:45
+;     lmem[tid] = sum;
+	s_mov_b32 m0, -1                                           // 0000000022A4: BEFC00C1
+	s_and_b64 vcc, exec, s[2:3]                                // 0000000022A8: 86EA027E
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:45
+;     lmem[tid] = sum;
+	ds_write_b32 v2, v1                                        // 0000000022AC: D81A0000 00000102
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:46
+;     barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 0000000022B4: BF8C007F
+	s_barrier                                                  // 0000000022B8: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000022BC: BF8C007F
+	s_cbranch_vccz BB0_9                                       // 0000000022C0: BF860019
+
+00000000000022c4 <BB0_5>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:60
+;     if (tid == 0)
+	v_cmp_eq_u32_e32 vcc, 0, v0                                // 0000000022C4: 7D940080
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:58
+;     barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 0000000022C8: BF8C007F
+	s_barrier                                                  // 0000000022CC: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000022D0: BF8C007F
+	s_and_saveexec_b64 s[2:3], vcc                             // 0000000022D4: BE82206A
+	s_cbranch_execz BB0_7                                      // 0000000022D8: BF88000B
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:62
+;         isums[get_group_id(0)] = lmem[0];
+	v_mov_b32_e32 v0, s1                                       // 0000000022DC: 7E000201
+	ds_read_b32 v2, v0                                         // 0000000022E0: D86C0000 02000000
+	s_lshl_b64 s[2:3], s[8:9], 2                               // 0000000022E8: 8E828208
+	s_add_u32 s2, s14, s2                                      // 0000000022EC: 8002020E
+	s_addc_u32 s3, s15, s3                                     // 0000000022F0: 8203030F
+	v_mov_b32_e32 v0, s2                                       // 0000000022F4: 7E000202
+	v_mov_b32_e32 v1, s3                                       // 0000000022F8: 7E020203
+	s_waitcnt lgkmcnt(0)                                       // 0000000022FC: BF8C007F
+	flat_store_dword v[0:1], v2                                // 000000002300: DC700000 00000200
+
+0000000000002308 <BB0_7>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:64
+; }
+	s_endpgm                                                   // 000000002308: BF810000
+
+000000000000230c <BB0_8>:
+	s_or_b64 exec, exec, s[2:3]                                // 00000000230C: 87FE027E
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:49
+;     for (unsigned int s = get_local_size(0) / 2; s > 0; s >>= 1)
+	s_lshr_b32 s0, s0, 1                                       // 000000002310: 8F008100
+	s_cmp_eq_u32 s0, 0                                         // 000000002314: BF068000
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:55
+;         barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 000000002318: BF8C007F
+	s_barrier                                                  // 00000000231C: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000002320: BF8C007F
+	s_cbranch_scc1 BB0_5                                       // 000000002324: BF85FFE7
+
+0000000000002328 <BB0_9>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:51
+;         if (tid < s)
+	v_cmp_gt_u32_e32 vcc, s0, v0                               // 000000002328: 7D980000
+	s_and_saveexec_b64 s[2:3], vcc                             // 00000000232C: BE82206A
+	s_cbranch_execz BB0_8                                      // 000000002330: BF88FFF6
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:53
+;             lmem[tid] += lmem[tid + s];
+	s_lshl_b32 s4, s0, 2                                       // 000000002334: 8E048200
+	v_add_u32_e32 v1, vcc, s4, v2                              // 000000002338: 32020404
+	ds_read_b32 v1, v1                                         // 00000000233C: D86C0000 01000001
+	ds_read_b32 v3, v2                                         // 000000002344: D86C0000 03000002
+	s_waitcnt lgkmcnt(0)                                       // 00000000234C: BF8C007F
+	v_add_f32_e32 v1, v1, v3                                   // 000000002350: 02020701
+	ds_write_b32 v2, v1                                        // 000000002354: D81A0000 00000102
+	s_branch BB0_8                                             // 00000000235C: BF82FFEB
+	s_nop 0                                                    // 000000002360: BF800000
+	s_nop 0                                                    // 000000002364: BF800000
+	s_nop 0                                                    // 000000002368: BF800000
+	s_nop 0                                                    // 00000000236C: BF800000
+	s_nop 0                                                    // 000000002370: BF800000
+	s_nop 0                                                    // 000000002374: BF800000
+	s_nop 0                                                    // 000000002378: BF800000
+	s_nop 0                                                    // 00000000237C: BF800000
+	s_nop 0                                                    // 000000002380: BF800000
+	s_nop 0                                                    // 000000002384: BF800000
+	s_nop 0                                                    // 000000002388: BF800000
+	s_nop 0                                                    // 00000000238C: BF800000
+	s_nop 0                                                    // 000000002390: BF800000
+	s_nop 0                                                    // 000000002394: BF800000
+	s_nop 0                                                    // 000000002398: BF800000
+	s_nop 0                                                    // 00000000239C: BF800000
+	s_nop 0                                                    // 0000000023A0: BF800000
+	s_nop 0                                                    // 0000000023A4: BF800000
+	s_nop 0                                                    // 0000000023A8: BF800000
+	s_nop 0                                                    // 0000000023AC: BF800000
+	s_nop 0                                                    // 0000000023B0: BF800000
+	s_nop 0                                                    // 0000000023B4: BF800000
+	s_nop 0                                                    // 0000000023B8: BF800000
+	s_nop 0                                                    // 0000000023BC: BF800000
+	s_nop 0                                                    // 0000000023C0: BF800000
+	s_nop 0                                                    // 0000000023C4: BF800000
+	s_nop 0                                                    // 0000000023C8: BF800000
+	s_nop 0                                                    // 0000000023CC: BF800000
+	s_nop 0                                                    // 0000000023D0: BF800000
+	s_nop 0                                                    // 0000000023D4: BF800000
+	s_nop 0                                                    // 0000000023D8: BF800000
+	s_nop 0                                                    // 0000000023DC: BF800000
+	s_nop 0                                                    // 0000000023E0: BF800000
+	s_nop 0                                                    // 0000000023E4: BF800000
+	s_nop 0                                                    // 0000000023E8: BF800000
+	s_nop 0                                                    // 0000000023EC: BF800000
+	s_nop 0                                                    // 0000000023F0: BF800000
+	s_nop 0                                                    // 0000000023F4: BF800000
+	s_nop 0                                                    // 0000000023F8: BF800000
+	s_nop 0                                                    // 0000000023FC: BF800000
+
+0000000000002400 <top_scan$local>:
+; top_scan():
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:93
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000002400: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000002404: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000002408: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000240C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000002410: 00000100
+		...
+	v_cndmask_b32_e32 v86, s65, v0, vcc                        // 000000002430: 00AC0041
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000002434: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000002438: 000A000B
+		...
+	v_cndmask_b32_e32 v0, s72, v0, vcc                         // 000000002448: 00000048
+		...
+	v_cndmask_b32_e32 v3, s12, v0, vcc                         // 000000002454: 0006000C
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000002464: 06040404
+	.long 0xffffffff                                           // 000000002468: FFFFFFFF
+		...
+	s_load_dwordx2 s[8:9], s[6:7], 0x0                         // 000000002500: C0060203 00000000
+	s_load_dwordx2 s[2:3], s[6:7], 0x8                         // 000000002508: C0060083 00000008
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:94
+;     FPTYPE val = get_local_id(0) < n ? isums[get_local_id(0)] : 0.0f;
+	v_lshlrev_b32_e32 v2, 2, v0                                // 000000002510: 24040082
+	v_mov_b32_e32 v1, 0                                        // 000000002514: 7E020280
+	v_mov_b32_e32 v4, v1                                       // 000000002518: 7E080301
+	s_waitcnt lgkmcnt(0)                                       // 00000000251C: BF8C007F
+	v_mov_b32_e32 v3, s9                                       // 000000002520: 7E060209
+	s_ashr_i32 s1, s2, 31                                      // 000000002524: 90019F02
+	s_mov_b32 s0, s2                                           // 000000002528: BE800002
+	v_add_u32_e32 v2, vcc, s8, v2                              // 00000000252C: 32040408
+	v_cmp_gt_u64_e64 s[0:1], s[0:1], v[0:1]                    // 000000002530: D0EC0000 00020000
+	v_addc_u32_e32 v3, vcc, 0, v3, vcc                         // 000000002538: 38060680
+	s_and_saveexec_b64 s[6:7], s[0:1]                          // 00000000253C: BE862000
+	s_cbranch_execz BB1_2                                      // 000000002540: BF880002
+	flat_load_dword v4, v[2:3]                                 // 000000002544: DC500000 04000002
+
+000000000000254c <BB1_2>:
+	s_or_b64 exec, exec, s[6:7]                                // 00000000254C: 87FE067E
+; scanLocalMem():
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:77
+;     idx += get_local_size(0);
+	s_load_dword s4, s[4:5], 0x4                               // 000000002550: C0020102 00000004
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:73
+;     lmem[idx] = 0.0f;
+	v_lshlrev_b32_e32 v1, 2, v0                                // 000000002558: 24020082
+	v_add_u32_e32 v1, vcc, s3, v1                              // 00000000255C: 32020203
+	v_mov_b32_e32 v5, 0                                        // 000000002560: 7E0A0280
+	s_mov_b32 m0, -1                                           // 000000002564: BEFC00C1
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:77
+;     idx += get_local_size(0);
+	s_waitcnt lgkmcnt(0)                                       // 000000002568: BF8C007F
+	s_and_b32 s2, s4, 0xffff                                   // 00000000256C: 8602FF04 0000FFFF
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:78
+;     lmem[idx] = val;
+	s_lshl_b32 s5, s2, 2                                       // 000000002574: 8E058202
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:73
+;     lmem[idx] = 0.0f;
+	ds_write_b32 v1, v5                                        // 000000002578: D81A0000 00000501
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:78
+;     lmem[idx] = val;
+	v_add_u32_e32 v1, vcc, s5, v1                              // 000000002580: 32020205
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:83
+;     for (int i = 1; i < get_local_size(0); i *= 2)
+	v_cmp_lt_u16_e64 s[4:5], s4, 2                             // 000000002584: D0A90004 00010404
+	s_and_b64 vcc, exec, s[4:5]                                // 00000000258C: 86EA047E
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:78
+;     lmem[idx] = val;
+	s_waitcnt vmcnt(0)                                         // 000000002590: BF8C0F70
+	ds_write_b32 v1, v4                                        // 000000002594: D81A0000 00000401
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:79
+;     barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 00000000259C: BF8C007F
+	s_barrier                                                  // 0000000025A0: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000025A4: BF8C007F
+	s_cbranch_vccnz BB1_5                                      // 0000000025A8: BF870016
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:77
+;     idx += get_local_size(0);
+	v_add_u32_e32 v0, vcc, s2, v0                              // 0000000025AC: 32000002
+	s_mov_b32 s4, 1                                            // 0000000025B0: BE840081
+
+00000000000025b4 <BB1_4>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:85
+;         t = lmem[idx -  i]; barrier(CLK_LOCAL_MEM_FENCE);
+	v_subrev_u32_e32 v4, vcc, s4, v0                           // 0000000025B4: 36080004
+	v_lshlrev_b32_e32 v4, 2, v4                                // 0000000025B8: 24080882
+	v_add_u32_e32 v4, vcc, s3, v4                              // 0000000025BC: 32080803
+	ds_read_b32 v4, v4                                         // 0000000025C0: D86C0000 04000004
+	s_waitcnt lgkmcnt(0)                                       // 0000000025C8: BF8C007F
+	s_barrier                                                  // 0000000025CC: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000025D0: BF8C007F
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:86
+;         lmem[idx] += t;     barrier(CLK_LOCAL_MEM_FENCE);
+	ds_read_b32 v5, v1                                         // 0000000025D4: D86C0000 05000001
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:83
+;     for (int i = 1; i < get_local_size(0); i *= 2)
+	s_lshl_b32 s4, s4, 1                                       // 0000000025DC: 8E048104
+	s_cmp_lt_u32 s4, s2                                        // 0000000025E0: BF0A0204
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:86
+;         lmem[idx] += t;     barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 0000000025E4: BF8C007F
+	v_add_f32_e32 v4, v4, v5                                   // 0000000025E8: 02080B04
+	ds_write_b32 v1, v4                                        // 0000000025EC: D81A0000 00000401
+	s_waitcnt lgkmcnt(0)                                       // 0000000025F4: BF8C007F
+	s_barrier                                                  // 0000000025F8: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000025FC: BF8C007F
+	s_cbranch_scc1 BB1_4                                       // 000000002600: BF85FFEC
+
+0000000000002604 <BB1_5>:
+	s_and_saveexec_b64 s[2:3], s[0:1]                          // 000000002604: BE822000
+	s_cbranch_execz BB1_7                                      // 000000002608: BF880006
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:88
+;     return lmem[idx-exclusive];
+	v_add_u32_e32 v0, vcc, -4, v1                              // 00000000260C: 320002C4
+	ds_read_b32 v0, v0                                         // 000000002610: D86C0000 00000000
+; top_scan():
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:99
+;         isums[get_local_id(0)] = val;
+	s_waitcnt lgkmcnt(0)                                       // 000000002618: BF8C007F
+	flat_store_dword v[2:3], v0                                // 00000000261C: DC700000 00000002
+
+0000000000002624 <BB1_7>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:101
+; }
+	s_endpgm                                                   // 000000002624: BF810000
+	s_nop 0                                                    // 000000002628: BF800000
+	s_nop 0                                                    // 00000000262C: BF800000
+	s_nop 0                                                    // 000000002630: BF800000
+	s_nop 0                                                    // 000000002634: BF800000
+	s_nop 0                                                    // 000000002638: BF800000
+	s_nop 0                                                    // 00000000263C: BF800000
+	s_nop 0                                                    // 000000002640: BF800000
+	s_nop 0                                                    // 000000002644: BF800000
+	s_nop 0                                                    // 000000002648: BF800000
+	s_nop 0                                                    // 00000000264C: BF800000
+	s_nop 0                                                    // 000000002650: BF800000
+	s_nop 0                                                    // 000000002654: BF800000
+	s_nop 0                                                    // 000000002658: BF800000
+	s_nop 0                                                    // 00000000265C: BF800000
+	s_nop 0                                                    // 000000002660: BF800000
+	s_nop 0                                                    // 000000002664: BF800000
+	s_nop 0                                                    // 000000002668: BF800000
+	s_nop 0                                                    // 00000000266C: BF800000
+	s_nop 0                                                    // 000000002670: BF800000
+	s_nop 0                                                    // 000000002674: BF800000
+	s_nop 0                                                    // 000000002678: BF800000
+	s_nop 0                                                    // 00000000267C: BF800000
+	s_nop 0                                                    // 000000002680: BF800000
+	s_nop 0                                                    // 000000002684: BF800000
+	s_nop 0                                                    // 000000002688: BF800000
+	s_nop 0                                                    // 00000000268C: BF800000
+	s_nop 0                                                    // 000000002690: BF800000
+	s_nop 0                                                    // 000000002694: BF800000
+	s_nop 0                                                    // 000000002698: BF800000
+	s_nop 0                                                    // 00000000269C: BF800000
+	s_nop 0                                                    // 0000000026A0: BF800000
+	s_nop 0                                                    // 0000000026A4: BF800000
+	s_nop 0                                                    // 0000000026A8: BF800000
+	s_nop 0                                                    // 0000000026AC: BF800000
+	s_nop 0                                                    // 0000000026B0: BF800000
+	s_nop 0                                                    // 0000000026B4: BF800000
+	s_nop 0                                                    // 0000000026B8: BF800000
+	s_nop 0                                                    // 0000000026BC: BF800000
+	s_nop 0                                                    // 0000000026C0: BF800000
+	s_nop 0                                                    // 0000000026C4: BF800000
+	s_nop 0                                                    // 0000000026C8: BF800000
+	s_nop 0                                                    // 0000000026CC: BF800000
+	s_nop 0                                                    // 0000000026D0: BF800000
+	s_nop 0                                                    // 0000000026D4: BF800000
+	s_nop 0                                                    // 0000000026D8: BF800000
+	s_nop 0                                                    // 0000000026DC: BF800000
+	s_nop 0                                                    // 0000000026E0: BF800000
+	s_nop 0                                                    // 0000000026E4: BF800000
+	s_nop 0                                                    // 0000000026E8: BF800000
+	s_nop 0                                                    // 0000000026EC: BF800000
+	s_nop 0                                                    // 0000000026F0: BF800000
+	s_nop 0                                                    // 0000000026F4: BF800000
+	s_nop 0                                                    // 0000000026F8: BF800000
+	s_nop 0                                                    // 0000000026FC: BF800000
+
+0000000000002700 <bottom_scan$local>:
+; bottom_scan():
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:109
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000002700: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000002704: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000002708: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000270C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000002710: 00000100
+		...
+	v_cndmask_b32_e32 v86, -3, v0, vcc                         // 000000002730: 00AC00C3
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000002734: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000002738: 000A000B
+	v_cndmask_b32_e32 v0, s0, v0, vcc                          // 00000000273C: 00000000
+	v_cndmask_b32_e32 v0, s4, v0, vcc                          // 000000002740: 00000004
+	v_cndmask_b32_e32 v0, s0, v0, vcc                          // 000000002744: 00000000
+	v_cndmask_b32_e32 v0, s88, v0, vcc                         // 000000002748: 00000058
+		...
+	v_cndmask_b32_e32 v7, s26, v128, vcc                       // 000000002754: 000F001A
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000002764: 06040404
+	.long 0xffffffff                                           // 000000002768: FFFFFFFF
+		...
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:119
+;     int region_size = n4 / get_num_groups(0);
+	s_load_dword s0, s[4:5], 0x4                               // 000000002800: C0020002 00000004
+	s_load_dword s2, s[4:5], 0xc                               // 000000002808: C0020082 0000000C
+	s_load_dwordx2 s[10:11], s[6:7], 0x18                      // 000000002810: C0060283 00000018
+	s_mov_b32 s12, 0                                           // 000000002818: BE8C0080
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:120
+;     int block_start = get_group_id(0) * region_size;
+	s_mov_b32 s9, s12                                          // 00000000281C: BE89000C
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:119
+;     int region_size = n4 / get_num_groups(0);
+	s_waitcnt lgkmcnt(0)                                       // 000000002820: BF8C007F
+	s_and_b32 s4, s0, 0xffff                                   // 000000002824: 8604FF00 0000FFFF
+	v_cvt_f32_u32_e32 v1, s4                                   // 00000000282C: 7E020C04
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:111
+;     s_seed = 0;
+	s_mov_b32 m0, -1                                           // 000000002830: BEFC00C1
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:119
+;     int region_size = n4 / get_num_groups(0);
+	v_rcp_iflag_f32_e32 v1, v1                                 // 000000002834: 7E024701
+	v_mul_f32_e32 v1, 0x4f800000, v1                           // 000000002838: 0A0202FF 4F800000
+	v_cvt_u32_f32_e32 v1, v1                                   // 000000002840: 7E020F01
+	v_mul_lo_u32 v2, v1, s4                                    // 000000002844: D2850002 00000901
+	v_mul_hi_u32 v3, v1, s4                                    // 00000000284C: D2860003 00000901
+	v_sub_u32_e32 v4, vcc, 0, v2                               // 000000002854: 34080480
+	v_cmp_eq_u32_e64 s[0:1], 0, v3                             // 000000002858: D0CA0000 00020680
+	v_cndmask_b32_e64 v2, v2, v4, s[0:1]                       // 000000002860: D1000002 00020902
+	v_mul_hi_u32 v2, v2, v1                                    // 000000002868: D2860002 00020302
+	v_add_u32_e32 v3, vcc, v2, v1                              // 000000002870: 32060302
+	v_subrev_u32_e32 v1, vcc, v2, v1                           // 000000002874: 36020302
+	v_cndmask_b32_e64 v1, v1, v3, s[0:1]                       // 000000002878: D1000001 00020701
+	v_mul_hi_u32 v2, v1, s2                                    // 000000002880: D2860002 00000501
+	v_mov_b32_e32 v1, 0                                        // 000000002888: 7E020280
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:111
+;     s_seed = 0;
+	ds_write_b32 v1, v1                                        // 00000000288C: D81A0000 00000101
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:119
+;     int region_size = n4 / get_num_groups(0);
+	v_mul_lo_u32 v3, v2, s4                                    // 000000002894: D2850003 00000902
+	v_add_u32_e32 v4, vcc, 1, v2                               // 00000000289C: 32080481
+	v_add_u32_e32 v5, vcc, -1, v2                              // 0000000028A0: 320A04C1
+	v_sub_u32_e32 v6, vcc, s2, v3                              // 0000000028A4: 340C0602
+	v_cmp_le_u32_e64 s[0:1], s4, v6                            // 0000000028A8: D0CB0000 00020C04
+	v_cmp_ge_u32_e32 vcc, s2, v3                               // 0000000028B0: 7D9C0602
+	s_and_b64 s[0:1], s[0:1], vcc                              // 0000000028B4: 86806A00
+	v_cndmask_b32_e64 v2, v2, v4, s[0:1]                       // 0000000028B8: D1000002 00020902
+	v_cndmask_b32_e32 v2, v5, v2, vcc                          // 0000000028C0: 00040505
+	v_mul_lo_u32 v3, v2, s4                                    // 0000000028C4: D2850003 00000902
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:117
+;     int n4 = n / 4; //vector type is 4 wide
+	s_ashr_i32 s0, s10, 31                                     // 0000000028CC: 90009F0A
+	s_lshr_b32 s0, s0, 30                                      // 0000000028D0: 8F009E00
+	s_add_i32 s0, s10, s0                                      // 0000000028D4: 8100000A
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:119
+;     int region_size = n4 / get_num_groups(0);
+	v_cmp_gt_u32_e32 vcc, s2, v3                               // 0000000028D8: 7D980602
+	v_addc_u32_e32 v3, vcc, 0, v2, vcc                         // 0000000028DC: 38060480
+	v_cvt_f32_u32_e32 v2, v3                                   // 0000000028E0: 7E040D03
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:117
+;     int n4 = n / 4; //vector type is 4 wide
+	s_ashr_i32 s0, s0, 2                                       // 0000000028E4: 90008200
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:119
+;     int region_size = n4 / get_num_groups(0);
+	v_cvt_f32_u32_e32 v4, s0                                   // 0000000028E8: 7E080C00
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:122
+;     int block_stop  = (get_group_id(0) == get_num_groups(0) - 1) ?
+	v_mov_b32_e32 v7, s0                                       // 0000000028EC: 7E0E0200
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:119
+;     int region_size = n4 / get_num_groups(0);
+	v_rcp_iflag_f32_e32 v5, v2                                 // 0000000028F0: 7E0A4702
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:122
+;     int block_stop  = (get_group_id(0) == get_num_groups(0) - 1) ?
+	v_mov_b32_e32 v6, 0                                        // 0000000028F4: 7E0C0280
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:119
+;     int region_size = n4 / get_num_groups(0);
+	v_mul_f32_e32 v5, v4, v5                                   // 0000000028F8: 0A0A0B04
+	v_trunc_f32_e32 v5, v5                                     // 0000000028FC: 7E0A3905
+	v_cvt_u32_f32_e32 v8, v5                                   // 000000002900: 7E100F05
+	v_mad_f32 v4, -v5, v2, v4                                  // 000000002904: D1C10004 24120505
+	v_cmp_ge_f32_e64 vcc, |v4|, v2                             // 00000000290C: D046016A 00020504
+	v_addc_u32_e64 v2, s[0:1], 0, v8, vcc                      // 000000002914: D11C0002 01AA1080
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:120
+;     int block_start = get_group_id(0) * region_size;
+	v_mul_lo_u32 v2, v2, s8                                    // 00000000291C: D2850002 00001102
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:122
+;     int block_stop  = (get_group_id(0) == get_num_groups(0) - 1) ?
+	v_add_u32_e64 v3, s[0:1], -1, v3                           // 000000002924: D1190003 000206C1
+	v_addc_u32_e64 v4, s[0:1], -1, v6, s[0:1]                  // 00000000292C: D11C0004 00020CC1
+	v_addc_u32_e32 v5, vcc, v2, v8, vcc                        // 000000002934: 380A1102
+	v_cmp_eq_u64_e32 vcc, s[8:9], v[3:4]                       // 000000002938: 7DD40608
+	v_cndmask_b32_e32 v3, v5, v7, vcc                          // 00000000293C: 00060F05
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:134
+;     while (window < block_stop) {
+	v_cmp_le_u32_e32 vcc, v3, v2                               // 000000002940: 7D960503
+	s_and_b64 vcc, exec, vcc                                   // 000000002944: 86EA6A7E
+	s_cbranch_vccnz BB2_12                                     // 000000002948: BF87007D
+	s_load_dwordx4 s[16:19], s[6:7], 0x0                       // 00000000294C: C00A0403 00000000
+	s_load_dwordx4 s[20:23], s[6:7], 0x10                      // 000000002954: C00A0503 00000010
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:131
+;     FPTYPE seed = isums[get_group_id(0)];
+	s_lshl_b64 s[0:1], s[8:9], 2                               // 00000000295C: 8E808208
+; scanLocalMem():
+	v_lshlrev_b32_e32 v5, 2, v0                                // 000000002960: 240A0082
+	v_add_u32_e32 v5, vcc, s11, v5                             // 000000002964: 320A0A0B
+; bottom_scan():
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:131
+;     FPTYPE seed = isums[get_group_id(0)];
+	s_waitcnt lgkmcnt(0)                                       // 000000002968: BF8C007F
+	s_add_u32 s0, s18, s0                                      // 00000000296C: 80000012
+	s_addc_u32 s1, s19, s1                                     // 000000002970: 82010113
+	s_load_dword s2, s[0:1], 0x0                               // 000000002974: C0020080 00000000
+; scanLocalMem():
+	s_lshl_b32 s0, s4, 2                                       // 00000000297C: 8E008204
+	v_add_u32_e32 v7, vcc, s0, v5                              // 000000002980: 320E0A00
+; bottom_scan():
+	s_add_u32 s0, s4, -1                                       // 000000002984: 8000C104
+	s_addc_u32 s1, 0, -1                                       // 000000002988: 8201C180
+	v_cmp_eq_u64_e64 s[0:1], s[0:1], v[0:1]                    // 00000000298C: D0EA0000 00020000
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:126
+;     int i = block_start + get_local_id(0);
+	v_add_u32_e32 v4, vcc, v2, v0                              // 000000002994: 32080102
+; scanLocalMem():
+	v_add_u32_e32 v6, vcc, s4, v0                              // 000000002998: 320C0004
+	v_cmp_gt_u32_e64 s[6:7], s4, 1                             // 00000000299C: D0CC0006 00010204
+	v_add_u32_e32 v8, vcc, -4, v7                              // 0000000029A4: 32100EC4
+	s_waitcnt lgkmcnt(0)                                       // 0000000029A8: BF8C007F
+	v_mov_b32_e32 v0, s2                                       // 0000000029AC: 7E000202
+	s_branch BB2_3                                             // 0000000029B0: BF82000E
+
+00000000000029b4 <BB2_2>:
+; bottom_scan():
+	s_or_b64 exec, exec, s[2:3]                                // 0000000029B4: 87FE027E
+	v_mov_b32_e32 v0, 0                                        // 0000000029B8: 7E000280
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:170
+;         barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 0000000029BC: BF8C007F
+	s_barrier                                                  // 0000000029C0: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000029C4: BF8C007F
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:173
+;         seed = s_seed;
+	ds_read_b32 v0, v0                                         // 0000000029C8: D86C0000 00000000
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:176
+;         window += get_local_size(0);
+	v_add_u32_e32 v2, vcc, s4, v2                              // 0000000029D0: 32040404
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:134
+;     while (window < block_stop) {
+	v_cmp_gt_u32_e32 vcc, v3, v2                               // 0000000029D4: 7D980503
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:177
+;         i += get_local_size(0);
+	v_ashrrev_i32_e32 v1, 31, v4                               // 0000000029D8: 2202089F
+	s_and_b64 vcc, exec, vcc                                   // 0000000029DC: 86EA6A7E
+	v_add_u32_e64 v4, s[2:3], s4, v4                           // 0000000029E0: D1190204 00020804
+	s_cbranch_vccz BB2_12                                      // 0000000029E8: BF860055
+
+00000000000029ec <BB2_3>:
+	s_mov_b32 s13, s12                                         // 0000000029EC: BE8D000C
+	s_mov_b32 s14, s12                                         // 0000000029F0: BE8E000C
+	s_mov_b32 s15, s12                                         // 0000000029F4: BE8F000C
+	v_mov_b32_e32 v9, s12                                      // 0000000029F8: 7E12020C
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:136
+;         if (i < block_stop) {
+	v_cmp_gt_i32_e64 s[2:3], v3, v4                            // 0000000029FC: D0C40002 00020903
+	v_mov_b32_e32 v10, s13                                     // 000000002A04: 7E14020D
+	v_mov_b32_e32 v11, s14                                     // 000000002A08: 7E16020E
+	v_mov_b32_e32 v12, s15                                     // 000000002A0C: 7E18020F
+	s_and_saveexec_b64 s[8:9], s[2:3]                          // 000000002A10: BE882002
+	s_cbranch_execz BB2_5                                      // 000000002A14: BF880009
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:137
+;             val_4 = in4[i];
+	v_mov_b32_e32 v9, 0                                        // 000000002A18: 7E120280
+	v_mov_b32_e32 v10, v4                                      // 000000002A1C: 7E140304
+	v_ashrrev_i64 v[9:10], 28, v[9:10]                         // 000000002A20: D2910009 0002129C
+	v_mov_b32_e32 v1, s17                                      // 000000002A28: 7E020211
+	v_add_u32_e32 v9, vcc, s16, v9                             // 000000002A2C: 32121210
+	v_addc_u32_e32 v10, vcc, v1, v10, vcc                      // 000000002A30: 38141501
+	flat_load_dwordx4 v[9:12], v[9:10]                         // 000000002A34: DC5C0000 09000009
+
+0000000000002a3c <BB2_5>:
+	s_or_b64 exec, exec, s[8:9]                                // 000000002A3C: 87FE087E
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:146
+;         val_4.y += val_4.x;
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000002A40: BF8C0070
+	v_add_f32_e32 v1, v10, v9                                  // 000000002A44: 0202130A
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:147
+;         val_4.z += val_4.y;
+	v_add_f32_e32 v10, v11, v1                                 // 000000002A48: 0214030B
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:148
+;         val_4.w += val_4.z;
+	v_add_f32_e32 v11, v12, v10                                // 000000002A4C: 0216150C
+	v_mov_b32_e32 v12, 0                                       // 000000002A50: 7E180280
+	s_andn2_b64 vcc, exec, s[6:7]                              // 000000002A54: 89EA067E
+; scanLocalMem():
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:73
+;     lmem[idx] = 0.0f;
+	ds_write_b32 v5, v12                                       // 000000002A58: D81A0000 00000C05
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:78
+;     lmem[idx] = val;
+	ds_write_b32 v7, v11                                       // 000000002A60: D81A0000 00000B07
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:79
+;     barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 000000002A68: BF8C007F
+	s_barrier                                                  // 000000002A6C: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000002A70: BF8C007F
+	s_cbranch_vccnz BB2_8                                      // 000000002A74: BF870015
+	s_mov_b32 s5, 1                                            // 000000002A78: BE850081
+
+0000000000002a7c <BB2_7>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:85
+;         t = lmem[idx -  i]; barrier(CLK_LOCAL_MEM_FENCE);
+	v_subrev_u32_e32 v12, vcc, s5, v6                          // 000000002A7C: 36180C05
+	v_lshlrev_b32_e32 v12, 2, v12                              // 000000002A80: 24181882
+	v_add_u32_e32 v12, vcc, s11, v12                           // 000000002A84: 3218180B
+	ds_read_b32 v12, v12                                       // 000000002A88: D86C0000 0C00000C
+	s_waitcnt lgkmcnt(0)                                       // 000000002A90: BF8C007F
+	s_barrier                                                  // 000000002A94: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000002A98: BF8C007F
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:86
+;         lmem[idx] += t;     barrier(CLK_LOCAL_MEM_FENCE);
+	ds_read_b32 v13, v7                                        // 000000002A9C: D86C0000 0D000007
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:83
+;     for (int i = 1; i < get_local_size(0); i *= 2)
+	s_lshl_b32 s5, s5, 1                                       // 000000002AA4: 8E058105
+	s_cmp_lt_u32 s5, s4                                        // 000000002AA8: BF0A0405
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:86
+;         lmem[idx] += t;     barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 000000002AAC: BF8C007F
+	v_add_f32_e32 v12, v12, v13                                // 000000002AB0: 02181B0C
+	ds_write_b32 v7, v12                                       // 000000002AB4: D81A0000 00000C07
+	s_waitcnt lgkmcnt(0)                                       // 000000002ABC: BF8C007F
+	s_barrier                                                  // 000000002AC0: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000002AC4: BF8C007F
+	s_cbranch_scc1 BB2_7                                       // 000000002AC8: BF85FFEC
+
+0000000000002acc <BB2_8>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:88
+;     return lmem[idx-exclusive];
+	ds_read_b32 v12, v8                                        // 000000002ACC: D86C0000 0C000008
+; bottom_scan():
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:154
+;         val_4.x += res + seed;
+	s_waitcnt lgkmcnt(0)                                       // 000000002AD4: BF8C007F
+	v_add_f32_e32 v0, v0, v12                                  // 000000002AD8: 02001900
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:157
+;         val_4.w += res + seed;
+	v_add_f32_e32 v14, v11, v0                                 // 000000002ADC: 021C010B
+	s_and_saveexec_b64 s[8:9], s[2:3]                          // 000000002AE0: BE882002
+	s_cbranch_execz BB2_10                                     // 000000002AE4: BF88000C
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:154
+;         val_4.x += res + seed;
+	v_add_f32_e32 v11, v9, v0                                  // 000000002AE8: 02160109
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:155
+;         val_4.y += res + seed;
+	v_add_f32_e32 v12, v1, v0                                  // 000000002AEC: 02180101
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:156
+;         val_4.z += res + seed;
+	v_add_f32_e32 v13, v10, v0                                 // 000000002AF0: 021A010A
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:161
+;             out4[i] = val_4;
+	v_mov_b32_e32 v0, 0                                        // 000000002AF4: 7E000280
+	v_mov_b32_e32 v1, v4                                       // 000000002AF8: 7E020304
+	v_ashrrev_i64 v[0:1], 28, v[0:1]                           // 000000002AFC: D2910000 0002009C
+	v_mov_b32_e32 v9, s21                                      // 000000002B04: 7E120215
+	v_add_u32_e32 v0, vcc, s20, v0                             // 000000002B08: 32000014
+	v_addc_u32_e32 v1, vcc, v9, v1, vcc                        // 000000002B0C: 38020309
+	flat_store_dwordx4 v[0:1], v[11:14]                        // 000000002B10: DC7C0000 00000B00
+
+0000000000002b18 <BB2_10>:
+	s_or_b64 exec, exec, s[8:9]                                // 000000002B18: 87FE087E
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:166
+;         barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000002B1C: BF8C0070
+	s_barrier                                                  // 000000002B20: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000002B24: BF8C007F
+	s_and_saveexec_b64 s[2:3], s[0:1]                          // 000000002B28: BE822000
+	s_cbranch_execz BB2_2                                      // 000000002B2C: BF88FFA1
+	v_mov_b32_e32 v0, 0                                        // 000000002B30: 7E000280
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:168
+;               s_seed = val_4.w;
+	ds_write_b32 v0, v14                                       // 000000002B34: D81A0000 00000E00
+	s_branch BB2_2                                             // 000000002B3C: BF82FF9D
+
+0000000000002b40 <BB2_12>:
+; /root/wgpu_backup/mgpusim/benchmarks/shoc/scan/native/kernel/scan.cl:179
+; }
+	s_endpgm                                                   // 000000002B40: BF810000

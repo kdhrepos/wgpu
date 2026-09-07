@@ -1,0 +1,27 @@
+#!/bin/bash
+go build
+
+NAME=doitgen
+
+R=275
+Q=275
+P=275
+
+MAX_INST=10000000
+
+./$NAME \
+    -timing \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="${NAME}_4x4_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="${NAME}_4x4_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

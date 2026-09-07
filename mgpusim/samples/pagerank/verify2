@@ -1,0 +1,1 @@
+./pagerank -timing -verify -no-progress-bar -platform-type mesh -mem-allocator-type lasp -use-lasp-mem-alloc -scheduling lasp -sched-partition Xdiv

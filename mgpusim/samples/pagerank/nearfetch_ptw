@@ -1,0 +1,26 @@
+#!/bin/bash
+go build
+
+NODE=2048
+SPARSITY=0.5
+ITER=1
+
+./pagerank \
+    -node=$NODE \
+    -sparsity=$SPARSITY \
+    -iterations=$ITER \
+    -timing \
+    -fast-h2d \
+    -verbose \ 
+    -report-all \
+    -no-progress-bar \
+    -platform-type=nearfetch-ptw \
+    -use-pte-caching \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=6 \
+    -yDim=6 \
+    -metric-file-name=pagerank_nearfetch_ptw_6x6 \
+    "$@"

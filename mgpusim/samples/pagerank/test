@@ -1,0 +1,1 @@
+./pagerank -timing -no-progress-bar -platform-type mesh -mem-allocator-type lasp -use-lasp-mem-alloc -scheduling lasp -sched-partition Xdiv -trace-mem -mem-trace-filename test_mem.trace

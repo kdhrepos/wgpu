@@ -1,0 +1,110 @@
+package writeback_dynamic_dist
+
+import (
+	"gitlab.com/akita/akita"
+	"gitlab.com/akita/mem/idealmemcontroller"
+	"gitlab.com/akita/protocol"
+	"gitlab.com/akita/util/tracing"
+)
+
+type topParser struct {
+	cache *Cache
+}
+
+func (p *topParser) Tick(now akita.VTimeInSec) bool {
+	if p.cache.state != cacheStateRunning {
+		return false // return false
+	}
+
+	// Destination-first: RDMAPort messages all target this chiplet's
+	// L2/DRAM (toRemote=false), so drain them ahead of TopPort messages
+	// which may include forward-to-remote requests.
+	req := p.cache.RDMAPort.Peek()
+	pipeline := p.cache.pipelineForRemote
+	fromLocal := false
+	if req == nil {
+		req = p.cache.TopPort.Peek()
+		pipeline = p.cache.pipelineForLocal
+		fromLocal = true
+	}
+
+	if req == nil {
+		return false
+	}
+
+	// instead wrap in pipeline object and push into pipeline
+	if !pipeline.CanAccept() {
+		return false
+	}
+
+	trans := &transaction{}
+	var addr uint64
+	switch req := req.(type) {
+	case *idealmemcontroller.ToDramMsg:
+		// if the type of msg is ToDramMsg,
+		// this request is from mmu to find pte cached in l2 cache.
+		trans.read = req.Msg.(*protocol.ReadReq)
+		addr = trans.read.Address
+		trans.toRemote = p.cache.isReqToRemote(addr)
+	case *protocol.ReadReq:
+		trans.read = req
+		addr = trans.read.Address
+		trans.toRemote = p.cache.isReqToRemote(addr)
+	case *protocol.LookupReq:
+		trans.read = protocol.ReadReqBuilder{}.
+			WithSendTime(req.SendTime).
+			WithSrc(req.Meta().Src).
+			WithDst(req.Meta().Dst).
+			WithAddress(req.Address).
+			WithByteSize(req.AccessByteSize).
+			WithInfo(req.Info).
+			Build()
+		trans.read.IsPtw = req.IsPtw
+		trans.read.Meta().ID = req.Meta().ID
+		trans.isLookup = true
+		addr = trans.read.Address
+		trans.toRemote = p.cache.isReqToRemote(addr)
+
+		tracing.StartTask(
+			"",
+			"",
+			now,
+			p.cache,
+			"lookup",
+			"",
+			p.cache.ChipletId)
+	case *protocol.WriteReq:
+		trans.write = req
+		addr = trans.write.Address
+		trans.toRemote = p.cache.isReqToRemote(addr)
+
+		// if trans.write.Info != nil {
+		// 	pc, ok := trans.write.Info.(uint64)
+		// 	if ok {
+		// 		p.cache.PCTable.MarkAsWrite(pc)
+		// 	}
+		// }
+	default:
+		panic("unknown request type")
+	}
+
+	// pipeline
+	pipelineItem := cachePipelineItem{
+		taskID: akita.GetIDGenerator().Generate(),
+		trans:  trans,
+	}
+	pipeline.Accept(now, pipelineItem)
+
+	p.cache.inFlightTransactions = append(p.cache.inFlightTransactions, trans)
+
+	tracing.TraceReqReceive(req, now, p.cache)
+
+	if fromLocal {
+		p.cache.TopPort.Retrieve(now)
+		trans.fromLocal = true
+	} else {
+		p.cache.RDMAPort.Retrieve(now)
+	}
+
+	return true
+}

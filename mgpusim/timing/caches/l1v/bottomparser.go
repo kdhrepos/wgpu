@@ -1,0 +1,188 @@
+package l1v
+
+import (
+	"gitlab.com/akita/akita"
+	"gitlab.com/akita/mem/cache"
+	"gitlab.com/akita/protocol"
+	"gitlab.com/akita/util"
+	"gitlab.com/akita/util/tracing"
+)
+
+type bottomParser struct {
+	cache *Cache
+}
+
+func (p *bottomParser) Tick(now akita.VTimeInSec) bool {
+	item := p.cache.BottomPort.Peek()
+	if item == nil {
+		return false
+	}
+
+	switch rsp := item.(type) {
+	case *protocol.WriteDoneRsp:
+		return p.processWriteDoneRsp(now, rsp)
+	case *protocol.DataReadyRsp:
+		return p.processDataReady(now, rsp)
+	default:
+		panic("cannot process response")
+	}
+}
+
+func (p *bottomParser) processWriteDoneRsp(
+	now akita.VTimeInSec,
+	done *protocol.WriteDoneRsp,
+) bool {
+	trans := p.findTransactionByWriteToBottomID(done.GetRespondTo())
+	if trans == nil || trans.fetchAndWrite {
+		p.cache.BottomPort.Retrieve(now)
+		return true
+	}
+
+	for _, t := range trans.preCoalesceTransactions {
+		t.done = true
+	}
+
+	p.removeTransaction(trans)
+	p.cache.BottomPort.Retrieve(now)
+
+	tracing.TraceReqFinalize(trans.writeToBottom, now, p.cache)
+	tracing.EndTask(trans.id, now, p.cache)
+
+	return true
+}
+
+func (p *bottomParser) processDataReady(
+	now akita.VTimeInSec,
+	dr *protocol.DataReadyRsp,
+) bool {
+	trans := p.findTransactionByReadToBottomID(dr.GetRespondTo())
+	if trans == nil {
+		p.cache.BottomPort.Retrieve(now)
+		return true
+	}
+	// pid := trans.readToBottom.PID
+	bankBuf := p.getBankBuf(trans.block)
+	if !bankBuf.CanPush() {
+		return false
+	}
+
+	addr := trans.Address()
+	cachelineID := (addr >> p.cache.log2BlockSize) << p.cache.log2BlockSize
+	data := dr.Data
+	dirtyMask := make([]bool, 1<<p.cache.log2BlockSize)
+	mshrEntry := p.cache.mshr.Query(1, addr)
+	// Emit the final merge depth (number of post-coalesce transactions that
+	// piled onto this MSHR entry while it was outstanding) before draining.
+	// Matches the L2 writebufferstage convention; source label "buffer" so
+	// it slots into the existing source-breakdown columns.
+	tracing.StartTask(0, 0, now, p.cache,
+		"mshr-merge", "buffer", len(mshrEntry.Requests))
+	p.mergeMSHRData(mshrEntry, data, dirtyMask)
+	p.finalizeMSHRTrans(mshrEntry, data, now)
+	p.cache.mshr.Remove(1, cachelineID)
+
+	trans.bankAction = bankActionWriteFetched
+	trans.data = data
+	trans.writeFetchedDirtyMask = dirtyMask
+	bankBuf.Push(trans)
+
+	p.removeTransaction(trans)
+	p.cache.BottomPort.Retrieve(now)
+
+	if st := trans.readToBottom.Meta().SendTime; st != 0 {
+		p.cache.BelowWaitSum += now - st
+		p.cache.BelowWaitCount++
+	}
+
+	tracing.TraceReqFinalize(trans.readToBottom, now, p.cache)
+
+	return true
+}
+
+func (p *bottomParser) mergeMSHRData(
+	mshrEntry *cache.MSHREntry,
+	data []byte,
+	dirtyMask []bool,
+) {
+	for _, t := range mshrEntry.Requests {
+		trans := t.(*transaction)
+
+		if trans.write == nil {
+			continue
+		}
+
+		write := trans.write
+		offset := write.Address - mshrEntry.Block.Tag
+		for i := 0; i < len(write.Data); i++ {
+			if write.DirtyMask[i] == true {
+				data[offset+uint64(i)] = write.Data[i]
+				dirtyMask[offset+uint64(i)] = true
+			}
+		}
+	}
+}
+
+func (p *bottomParser) finalizeMSHRTrans(
+	mshrEntry *cache.MSHREntry,
+	data []byte,
+	now akita.VTimeInSec,
+) {
+	for _, t := range mshrEntry.Requests {
+		trans := t.(*transaction)
+		if trans.read != nil {
+			for _, preCTrans := range trans.preCoalesceTransactions {
+				read := preCTrans.read
+				offset := read.Address - mshrEntry.Block.Tag
+				preCTrans.data = data[offset : offset+read.AccessByteSize]
+				preCTrans.done = true
+			}
+		} else {
+			for _, preCTrans := range trans.preCoalesceTransactions {
+				preCTrans.done = true
+			}
+		}
+		p.removeTransaction(trans)
+
+		tracing.EndTask(trans.id, now, p.cache)
+	}
+}
+
+func (p *bottomParser) findTransactionByWriteToBottomID(
+	id uint64,
+) *transaction {
+	for _, trans := range p.cache.postCoalesceTransactions {
+		if trans.writeToBottom != nil && trans.writeToBottom.ID == id {
+			return trans
+		}
+	}
+	return nil
+}
+
+func (p *bottomParser) findTransactionByReadToBottomID(
+	id uint64,
+) *transaction {
+	for _, trans := range p.cache.postCoalesceTransactions {
+		if trans.readToBottom != nil && trans.readToBottom.ID == id {
+			return trans
+		}
+	}
+	return nil
+}
+
+func (p *bottomParser) removeTransaction(trans *transaction) {
+	for i, t := range p.cache.postCoalesceTransactions {
+		if t == trans {
+			p.cache.postCoalesceTransactions = append(
+				(p.cache.postCoalesceTransactions)[:i],
+				(p.cache.postCoalesceTransactions)[i+1:]...)
+			return
+		}
+	}
+}
+
+func (p *bottomParser) getBankBuf(block *cache.Block) util.Buffer {
+	numWaysPerSet := p.cache.wayAssociativity
+	blockID := block.SetID*numWaysPerSet + block.WayID
+	bankID := blockID % len(p.cache.bankBufs)
+	return p.cache.bankBufs[bankID]
+}

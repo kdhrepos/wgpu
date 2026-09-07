@@ -1,0 +1,1674 @@
+
+kernels.hsaco:	file format elf64-amdgpu
+
+
+Disassembly of section .text:
+
+0000000000004000 <find_index_kernel$local>:
+; find_index_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:182
+; 	){
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000004000: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000004004: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000004008: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000400C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000004010: 00000100
+		...
+	v_cndmask_b32_e32 v86, -2, v0, vcc                         // 000000004030: 00AC00C2
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000004034: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000004038: 000A000B
+		...
+	v_cndmask_b32_e32 v0, ttmp8, v0, vcc                       // 000000004048: 00000078
+		...
+	v_cndmask_b32_e32 v4, s30, v128, vcc                       // 000000004054: 0009001E
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000004064: 06040404
+	.long 0xffffffff                                           // 000000004068: FFFFFFFF
+		...
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:183
+; 		int i = get_global_id(0);
+	s_load_dwordx2 s[0:1], s[6:7], 0x40                        // 000000004100: C0060003 00000040
+	s_waitcnt lgkmcnt(0)                                       // 000000004108: BF8C007F
+	s_load_dword s1, s[4:5], 0x4                               // 00000000410C: C0020042 00000004
+	s_load_dword s2, s[6:7], 0x38                              // 000000004114: C0020083 00000038
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:183
+; 		int i = get_global_id(0);
+	s_waitcnt lgkmcnt(0)                                       // 00000000411C: BF8C007F
+	s_and_b32 s1, s1, 0xffff                                   // 000000004120: 8601FF01 0000FFFF
+	s_mul_i32 s8, s8, s1                                       // 000000004128: 92080108
+	v_add_u32_e32 v0, vcc, s8, v0                              // 00000000412C: 32000008
+	v_add_u32_e32 v0, vcc, s0, v0                              // 000000004130: 32000000
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:185
+; 		if(i < Nparticles){
+	v_cmp_gt_i32_e32 vcc, s2, v0                               // 000000004134: 7D880002
+	s_and_saveexec_b64 s[0:1], vcc                             // 000000004138: BE80206A
+	s_cbranch_execz BB0_9                                      // 00000000413C: BF880054
+	s_load_dwordx8 s[8:15], s[6:7], 0x0                        // 000000004140: C00E0203 00000000
+	s_load_dwordx4 s[4:7], s[6:7], 0x20                        // 000000004148: C00A0103 00000020
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:190
+; 			for(x = 0; x < Nparticles; x++){
+	s_cmp_lt_i32 s2, 1                                         // 000000004150: BF048102
+	v_ashrrev_i32_e32 v1, 31, v0                               // 000000004154: 2202009F
+	s_cbranch_scc1 BB0_10                                      // 000000004158: BF850052
+	v_lshlrev_b64 v[2:3], 2, v[0:1]                            // 00000000415C: D28F0002 00020082
+	s_waitcnt lgkmcnt(0)                                       // 000000004164: BF8C007F
+	v_mov_b32_e32 v4, s15                                      // 000000004168: 7E08020F
+	v_add_u32_e32 v2, vcc, s14, v2                             // 00000000416C: 3204040E
+	v_addc_u32_e32 v3, vcc, v4, v3, vcc                        // 000000004170: 38060704
+	flat_load_dword v2, v[2:3]                                 // 000000004174: DC500000 02000002
+	s_mov_b32 s3, 0                                            // 00000000417C: BE830080
+	s_mov_b64 s[22:23], 0                                      // 000000004180: BE960180
+	s_mov_b64 s[16:17], 0                                      // 000000004184: BE900180
+	s_branch BB0_4                                             // 000000004188: BF82000C
+
+000000000000418c <BB0_3>:
+	s_or_b64 exec, exec, s[26:27]                              // 00000000418C: 87FE1A7E
+	s_and_b64 s[26:27], exec, s[20:21]                         // 000000004190: 869A147E
+	s_or_b64 s[16:17], s[26:27], s[16:17]                      // 000000004194: 8790101A
+	s_andn2_b64 s[22:23], s[22:23], exec                       // 000000004198: 89967E16
+	s_and_b64 s[26:27], s[18:19], exec                         // 00000000419C: 869A7E12
+	s_andn2_b64 s[14:15], s[14:15], exec                       // 0000000041A0: 898E7E0E
+	v_mov_b32_e32 v3, s3                                       // 0000000041A4: 7E060203
+	s_or_b64 s[22:23], s[22:23], s[26:27]                      // 0000000041A8: 87961A16
+	s_or_b64 s[14:15], s[14:15], s[26:27]                      // 0000000041AC: 878E1A0E
+	s_mov_b32 s3, s24                                          // 0000000041B0: BE830018
+	s_andn2_b64 exec, exec, s[16:17]                           // 0000000041B4: 89FE107E
+	s_cbranch_execz BB0_6                                      // 0000000041B8: BF880015
+
+00000000000041bc <BB0_4>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:191
+; 				if(CDF[x] >= u[i]){
+	s_load_dword s26, s[12:13], 0x0                            // 0000000041BC: C0020686 00000000
+	s_andn2_b64 s[18:19], s[18:19], exec                       // 0000000041C4: 89927E12
+	s_and_b64 s[24:25], s[22:23], exec                         // 0000000041C8: 86987E16
+	s_or_b64 s[18:19], s[18:19], s[24:25]                      // 0000000041CC: 87921812
+	s_or_b64 s[20:21], s[20:21], exec                          // 0000000041D0: 87947E14
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000041D4: BF8C0070
+	v_cmp_nge_f32_e32 vcc, s26, v2                             // 0000000041D8: 7C92041A
+	s_and_saveexec_b64 s[26:27], vcc                           // 0000000041DC: BE9A206A
+	s_cbranch_execz BB0_3                                      // 0000000041E0: BF88FFEA
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:190
+; 			for(x = 0; x < Nparticles; x++){
+	s_add_i32 s24, s3, 1                                       // 0000000041E4: 81188103
+	v_mov_b32_e32 v3, s24                                      // 0000000041E8: 7E060218
+	s_add_u32 s12, s12, 4                                      // 0000000041EC: 800C840C
+	v_cmp_eq_u32_e32 vcc, s2, v3                               // 0000000041F0: 7D940602
+	s_addc_u32 s13, s13, 0                                     // 0000000041F4: 820D800D
+	s_andn2_b64 s[20:21], s[20:21], exec                       // 0000000041F8: 89947E14
+	s_and_b64 s[22:23], vcc, exec                              // 0000000041FC: 86967E6A
+	s_andn2_b64 s[18:19], s[18:19], exec                       // 000000004200: 89927E12
+	s_or_b64 s[20:21], s[20:21], s[22:23]                      // 000000004204: 87941614
+	s_or_b64 s[18:19], s[18:19], s[22:23]                      // 000000004208: 87921612
+	s_branch BB0_3                                             // 00000000420C: BF82FFDF
+
+0000000000004210 <BB0_6>:
+	s_or_b64 exec, exec, s[16:17]                              // 000000004210: 87FE107E
+	s_and_saveexec_b64 s[12:13], s[14:15]                      // 000000004214: BE8C200E
+
+0000000000004218 <BB0_7>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:197
+; 				index = Nparticles-1;
+	s_add_i32 s2, s2, -1                                       // 000000004218: 8102C102
+	v_mov_b32_e32 v3, s2                                       // 00000000421C: 7E060202
+
+0000000000004220 <BB0_8>:
+	s_or_b64 exec, exec, s[12:13]                              // 000000004220: 87FE0C7E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:200
+; 			xj[i] = arrayX[index];
+	v_ashrrev_i32_e32 v4, 31, v3                               // 000000004224: 2208069F
+	v_lshlrev_b64 v[2:3], 2, v[3:4]                            // 000000004228: D28F0002 00020682
+	v_mov_b32_e32 v5, s9                                       // 000000004230: 7E0A0209
+	v_add_u32_e32 v4, vcc, s8, v2                              // 000000004234: 32080408
+	v_addc_u32_e32 v5, vcc, v5, v3, vcc                        // 000000004238: 380A0705
+	flat_load_dword v4, v[4:5]                                 // 00000000423C: DC500000 04000004
+	v_lshlrev_b64 v[0:1], 2, v[0:1]                            // 000000004244: D28F0000 00020082
+	v_mov_b32_e32 v7, s5                                       // 00000000424C: 7E0E0205
+	v_add_u32_e32 v6, vcc, s4, v0                              // 000000004250: 320C0004
+	v_addc_u32_e32 v7, vcc, v7, v1, vcc                        // 000000004254: 380E0307
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:201
+; 			yj[i] = arrayY[index];
+	v_mov_b32_e32 v8, s11                                      // 000000004258: 7E10020B
+	v_add_u32_e32 v2, vcc, s10, v2                             // 00000000425C: 3204040A
+	v_addc_u32_e32 v3, vcc, v8, v3, vcc                        // 000000004260: 38060708
+	v_add_u32_e32 v0, vcc, s6, v0                              // 000000004264: 32000006
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:200
+; 			xj[i] = arrayX[index];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004268: BF8C0070
+	flat_store_dword v[6:7], v4                                // 00000000426C: DC700000 00000406
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:201
+; 			yj[i] = arrayY[index];
+	flat_load_dword v2, v[2:3]                                 // 000000004274: DC500000 02000002
+	v_mov_b32_e32 v3, s7                                       // 00000000427C: 7E060207
+	v_addc_u32_e32 v1, vcc, v3, v1, vcc                        // 000000004280: 38020303
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004284: BF8C0070
+	flat_store_dword v[0:1], v2                                // 000000004288: DC700000 00000200
+
+0000000000004290 <BB0_9>:
+	s_or_b64 exec, exec, s[0:1]                                // 000000004290: 87FE007E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:206
+; 		barrier(CLK_GLOBAL_MEM_FENCE);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004294: BF8C0070
+	s_barrier                                                  // 000000004298: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 00000000429C: BF8C007F
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:207
+; }
+	s_endpgm                                                   // 0000000042A0: BF810000
+
+00000000000042a4 <BB0_10>:
+	s_waitcnt lgkmcnt(0)                                       // 0000000042A4: BF8C007F
+	s_mov_b64 s[14:15], -1                                     // 0000000042A8: BE8E01C1
+	s_and_saveexec_b64 s[12:13], s[14:15]                      // 0000000042AC: BE8C200E
+	s_cbranch_execnz BB0_7                                     // 0000000042B0: BF89FFD9
+	s_branch BB0_8                                             // 0000000042B4: BF82FFDA
+	s_nop 0                                                    // 0000000042B8: BF800000
+	s_nop 0                                                    // 0000000042BC: BF800000
+	s_nop 0                                                    // 0000000042C0: BF800000
+	s_nop 0                                                    // 0000000042C4: BF800000
+	s_nop 0                                                    // 0000000042C8: BF800000
+	s_nop 0                                                    // 0000000042CC: BF800000
+	s_nop 0                                                    // 0000000042D0: BF800000
+	s_nop 0                                                    // 0000000042D4: BF800000
+	s_nop 0                                                    // 0000000042D8: BF800000
+	s_nop 0                                                    // 0000000042DC: BF800000
+	s_nop 0                                                    // 0000000042E0: BF800000
+	s_nop 0                                                    // 0000000042E4: BF800000
+	s_nop 0                                                    // 0000000042E8: BF800000
+	s_nop 0                                                    // 0000000042EC: BF800000
+	s_nop 0                                                    // 0000000042F0: BF800000
+	s_nop 0                                                    // 0000000042F4: BF800000
+	s_nop 0                                                    // 0000000042F8: BF800000
+	s_nop 0                                                    // 0000000042FC: BF800000
+
+0000000000004300 <normalize_weights_kernel$local>:
+; normalize_weights_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:209
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000004300: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000004304: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000004308: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000430C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000004310: 00000100
+		...
+	v_cndmask_b32_e32 v86, 1, v0, vcc                          // 000000004330: 00AC0081
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000004334: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000004338: 000A000B
+	v_cndmask_b32_e32 v0, s0, v0, vcc                          // 00000000433C: 00000000
+	v_cndmask_b32_e32 v0, s8, v0, vcc                          // 000000004340: 00000008
+	v_cndmask_b32_e32 v0, s0, v0, vcc                          // 000000004344: 00000000
+	v_cndmask_b32_e32 v0, xnack_mask_lo, v0, vcc               // 000000004348: 00000068
+		...
+	v_cndmask_b32_e32 v3, s22, v128, vcc                       // 000000004354: 00070016
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000004364: 06040404
+	.long 0xffffffff                                           // 000000004368: FFFFFFFF
+		...
+	s_load_dwordx2 s[10:11], s[6:7], 0x0                       // 000000004400: C0060283 00000000
+	s_load_dword s9, s[6:7], 0x8                               // 000000004408: C0020243 00000008
+	s_load_dwordx8 s[12:19], s[6:7], 0x10                      // 000000004410: C00E0303 00000010
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:210
+; 	int i = get_global_id(0);
+	s_load_dwordx2 s[2:3], s[6:7], 0x30                        // 000000004418: C0060083 00000030
+	s_waitcnt lgkmcnt(0)                                       // 000000004420: BF8C007F
+	s_load_dword s3, s[4:5], 0x4                               // 000000004424: C00200C2 00000004
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:215
+; 	if(0 == local_id)
+	v_cmp_eq_u32_e64 s[0:1], 0, v0                             // 00000000442C: D0CA0000 00020080
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:221
+; 		weights[i] = weights[i]/sumWeights;
+	s_mov_b32 m0, -1                                           // 000000004434: BEFC00C1
+	s_and_saveexec_b64 s[4:5], s[0:1]                          // 000000004438: BE842000
+	s_cbranch_execz BB1_2                                      // 00000000443C: BF880007
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:216
+; 		sumWeights = partial_sums[0];
+	s_load_dword s6, s[12:13], 0x0                             // 000000004440: C0020186 00000000
+	v_mov_b32_e32 v1, 0                                        // 000000004448: 7E020280
+	s_waitcnt lgkmcnt(0)                                       // 00000000444C: BF8C007F
+	v_mov_b32_e32 v2, s6                                       // 000000004450: 7E040206
+	ds_write_b32 v1, v2                                        // 000000004454: D81A0000 00000201
+
+000000000000445c <BB1_2>:
+	s_or_b64 exec, exec, s[4:5]                                // 00000000445C: 87FE047E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:210
+; 	int i = get_global_id(0);
+	s_waitcnt lgkmcnt(0)                                       // 000000004460: BF8C007F
+	s_and_b32 s3, s3, 0xffff                                   // 000000004464: 8603FF03 0000FFFF
+	s_mul_i32 s8, s8, s3                                       // 00000000446C: 92080308
+	v_add_u32_e32 v0, vcc, s8, v0                              // 000000004470: 32000008
+	v_add_u32_e32 v0, vcc, s2, v0                              // 000000004474: 32000002
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:220
+; 	if(i < Nparticles) {
+	v_cmp_gt_i32_e64 s[2:3], s9, v0                            // 000000004478: D0C40002 00020009
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:221
+; 		weights[i] = weights[i]/sumWeights;
+	v_ashrrev_i32_e32 v1, 31, v0                               // 000000004480: 2202009F
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:218
+; 	barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 000000004484: BF8C007F
+	s_barrier                                                  // 000000004488: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 00000000448C: BF8C007F
+	s_and_saveexec_b64 s[4:5], s[2:3]                          // 000000004490: BE842002
+	s_cbranch_execz BB1_4                                      // 000000004494: BF880019
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:221
+; 		weights[i] = weights[i]/sumWeights;
+	v_lshlrev_b64 v[2:3], 2, v[0:1]                            // 000000004498: D28F0002 00020082
+	v_mov_b32_e32 v4, s11                                      // 0000000044A0: 7E08020B
+	v_add_u32_e32 v2, vcc, s10, v2                             // 0000000044A4: 3204040A
+	v_addc_u32_e32 v3, vcc, v4, v3, vcc                        // 0000000044A8: 38060704
+	flat_load_dword v6, v[2:3]                                 // 0000000044AC: DC500000 06000002
+	v_mov_b32_e32 v4, 0                                        // 0000000044B4: 7E080280
+	ds_read_b32 v4, v4                                         // 0000000044B8: D86C0000 04000004
+	s_mov_b32 s6, 0x6f800000                                   // 0000000044C0: BE8600FF 6F800000
+	v_mov_b32_e32 v5, 0x2f800000                               // 0000000044C8: 7E0A02FF 2F800000
+	s_waitcnt lgkmcnt(0)                                       // 0000000044D0: BF8C007F
+	v_cmp_gt_f32_e64 vcc, |v4|, s6                             // 0000000044D4: D044016A 00000D04
+	v_cndmask_b32_e32 v5, 1.0, v5, vcc                         // 0000000044DC: 000A0AF2
+	v_mul_f32_e32 v4, v4, v5                                   // 0000000044E0: 0A080B04
+	v_rcp_f32_e32 v4, v4                                       // 0000000044E4: 7E084504
+	s_waitcnt vmcnt(0)                                         // 0000000044E8: BF8C0F70
+	v_mul_f32_e32 v4, v6, v4                                   // 0000000044EC: 0A080906
+	v_mul_f32_e32 v4, v5, v4                                   // 0000000044F0: 0A080905
+	flat_store_dword v[2:3], v4                                // 0000000044F4: DC700000 00000402
+
+00000000000044fc <BB1_4>:
+	s_or_b64 exec, exec, s[4:5]                                // 0000000044FC: 87FE047E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:226
+; 	if(i == 0) {
+	v_cmp_eq_u32_e32 vcc, 0, v0                                // 000000004500: 7D940080
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:224
+; 	barrier(CLK_GLOBAL_MEM_FENCE);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004504: BF8C0070
+	s_barrier                                                  // 000000004508: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 00000000450C: BF8C007F
+	s_and_saveexec_b64 s[4:5], vcc                             // 000000004510: BE84206A
+	s_cbranch_execz BB1_10                                     // 000000004514: BF880054
+; cdfCalc():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:48
+; 	CDF[0] = weights[0];
+	v_mov_b32_e32 v2, s10                                      // 000000004518: 7E04020A
+	v_mov_b32_e32 v3, s11                                      // 00000000451C: 7E06020B
+	flat_load_dword v2, v[2:3]                                 // 000000004520: DC500000 02000002
+; normalize_weights_kernel():
+	v_mov_b32_e32 v3, s14                                      // 000000004528: 7E06020E
+	v_mov_b32_e32 v4, s15                                      // 00000000452C: 7E08020F
+; cdfCalc():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:49
+; 	for(x = 1; x < Nparticles; x++){
+	s_cmp_lt_i32 s9, 2                                         // 000000004530: BF048209
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:48
+; 	CDF[0] = weights[0];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004534: BF8C0070
+	flat_store_dword v[3:4], v2                                // 000000004538: DC700000 00000203
+	s_cbranch_scc1 BB1_9                                       // 000000004540: BF850026
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:50
+; 		CDF[x] = weights[x] + CDF[x-1];
+	s_add_u32 s6, s10, 4                                       // 000000004544: 8006840A
+	s_addc_u32 s7, s11, 0                                      // 000000004548: 8207800B
+	v_mov_b32_e32 v3, s6                                       // 00000000454C: 7E060206
+	v_mov_b32_e32 v4, s7                                       // 000000004550: 7E080207
+	flat_load_dword v5, v[3:4]                                 // 000000004554: DC500000 05000003
+	s_add_u32 s6, s14, 4                                       // 00000000455C: 8006840E
+	s_addc_u32 s7, s15, 0                                      // 000000004560: 8207800F
+	v_mov_b32_e32 v3, s6                                       // 000000004564: 7E060206
+	v_mov_b32_e32 v4, s7                                       // 000000004568: 7E080207
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:49
+; 	for(x = 1; x < Nparticles; x++){
+	s_cmp_eq_u32 s9, 2                                         // 00000000456C: BF068209
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:50
+; 		CDF[x] = weights[x] + CDF[x-1];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004570: BF8C0070
+	v_add_f32_e32 v2, v5, v2                                   // 000000004574: 02040505
+	flat_store_dword v[3:4], v2                                // 000000004578: DC700000 00000203
+	s_cbranch_scc1 BB1_9                                       // 000000004580: BF850016
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:49
+; 	for(x = 1; x < Nparticles; x++){
+	s_add_i32 s6, s9, -2                                       // 000000004584: 8106C209
+	s_add_u32 s12, s14, 8                                      // 000000004588: 800C880E
+	s_addc_u32 s13, s15, 0                                     // 00000000458C: 820D800F
+	s_add_u32 s10, s10, 8                                      // 000000004590: 800A880A
+	s_addc_u32 s11, s11, 0                                     // 000000004594: 820B800B
+
+0000000000004598 <BB1_8>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:50
+; 		CDF[x] = weights[x] + CDF[x-1];
+	v_mov_b32_e32 v3, s10                                      // 000000004598: 7E06020A
+	v_mov_b32_e32 v4, s11                                      // 00000000459C: 7E08020B
+	flat_load_dword v5, v[3:4]                                 // 0000000045A0: DC500000 05000003
+	v_mov_b32_e32 v3, s12                                      // 0000000045A8: 7E06020C
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:49
+; 	for(x = 1; x < Nparticles; x++){
+	s_add_i32 s6, s6, -1                                       // 0000000045AC: 8106C106
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:50
+; 		CDF[x] = weights[x] + CDF[x-1];
+	v_mov_b32_e32 v4, s13                                      // 0000000045B0: 7E08020D
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:49
+; 	for(x = 1; x < Nparticles; x++){
+	s_add_u32 s12, s12, 4                                      // 0000000045B4: 800C840C
+	s_addc_u32 s13, s13, 0                                     // 0000000045B8: 820D800D
+	s_add_u32 s10, s10, 4                                      // 0000000045BC: 800A840A
+	s_addc_u32 s11, s11, 0                                     // 0000000045C0: 820B800B
+	s_cmp_lg_u32 s6, 0                                         // 0000000045C4: BF078006
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:50
+; 		CDF[x] = weights[x] + CDF[x-1];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000045C8: BF8C0070
+	v_add_f32_e32 v2, v2, v5                                   // 0000000045CC: 02040B02
+	flat_store_dword v[3:4], v2                                // 0000000045D0: DC700000 00000203
+	s_cbranch_scc1 BB1_8                                       // 0000000045D8: BF85FFEF
+
+00000000000045dc <BB1_9>:
+; normalize_weights_kernel():
+	v_mov_b32_e32 v2, s18                                      // 0000000045DC: 7E040212
+	v_mov_b32_e32 v3, s19                                      // 0000000045E0: 7E060213
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:64
+; 	int num = A*seed[index] + C;
+	flat_load_dword v4, v[2:3]                                 // 0000000045E4: DC500000 04000002
+	s_mov_b32 s6, 0x41c64e6d                                   // 0000000045EC: BE8600FF 41C64E6D
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000045F4: BF8C0070
+	v_mul_lo_u32 v4, v4, s6                                    // 0000000045F8: D2850004 00000D04
+	s_mov_b32 s6, 0x40000001                                   // 000000004600: BE8600FF 40000001
+	v_add_u32_e32 v4, vcc, 0x3039, v4                          // 000000004608: 320808FF 00003039
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_mul_hi_i32 v5, v4, s6                                    // 000000004610: D2870005 00000D04
+	s_brev_b32 s6, -2                                          // 000000004618: BE8608C2
+	v_lshrrev_b32_e32 v6, 31, v5                               // 00000000461C: 200C0A9F
+	v_ashrrev_i32_e32 v5, 29, v5                               // 000000004620: 220A0A9D
+	v_add_u32_e32 v5, vcc, v5, v6                              // 000000004624: 320A0D05
+	v_mul_lo_u32 v5, v5, s6                                    // 000000004628: D2850005 00000D05
+; normalize_weights_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:228
+; 		u[0] = (1/((float)(Nparticles))) * d_randu(seed, i); // do this to allow all threads in all blocks to use the same u1
+	v_cvt_f32_i32_e32 v6, s9                                   // 000000004630: 7E0C0A09
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_subrev_u32_e32 v4, vcc, v5, v4                           // 000000004634: 36080905
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_cvt_f32_i32_e32 v5, v4                                   // 000000004638: 7E0A0B04
+; normalize_weights_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:228
+; 		u[0] = (1/((float)(Nparticles))) * d_randu(seed, i); // do this to allow all threads in all blocks to use the same u1
+	v_rcp_iflag_f32_e32 v6, v6                                 // 00000000463C: 7E0C4706
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	flat_store_dword v[2:3], v4                                // 000000004640: DC700000 00000402
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_mul_f32_e32 v2, 0x30000000, v5                           // 000000004648: 0A040AFF 30000000
+; normalize_weights_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:228
+; 		u[0] = (1/((float)(Nparticles))) * d_randu(seed, i); // do this to allow all threads in all blocks to use the same u1
+	v_mul_f32_e64 v4, v6, |v2|                                 // 000000004650: D1050204 00020506
+	v_mov_b32_e32 v2, s16                                      // 000000004658: 7E040210
+	v_mov_b32_e32 v3, s17                                      // 00000000465C: 7E060211
+	flat_store_dword v[2:3], v4                                // 000000004660: DC700000 00000402
+
+0000000000004668 <BB1_10>:
+	s_or_b64 exec, exec, s[4:5]                                // 000000004668: 87FE047E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:231
+; 	barrier(CLK_GLOBAL_MEM_FENCE);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 00000000466C: BF8C0070
+	s_barrier                                                  // 000000004670: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000004674: BF8C007F
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:240
+; 		u[i] = u1 + i/((float)(Nparticles));
+	s_mov_b32 m0, -1                                           // 000000004678: BEFC00C1
+	s_and_saveexec_b64 s[4:5], s[0:1]                          // 00000000467C: BE842000
+	s_cbranch_execz BB1_12                                     // 000000004680: BF880008
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:234
+; 		u1 = u[0];
+	v_mov_b32_e32 v2, s16                                      // 000000004684: 7E040210
+	v_mov_b32_e32 v3, s17                                      // 000000004688: 7E060211
+	flat_load_dword v2, v[2:3]                                 // 00000000468C: DC500000 02000002
+	v_mov_b32_e32 v3, 0                                        // 000000004694: 7E060280
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004698: BF8C0070
+	ds_write_b32 v3, v2 offset:4                               // 00000000469C: D81A0004 00000203
+
+00000000000046a4 <BB1_12>:
+	s_or_b64 exec, exec, s[4:5]                                // 0000000046A4: 87FE047E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:236
+; 	barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 0000000046A8: BF8C007F
+	s_barrier                                                  // 0000000046AC: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000046B0: BF8C007F
+	s_and_saveexec_b64 s[0:1], s[2:3]                          // 0000000046B4: BE802002
+	s_cbranch_execz BB1_14                                     // 0000000046B8: BF880018
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:240
+; 		u[i] = u1 + i/((float)(Nparticles));
+	v_cvt_f32_i32_e32 v3, s9                                   // 0000000046BC: 7E060A09
+	s_mov_b32 s0, 0x6f800000                                   // 0000000046C0: BE8000FF 6F800000
+	v_mov_b32_e32 v5, 0x2f800000                               // 0000000046C8: 7E0A02FF 2F800000
+	v_mov_b32_e32 v2, 0                                        // 0000000046D0: 7E040280
+	v_cmp_gt_f32_e64 vcc, |v3|, s0                             // 0000000046D4: D044016A 00000103
+	v_cndmask_b32_e32 v5, 1.0, v5, vcc                         // 0000000046DC: 000A0AF2
+	v_mul_f32_e32 v3, v3, v5                                   // 0000000046E0: 0A060B03
+	v_cvt_f32_i32_e32 v4, v0                                   // 0000000046E4: 7E080B00
+	v_rcp_f32_e32 v3, v3                                       // 0000000046E8: 7E064503
+	ds_read_b32 v2, v2 offset:4                                // 0000000046EC: D86C0004 02000002
+	v_lshlrev_b64 v[0:1], 2, v[0:1]                            // 0000000046F4: D28F0000 00020082
+	v_mul_f32_e32 v3, v4, v3                                   // 0000000046FC: 0A060704
+	v_add_u32_e32 v0, vcc, s16, v0                             // 000000004700: 32000010
+	s_waitcnt lgkmcnt(0)                                       // 000000004704: BF8C007F
+	v_mac_f32_e32 v2, v5, v3                                   // 000000004708: 2C040705
+	v_mov_b32_e32 v3, s17                                      // 00000000470C: 7E060211
+	v_addc_u32_e32 v1, vcc, v3, v1, vcc                        // 000000004710: 38020303
+	flat_store_dword v[0:1], v2                                // 000000004714: DC700000 00000200
+
+000000000000471c <BB1_14>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:242
+; }
+	s_endpgm                                                   // 00000000471C: BF810000
+	s_nop 0                                                    // 000000004720: BF800000
+	s_nop 0                                                    // 000000004724: BF800000
+	s_nop 0                                                    // 000000004728: BF800000
+	s_nop 0                                                    // 00000000472C: BF800000
+	s_nop 0                                                    // 000000004730: BF800000
+	s_nop 0                                                    // 000000004734: BF800000
+	s_nop 0                                                    // 000000004738: BF800000
+	s_nop 0                                                    // 00000000473C: BF800000
+	s_nop 0                                                    // 000000004740: BF800000
+	s_nop 0                                                    // 000000004744: BF800000
+	s_nop 0                                                    // 000000004748: BF800000
+	s_nop 0                                                    // 00000000474C: BF800000
+	s_nop 0                                                    // 000000004750: BF800000
+	s_nop 0                                                    // 000000004754: BF800000
+	s_nop 0                                                    // 000000004758: BF800000
+	s_nop 0                                                    // 00000000475C: BF800000
+	s_nop 0                                                    // 000000004760: BF800000
+	s_nop 0                                                    // 000000004764: BF800000
+	s_nop 0                                                    // 000000004768: BF800000
+	s_nop 0                                                    // 00000000476C: BF800000
+	s_nop 0                                                    // 000000004770: BF800000
+	s_nop 0                                                    // 000000004774: BF800000
+	s_nop 0                                                    // 000000004778: BF800000
+	s_nop 0                                                    // 00000000477C: BF800000
+	s_nop 0                                                    // 000000004780: BF800000
+	s_nop 0                                                    // 000000004784: BF800000
+	s_nop 0                                                    // 000000004788: BF800000
+	s_nop 0                                                    // 00000000478C: BF800000
+	s_nop 0                                                    // 000000004790: BF800000
+	s_nop 0                                                    // 000000004794: BF800000
+	s_nop 0                                                    // 000000004798: BF800000
+	s_nop 0                                                    // 00000000479C: BF800000
+	s_nop 0                                                    // 0000000047A0: BF800000
+	s_nop 0                                                    // 0000000047A4: BF800000
+	s_nop 0                                                    // 0000000047A8: BF800000
+	s_nop 0                                                    // 0000000047AC: BF800000
+	s_nop 0                                                    // 0000000047B0: BF800000
+	s_nop 0                                                    // 0000000047B4: BF800000
+	s_nop 0                                                    // 0000000047B8: BF800000
+	s_nop 0                                                    // 0000000047BC: BF800000
+	s_nop 0                                                    // 0000000047C0: BF800000
+	s_nop 0                                                    // 0000000047C4: BF800000
+	s_nop 0                                                    // 0000000047C8: BF800000
+	s_nop 0                                                    // 0000000047CC: BF800000
+	s_nop 0                                                    // 0000000047D0: BF800000
+	s_nop 0                                                    // 0000000047D4: BF800000
+	s_nop 0                                                    // 0000000047D8: BF800000
+	s_nop 0                                                    // 0000000047DC: BF800000
+	s_nop 0                                                    // 0000000047E0: BF800000
+	s_nop 0                                                    // 0000000047E4: BF800000
+	s_nop 0                                                    // 0000000047E8: BF800000
+	s_nop 0                                                    // 0000000047EC: BF800000
+	s_nop 0                                                    // 0000000047F0: BF800000
+	s_nop 0                                                    // 0000000047F4: BF800000
+	s_nop 0                                                    // 0000000047F8: BF800000
+	s_nop 0                                                    // 0000000047FC: BF800000
+
+0000000000004800 <sum_kernel$local>:
+; sum_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:246
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000004800: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000004804: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000004808: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000480C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000004810: 00000100
+		...
+	v_cndmask_b32_e32 v86, s64, v0, vcc                        // 000000004830: 00AC0040
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000004834: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000004838: 000A000B
+		...
+	v_cndmask_b32_e32 v0, s72, v0, vcc                         // 000000004848: 00000048
+		...
+	v_cndmask_b32_e32 v1, s11, v128, vcc                       // 000000004854: 0003000B
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000004864: 06040404
+	.long 0xffffffff                                           // 000000004868: FFFFFFFF
+		...
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:248
+; 	int i = get_global_id(0);
+	s_load_dword s0, s[4:5], 0x4                               // 000000004900: C0020002 00000004
+	s_load_dword s1, s[6:7], 0x10                              // 000000004908: C0020043 00000010
+	s_waitcnt lgkmcnt(0)                                       // 000000004910: BF8C007F
+	s_and_b32 s0, s0, 0xffff                                   // 000000004914: 8600FF00 0000FFFF
+	s_mul_i32 s8, s8, s0                                       // 00000000491C: 92080008
+	v_add_u32_e32 v0, vcc, s8, v0                              // 000000004920: 32000008
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:251
+; 	if(i == 0)
+	s_sub_i32 s1, 0, s1                                        // 000000004924: 81810180
+	v_cmp_eq_u32_e32 vcc, s1, v0                               // 000000004928: 7D940001
+	s_and_saveexec_b64 s[2:3], vcc                             // 00000000492C: BE82206A
+	s_cbranch_execz BB2_5                                      // 000000004930: BF88002A
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:255
+; 		int num_blocks = ceil((float) Nparticles / (float) THREADS_PER_BLOCK);
+	v_cvt_f32_u32_e32 v0, s0                                   // 000000004934: 7E000C00
+	s_load_dword s1, s[6:7], 0x8                               // 000000004938: C0020043 00000008
+	s_mov_b32 s0, 0x6f800000                                   // 000000004940: BE8000FF 6F800000
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:255
+; 		int num_blocks = ceil((float) Nparticles / (float) THREADS_PER_BLOCK);
+	v_mov_b32_e32 v1, 0x2f800000                               // 000000004948: 7E0202FF 2F800000
+	v_cmp_gt_f32_e64 vcc, |v0|, s0                             // 000000004950: D044016A 00000100
+	v_cndmask_b32_e32 v1, 1.0, v1, vcc                         // 000000004958: 000202F2
+	v_mul_f32_e32 v0, v0, v1                                   // 00000000495C: 0A000300
+	s_waitcnt lgkmcnt(0)                                       // 000000004960: BF8C007F
+	v_cvt_f32_i32_e32 v2, s1                                   // 000000004964: 7E040A01
+	v_rcp_f32_e32 v0, v0                                       // 000000004968: 7E004500
+	s_load_dwordx2 s[0:1], s[6:7], 0x0                         // 00000000496C: C0060003 00000000
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:255
+; 		int num_blocks = ceil((float) Nparticles / (float) THREADS_PER_BLOCK);
+	v_mul_f32_e32 v0, v2, v0                                   // 000000004974: 0A000102
+	v_mul_f32_e32 v0, v1, v0                                   // 000000004978: 0A000101
+	v_ceil_f32_e32 v0, v0                                      // 00000000497C: 7E003B00
+	v_cvt_i32_f32_e32 v1, v0                                   // 000000004980: 7E021100
+	v_mov_b32_e32 v0, 0                                        // 000000004984: 7E000280
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:256
+; 		for (x = 0; x < num_blocks; x++) {
+	v_cmp_gt_i32_e32 vcc, 1, v1                                // 000000004988: 7D880281
+	s_and_b64 vcc, exec, vcc                                   // 00000000498C: 86EA6A7E
+	s_cbranch_vccnz BB2_4                                      // 000000004990: BF87000D
+	v_mov_b32_e32 v0, 0                                        // 000000004994: 7E000280
+	s_waitcnt lgkmcnt(0)                                       // 000000004998: BF8C007F
+	s_mov_b64 s[2:3], s[0:1]                                   // 00000000499C: BE820100
+
+00000000000049a0 <BB2_3>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:257
+; 			sum += partial_sums[x];
+	s_load_dword s4, s[2:3], 0x0                               // 0000000049A0: C0020101 00000000
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:256
+; 		for (x = 0; x < num_blocks; x++) {
+	v_add_u32_e32 v1, vcc, -1, v1                              // 0000000049A8: 320202C1
+	s_add_u32 s2, s2, 4                                        // 0000000049AC: 80028402
+	v_cmp_ne_u32_e32 vcc, 0, v1                                // 0000000049B0: 7D9A0280
+	s_addc_u32 s3, s3, 0                                       // 0000000049B4: 82038003
+	s_and_b64 vcc, exec, vcc                                   // 0000000049B8: 86EA6A7E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:257
+; 			sum += partial_sums[x];
+	s_waitcnt lgkmcnt(0)                                       // 0000000049BC: BF8C007F
+	v_add_f32_e32 v0, s4, v0                                   // 0000000049C0: 02000004
+	s_cbranch_vccnz BB2_3                                      // 0000000049C4: BF87FFF6
+
+00000000000049c8 <BB2_4>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:259
+; 		partial_sums[0] = sum;
+	s_waitcnt lgkmcnt(0)                                       // 0000000049C8: BF8C007F
+	v_mov_b32_e32 v2, s1                                       // 0000000049CC: 7E040201
+	v_mov_b32_e32 v1, s0                                       // 0000000049D0: 7E020200
+	flat_store_dword v[1:2], v0                                // 0000000049D4: DC700000 00000001
+
+00000000000049dc <BB2_5>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:261
+; }
+	s_endpgm                                                   // 0000000049DC: BF810000
+	s_nop 0                                                    // 0000000049E0: BF800000
+	s_nop 0                                                    // 0000000049E4: BF800000
+	s_nop 0                                                    // 0000000049E8: BF800000
+	s_nop 0                                                    // 0000000049EC: BF800000
+	s_nop 0                                                    // 0000000049F0: BF800000
+	s_nop 0                                                    // 0000000049F4: BF800000
+	s_nop 0                                                    // 0000000049F8: BF800000
+	s_nop 0                                                    // 0000000049FC: BF800000
+
+0000000000004a00 <likelihood_kernel$local>:
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:282
+; __kernel void likelihood_kernel(__global float * arrayX, __global float * arrayY,__global float * xj, __global float * yj, __global float * CDF, __global int * ind, __global int * objxy, __global float * likelihood, __global unsigned char * I, __global float * u, __global float * weights, const int Nparticles, const int countOnes, const int max_size, int k, const int IszY, const int Nfr, __global int *seed, __global float * partial_sums, __local float* buffer){
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000004A00: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000004A04: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000004A08: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 000000004A0C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000004A10: 00000100
+		...
+	v_cndmask_b32_e32 v86, v69, v0, vcc                        // 000000004A30: 00AC0145
+	v_cndmask_b32_e32 v0, 16, v0, vcc                          // 000000004A34: 00000090
+	v_cndmask_b32_e32 v5, s11, v0, vcc                         // 000000004A38: 000A000B
+		...
+	v_cndmask_b32_e32 v0, 64, v0, vcc                          // 000000004A48: 000000C0
+		...
+	v_cndmask_b32_e32 v12, s46, v0, vcc                        // 000000004A54: 0018002E
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000004A64: 06040404
+	.long 0xffffffff                                           // 000000004A68: FFFFFFFF
+		...
+	s_load_dwordx8 s[36:43], s[6:7], 0x0                       // 000000004B00: C00E0903 00000000
+	s_load_dwordx8 s[16:23], s[6:7], 0x28                      // 000000004B08: C00E0403 00000028
+	s_load_dwordx2 s[10:11], s[6:7], 0x50                      // 000000004B10: C0060283 00000050
+	s_load_dwordx4 s[24:27], s[6:7], 0x58                      // 000000004B18: C00A0603 00000058
+	s_load_dwordx2 s[28:29], s[6:7], 0x68                      // 000000004B20: C0060703 00000068
+	s_load_dwordx4 s[12:15], s[6:7], 0x70                      // 000000004B28: C00A0303 00000070
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:285
+; 	int i = get_global_id(0);
+	s_load_dword s0, s[4:5], 0x4                               // 000000004B30: C0020002 00000004
+	s_load_dword s2, s[6:7], 0x80                              // 000000004B38: C0020083 00000080
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:285
+; 	int i = get_global_id(0);
+	s_waitcnt lgkmcnt(0)                                       // 000000004B40: BF8C007F
+	s_and_b32 s3, s0, 0xffff                                   // 000000004B44: 8603FF00 0000FFFF
+	s_mul_i32 s0, s8, s3                                       // 000000004B4C: 92000308
+	v_add_u32_e32 v1, vcc, s0, v0                              // 000000004B50: 32020000
+	s_load_dwordx2 s[0:1], s[6:7], 0x88                        // 000000004B54: C0060003 00000088
+	s_mov_b64 s[6:7], 0                                        // 000000004B5C: BE860180
+	s_waitcnt lgkmcnt(0)                                       // 000000004B60: BF8C007F
+	v_add_u32_e32 v1, vcc, s0, v1                              // 000000004B64: 32020200
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:291
+; 	if(i < Nparticles){
+	v_cmp_gt_i32_e64 s[0:1], s24, v1                           // 000000004B68: D0C40000 00020218
+	s_and_saveexec_b64 s[4:5], s[0:1]                          // 000000004B70: BE842000
+	s_cbranch_execz BB3_10                                     // 000000004B74: BF8802CE
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:292
+; 		arrayX[i] = xj[i]; 
+	v_mov_b32_e32 v2, 0                                        // 000000004B78: 7E040280
+	v_mov_b32_e32 v3, v1                                       // 000000004B7C: 7E060301
+	v_ashrrev_i64 v[6:7], 30, v[2:3]                           // 000000004B80: D2910006 0002049E
+	v_mov_b32_e32 v2, s41                                      // 000000004B88: 7E040229
+	v_add_u32_e32 v8, vcc, s40, v6                             // 000000004B8C: 32100C28
+	v_addc_u32_e32 v9, vcc, v2, v7, vcc                        // 000000004B90: 38120F02
+	flat_load_dword v8, v[8:9]                                 // 000000004B94: DC500000 08000008
+	v_mov_b32_e32 v2, s37                                      // 000000004B9C: 7E040225
+	v_add_u32_e32 v4, vcc, s36, v6                             // 000000004BA0: 32080C24
+	v_addc_u32_e32 v5, vcc, v2, v7, vcc                        // 000000004BA4: 380A0F02
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:293
+; 		arrayY[i] = yj[i]; 
+	v_mov_b32_e32 v2, s43                                      // 000000004BA8: 7E04022B
+	v_add_u32_e32 v10, vcc, s42, v6                            // 000000004BAC: 32140C2A
+	v_addc_u32_e32 v11, vcc, v2, v7, vcc                       // 000000004BB0: 38160F02
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:295
+; 		weights[i] = 1 / ((float) (Nparticles)); //Donnie - moved this line from end of find_index_kernel to prevent all weights from being reset before calculating position on final iteration.
+	v_cvt_f32_i32_e32 v14, s24                                 // 000000004BB4: 7E1C0A18
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:293
+; 		arrayY[i] = yj[i]; 
+	v_mov_b32_e32 v3, s39                                      // 000000004BB8: 7E060227
+	v_add_u32_e32 v2, vcc, s38, v6                             // 000000004BBC: 32040C26
+	v_addc_u32_e32 v3, vcc, v3, v7, vcc                        // 000000004BC0: 38060F03
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:295
+; 		weights[i] = 1 / ((float) (Nparticles)); //Donnie - moved this line from end of find_index_kernel to prevent all weights from being reset before calculating position on final iteration.
+	v_rcp_iflag_f32_e32 v9, v14                                // 000000004BC4: 7E12470E
+	v_mov_b32_e32 v13, s11                                     // 000000004BC8: 7E1A020B
+	v_add_u32_e32 v12, vcc, s10, v6                            // 000000004BCC: 32180C0A
+	v_addc_u32_e32 v13, vcc, v13, v7, vcc                      // 000000004BD0: 381A0F0D
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:64
+; 	int num = A*seed[index] + C;
+	v_add_u32_e32 v6, vcc, s12, v6                             // 000000004BD4: 320C0C0C
+	v_mov_b32_e32 v15, s13                                     // 000000004BD8: 7E1E020D
+	v_addc_u32_e32 v7, vcc, v15, v7, vcc                       // 000000004BDC: 380E0F0F
+	s_mov_b32 s6, 0x41c64e6d                                   // 000000004BE0: BE8600FF 41C64E6D
+	s_movk_i32 s12, 0x3039                                     // 000000004BE8: B00C3039
+	s_mov_b32 s7, 0x40000001                                   // 000000004BEC: BE8700FF 40000001
+	s_brev_b32 s9, -2                                          // 000000004BF4: BE8908C2
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:292
+; 		arrayX[i] = xj[i]; 
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004BF8: BF8C0070
+	flat_store_dword v[4:5], v8                                // 000000004BFC: DC700000 00000804
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:293
+; 		arrayY[i] = yj[i]; 
+	flat_load_dword v8, v[10:11]                               // 000000004C04: DC500000 0800000A
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004C0C: BF8C0070
+	flat_store_dword v[2:3], v8                                // 000000004C10: DC700000 00000802
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:295
+; 		weights[i] = 1 / ((float) (Nparticles)); //Donnie - moved this line from end of find_index_kernel to prevent all weights from being reset before calculating position on final iteration.
+	flat_store_dword v[12:13], v9                              // 000000004C18: DC700000 0000090C
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:64
+; 	int num = A*seed[index] + C;
+	flat_load_dword v8, v[6:7]                                 // 000000004C20: DC500000 08000006
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000004C28: BF8C0070
+	v_mul_lo_u32 v8, v8, s6                                    // 000000004C2C: D2850008 00000D08
+	v_add_u32_e32 v8, vcc, s12, v8                             // 000000004C34: 3210100C
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_mul_hi_i32 v9, v8, s7                                    // 000000004C38: D2870009 00000F08
+	v_lshrrev_b32_e32 v10, 31, v9                              // 000000004C40: 2014129F
+	v_ashrrev_i32_e32 v9, 29, v9                               // 000000004C44: 2212129D
+	v_add_u32_e32 v9, vcc, v9, v10                             // 000000004C48: 32121509
+	v_mul_lo_u32 v9, v9, s9                                    // 000000004C4C: D2850009 00001309
+	v_sub_u32_e32 v10, vcc, v8, v9                             // 000000004C54: 34141308
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:64
+; 	int num = A*seed[index] + C;
+	v_mul_lo_u32 v8, v10, s6                                   // 000000004C58: D2850008 00000D0A
+	s_mov_b32 s6, 0x40c90fdb                                   // 000000004C60: BE8600FF 40C90FDB
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:64
+; 	int num = A*seed[index] + C;
+	v_add_u32_e32 v8, vcc, s12, v8                             // 000000004C68: 3210100C
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_mul_hi_i32 v9, v8, s7                                    // 000000004C6C: D2870009 00000F08
+	s_brev_b32 s7, 18                                          // 000000004C74: BE870892
+	v_lshrrev_b32_e32 v11, 31, v9                              // 000000004C78: 2016129F
+	v_ashrrev_i32_e32 v9, 29, v9                               // 000000004C7C: 2212129D
+	v_add_u32_e32 v9, vcc, v9, v11                             // 000000004C80: 32121709
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:298
+; 		arrayX[i] = arrayX[i] + 1.0 + 5.0*d_randn(seed, i);
+	flat_load_dword v11, v[4:5]                                // 000000004C84: DC500000 0B000004
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_mul_lo_u32 v9, v9, s9                                    // 000000004C8C: D2850009 00001309
+	v_sub_u32_e32 v8, vcc, v8, v9                              // 000000004C94: 34101308
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_cvt_f32_i32_e32 v9, v8                                   // 000000004C98: 7E120B08
+	v_mul_f32_e32 v9, 0x30000000, v9                           // 000000004C9C: 0A1212FF 30000000
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_mul_f32_e64 v15, |v9|, s6                                // 000000004CA4: D105010F 00000D09
+	v_and_b32_e32 v9, s9, v15                                  // 000000004CAC: 26121E09
+	v_and_b32_e32 v12, s9, v15                                 // 000000004CB0: 26181E09
+	v_cmp_nlt_f32_e64 s[6:7], |v15|, s7                        // 000000004CB4: D04E0106 00000F0F
+	s_and_saveexec_b64 s[12:13], s[6:7]                        // 000000004CBC: BE8C2006
+	s_xor_b64 s[6:7], exec, s[12:13]                           // 000000004CC0: 88860C7E
+	s_cbranch_execz BB3_3                                      // 000000004CC4: BF8800AF
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_and_b32_e32 v14, 0x7fffff, v15                           // 000000004CC8: 261C1EFF 007FFFFF
+	v_or_b32_e32 v14, 0x800000, v14                            // 000000004CD0: 281C1CFF 00800000
+	s_mov_b32 s9, 0xfe5163ab                                   // 000000004CD8: BE8900FF FE5163AB
+	v_mul_lo_u32 v15, v14, s9                                  // 000000004CE0: D285000F 0000130E
+	v_mul_hi_u32 v16, v14, s9                                  // 000000004CE8: D2860010 0000130E
+	s_mov_b32 s9, 0x3c439041                                   // 000000004CF0: BE8900FF 3C439041
+	v_mul_lo_u32 v17, v14, s9                                  // 000000004CF8: D2850011 0000130E
+	v_mul_hi_u32 v18, v14, s9                                  // 000000004D00: D2860012 0000130E
+	s_mov_b32 s9, 0xdb629599                                   // 000000004D08: BE8900FF DB629599
+	v_mul_lo_u32 v19, v14, s9                                  // 000000004D10: D2850013 0000130E
+	v_add_u32_e32 v16, vcc, v17, v16                           // 000000004D18: 32202111
+	v_lshrrev_b32_e32 v13, 23, v9                              // 000000004D1C: 201A1297
+	s_mov_b32 s12, 0x39fda000                                  // 000000004D20: BE8C00FF 39FDA000
+	v_addc_u32_e32 v17, vcc, v19, v18, vcc                     // 000000004D28: 38222513
+	v_mul_hi_u32 v18, v14, s9                                  // 000000004D2C: D2860012 0000130E
+	s_mov_b32 s9, 0xf534ddc0                                   // 000000004D34: BE8900FF F534DDC0
+	v_mul_lo_u32 v19, v14, s9                                  // 000000004D3C: D2850013 0000130E
+	v_mul_hi_u32 v20, v14, s9                                  // 000000004D44: D2860014 0000130E
+	s_mov_b32 s9, 0xfc2757d1                                   // 000000004D4C: BE8900FF FC2757D1
+	v_mul_lo_u32 v21, v14, s9                                  // 000000004D54: D2850015 0000130E
+	v_addc_u32_e32 v18, vcc, v19, v18, vcc                     // 000000004D5C: 38242513
+	v_addc_u32_e32 v19, vcc, v21, v20, vcc                     // 000000004D60: 38262915
+	v_mul_hi_u32 v20, v14, s9                                  // 000000004D64: D2860014 0000130E
+	s_mov_b32 s9, 0x4e441529                                   // 000000004D6C: BE8900FF 4E441529
+	v_mul_lo_u32 v21, v14, s9                                  // 000000004D74: D2850015 0000130E
+	v_mul_hi_u32 v22, v14, s9                                  // 000000004D7C: D2860016 0000130E
+	s_mov_b32 s9, 0xa2f9836e                                   // 000000004D84: BE8900FF A2F9836E
+	v_mul_lo_u32 v23, v14, s9                                  // 000000004D8C: D2850017 0000130E
+	v_mul_hi_u32 v14, v14, s9                                  // 000000004D94: D286000E 0000130E
+	v_addc_u32_e32 v20, vcc, v21, v20, vcc                     // 000000004D9C: 38282915
+	s_movk_i32 s9, 0xff88                                      // 000000004DA0: B009FF88
+	v_addc_u32_e32 v21, vcc, v23, v22, vcc                     // 000000004DA4: 382A2D17
+	v_addc_u32_e32 v14, vcc, 0, v14, vcc                       // 000000004DA8: 381C1C80
+	v_add_u32_e32 v13, vcc, s9, v13                            // 000000004DAC: 321A1A09
+	v_cmp_lt_u32_e32 vcc, 31, v13                              // 000000004DB0: 7D921A9F
+	v_cndmask_b32_e32 v14, v14, v21, vcc                       // 000000004DB4: 001C2B0E
+	v_cndmask_b32_e32 v21, v21, v20, vcc                       // 000000004DB8: 002A2915
+	v_cndmask_b32_e32 v20, v20, v19, vcc                       // 000000004DBC: 00282714
+	v_cndmask_b32_e32 v19, v19, v18, vcc                       // 000000004DC0: 00262513
+	v_cndmask_b32_e32 v18, v18, v17, vcc                       // 000000004DC4: 00242312
+	v_cndmask_b32_e32 v17, v17, v16, vcc                       // 000000004DC8: 00222111
+	v_cndmask_b32_e32 v15, v16, v15, vcc                       // 000000004DCC: 001E1F10
+	v_cndmask_b32_e64 v16, 0, 1, vcc                           // 000000004DD0: D1000010 01A90280
+	v_lshlrev_b32_e32 v16, 5, v16                              // 000000004DD8: 24202085
+	v_sub_u32_e32 v13, vcc, v13, v16                           // 000000004DDC: 341A210D
+	v_cmp_lt_u32_e32 vcc, 31, v13                              // 000000004DE0: 7D921A9F
+	v_cndmask_b32_e32 v16, v21, v20, vcc                       // 000000004DE4: 00202915
+	v_cndmask_b32_e32 v20, v20, v19, vcc                       // 000000004DE8: 00282714
+	v_cndmask_b32_e32 v19, v19, v18, vcc                       // 000000004DEC: 00262513
+	v_cndmask_b32_e32 v18, v18, v17, vcc                       // 000000004DF0: 00242312
+	v_cndmask_b32_e32 v15, v17, v15, vcc                       // 000000004DF4: 001E1F11
+	v_cndmask_b32_e64 v17, 0, 1, vcc                           // 000000004DF8: D1000011 01A90280
+	v_lshlrev_b32_e32 v17, 5, v17                              // 000000004E00: 24222285
+	v_cndmask_b32_e32 v14, v14, v21, vcc                       // 000000004E04: 001C2B0E
+	v_sub_u32_e32 v13, vcc, v13, v17                           // 000000004E08: 341A230D
+	v_cmp_lt_u32_e32 vcc, 31, v13                              // 000000004E0C: 7D921A9F
+	v_cndmask_b32_e32 v17, v20, v19, vcc                       // 000000004E10: 00222714
+	v_cndmask_b32_e32 v19, v19, v18, vcc                       // 000000004E14: 00262513
+	v_cndmask_b32_e32 v15, v18, v15, vcc                       // 000000004E18: 001E1F12
+	v_cndmask_b32_e64 v18, 0, 1, vcc                           // 000000004E1C: D1000012 01A90280
+	v_lshlrev_b32_e32 v18, 5, v18                              // 000000004E24: 24242485
+	v_cndmask_b32_e32 v14, v14, v16, vcc                       // 000000004E28: 001C210E
+	v_cndmask_b32_e32 v16, v16, v20, vcc                       // 000000004E2C: 00202910
+	v_sub_u32_e32 v13, vcc, v13, v18                           // 000000004E30: 341A250D
+	v_cmp_lt_u32_e32 vcc, 31, v13                              // 000000004E34: 7D921A9F
+	v_cndmask_b32_e64 v18, 0, 1, vcc                           // 000000004E38: D1000012 01A90280
+	v_lshlrev_b32_e32 v18, 5, v18                              // 000000004E40: 24242485
+	v_cndmask_b32_e32 v14, v14, v16, vcc                       // 000000004E44: 001C210E
+	v_cndmask_b32_e32 v16, v16, v17, vcc                       // 000000004E48: 00202310
+	v_cndmask_b32_e32 v17, v17, v19, vcc                       // 000000004E4C: 00222711
+	v_cndmask_b32_e32 v15, v19, v15, vcc                       // 000000004E50: 001E1F13
+	v_sub_u32_e32 v13, vcc, v13, v18                           // 000000004E54: 341A250D
+	v_sub_u32_e32 v18, vcc, 32, v13                            // 000000004E58: 34241AA0
+	v_alignbit_b32 v19, v14, v16, v18                          // 000000004E5C: D1CE0013 044A210E
+	v_alignbit_b32 v20, v16, v17, v18                          // 000000004E64: D1CE0014 044A2310
+	v_cmp_ne_u32_e32 vcc, 0, v13                               // 000000004E6C: 7D9A1A80
+	v_cndmask_b32_e32 v14, v14, v19, vcc                       // 000000004E70: 001C270E
+	v_alignbit_b32 v18, v17, v15, v18                          // 000000004E74: D1CE0012 044A1F11
+	v_cndmask_b32_e32 v13, v16, v20, vcc                       // 000000004E7C: 001A2910
+	v_cndmask_b32_e32 v16, v17, v18, vcc                       // 000000004E80: 00202511
+	v_alignbit_b32 v18, v14, v13, 30                           // 000000004E84: D1CE0012 027A1B0E
+	v_bfe_i32 v19, v14, 29, 1                                  // 000000004E8C: D1C90013 02053B0E
+	v_alignbit_b32 v13, v13, v16, 30                           // 000000004E94: D1CE000D 027A210D
+	v_alignbit_b32 v15, v16, v15, 30                           // 000000004E9C: D1CE000F 027A1F10
+	v_xor_b32_e32 v18, v19, v18                                // 000000004EA4: 2A242513
+	v_xor_b32_e32 v13, v19, v13                                // 000000004EA8: 2A1A1B13
+	v_xor_b32_e32 v15, v19, v15                                // 000000004EAC: 2A1E1F13
+	v_ffbh_u32_e32 v19, v18                                    // 000000004EB0: 7E265B12
+	v_cmp_ne_u32_e32 vcc, 0, v18                               // 000000004EB4: 7D9A2480
+	v_cndmask_b32_e32 v19, 32, v19, vcc                        // 000000004EB8: 002626A0
+	v_lshrrev_b32_e32 v17, 29, v14                             // 000000004EBC: 20221C9D
+	v_sub_u32_e32 v20, vcc, 31, v19                            // 000000004EC0: 3428269F
+	v_alignbit_b32 v18, v18, v13, v20                          // 000000004EC4: D1CE0012 04521B12
+	v_alignbit_b32 v13, v13, v15, v20                          // 000000004ECC: D1CE000D 04521F0D
+	v_lshlrev_b32_e32 v17, 31, v17                             // 000000004ED4: 2422229F
+	v_lshlrev_b32_e32 v15, 23, v19                             // 000000004ED8: 241E2697
+	v_lshrrev_b32_e32 v20, 9, v18                              // 000000004EDC: 20282489
+	v_sub_u32_e32 v15, vcc, v17, v15                           // 000000004EE0: 341E1F11
+	v_or_b32_e32 v15, v15, v20                                 // 000000004EE4: 281E290F
+	v_alignbit_b32 v18, v18, v13, 9                            // 000000004EE8: D1CE0012 02261B12
+	v_add_u32_e32 v15, vcc, 0.5, v15                           // 000000004EF0: 321E1EF0
+	v_ffbh_u32_e32 v20, v18                                    // 000000004EF4: 7E285B12
+	v_cmp_ne_u32_e32 vcc, 0, v18                               // 000000004EF8: 7D9A2480
+	v_cndmask_b32_e32 v20, 32, v20, vcc                        // 000000004EFC: 002828A0
+	v_sub_u32_e32 v21, vcc, 31, v20                            // 000000004F00: 342A289F
+	v_alignbit_b32 v13, v18, v13, v21                          // 000000004F04: D1CE000D 04561B12
+	v_add_u32_e32 v18, vcc, v20, v19                           // 000000004F0C: 32242714
+	v_lshlrev_b32_e32 v18, 23, v18                             // 000000004F10: 24242497
+	s_mov_b32 s9, 0x33000000                                   // 000000004F14: BE8900FF 33000000
+	v_sub_u32_e32 v18, vcc, s9, v18                            // 000000004F1C: 34242409
+	v_or_b32_e32 v17, v18, v17                                 // 000000004F20: 28222312
+	v_lshrrev_b32_e32 v13, 9, v13                              // 000000004F24: 201A1A89
+	v_or_b32_e32 v13, v17, v13                                 // 000000004F28: 281A1B11
+	v_and_b32_e32 v17, 0xbffff000, v15                         // 000000004F2C: 26221EFF BFFFF000
+	v_mul_f32_e32 v19, 0xbfc90fda, v15                         // 000000004F34: 0A261EFF BFC90FDA
+	s_mov_b32 s9, 0x3fc90000                                   // 000000004F3C: BE8900FF 3FC90000
+	v_mac_f32_e32 v19, s9, v17                                 // 000000004F44: 2C262209
+	v_sub_f32_e32 v18, v15, v17                                // 000000004F48: 0424230F
+	v_mac_f32_e32 v19, s12, v17                                // 000000004F4C: 2C26220C
+	v_mac_f32_e32 v19, s9, v18                                 // 000000004F50: 2C262409
+	v_mul_f32_e32 v17, 0x33a22168, v15                         // 000000004F54: 0A221EFF 33A22168
+	s_mov_b32 s9, 0x3fc90fda                                   // 000000004F5C: BE8900FF 3FC90FDA
+	v_mac_f32_e32 v19, s12, v18                                // 000000004F64: 2C26240C
+	v_mac_f32_e32 v17, s9, v13                                 // 000000004F68: 2C221A09
+	v_add_f32_e32 v13, v19, v17                                // 000000004F6C: 021A2313
+	v_bfe_u32 v16, v14, 29, 1                                  // 000000004F70: D1C80010 02053B0E
+	v_lshrrev_b32_e32 v14, 30, v14                             // 000000004F78: 201C1C9E
+	v_mac_f32_e32 v13, s9, v15                                 // 000000004F7C: 2C1A1E09
+	v_add_u32_e32 v14, vcc, v16, v14                           // 000000004F80: 321C1D10
+
+0000000000004f84 <BB3_3>:
+	s_or_saveexec_b64 s[6:7], s[6:7]                           // 000000004F84: BE862106
+	s_xor_b64 exec, exec, s[6:7]                               // 000000004F88: 88FE067E
+	s_cbranch_execz BB3_5                                      // 000000004F8C: BF88002F
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_mul_f32_e32 v13, 0x3f22f983, v12                         // 000000004F90: 0A1A18FF 3F22F983
+	v_rndne_f32_e32 v15, v13                                   // 000000004F98: 7E1E3D0D
+	s_mov_b32 s9, 0x3fc90fda                                   // 000000004F9C: BE8900FF 3FC90FDA
+	v_and_b32_e32 v13, 0xfffff000, v15                         // 000000004FA4: 261A1EFF FFFFF000
+	v_mul_f32_e32 v16, s9, v15                                 // 000000004FAC: 0A201E09
+	s_mov_b32 s12, 0x3fc90000                                  // 000000004FB0: BE8C00FF 3FC90000
+	v_mad_f32 v16, v13, s12, -v16                              // 000000004FB8: D1C10010 8440190D
+	s_mov_b32 s13, 0x39fda000                                  // 000000004FC0: BE8D00FF 39FDA000
+	v_mad_f32 v17, -v15, s9, v12                               // 000000004FC8: D1C10011 2430130F
+	v_sub_f32_e32 v14, v15, v13                                // 000000004FD0: 041C1B0F
+	v_mac_f32_e32 v16, s13, v13                                // 000000004FD4: 2C201A0D
+	v_mac_f32_e32 v16, s12, v14                                // 000000004FD8: 2C201C0C
+	v_sub_f32_e32 v12, v12, v17                                // 000000004FDC: 0418230C
+	v_mad_f32 v12, -v15, s9, v12                               // 000000004FE0: D1C1000C 2430130F
+	v_mac_f32_e32 v16, s13, v14                                // 000000004FE8: 2C201C0D
+	v_sub_f32_e32 v12, v12, v16                                // 000000004FEC: 0418210C
+	v_add_f32_e32 v12, v17, v12                                // 000000004FF0: 02181911
+	s_mov_b32 s9, 0x33a22168                                   // 000000004FF4: BE8900FF 33A22168
+	v_mad_f32 v16, -v15, s9, v12                               // 000000004FFC: D1C10010 2430130F
+	v_sub_f32_e32 v12, v12, v16                                // 000000005004: 0418210C
+	v_mad_f32 v12, -v15, s9, v12                               // 000000005008: D1C1000C 2430130F
+	v_mul_f32_e32 v17, 0xb3a22168, v15                         // 000000005010: 0A221EFF B3A22168
+	s_mov_b32 s9, 0x33a22000                                   // 000000005018: BE8900FF 33A22000
+	v_mac_f32_e32 v17, s9, v13                                 // 000000005020: 2C221A09
+	s_mov_b32 s12, 0x2c340000                                  // 000000005024: BE8C00FF 2C340000
+	v_mac_f32_e32 v17, s12, v13                                // 00000000502C: 2C221A0C
+	v_mac_f32_e32 v17, s9, v14                                 // 000000005030: 2C221C09
+	v_mac_f32_e32 v17, s12, v14                                // 000000005034: 2C221C0C
+	v_cvt_i32_f32_e32 v14, v15                                 // 000000005038: 7E1C110F
+	v_sub_f32_e32 v12, v12, v17                                // 00000000503C: 0418230C
+	v_add_f32_e32 v13, v16, v12                                // 000000005040: 021A1910
+	v_mac_f32_e32 v13, 0xa7c234c4, v15                         // 000000005044: 2C1A1EFF A7C234C4
+
+000000000000504c <BB3_5>:
+; likelihood_kernel():
+	s_or_b64 exec, exec, s[6:7]                                // 00000000504C: 87FE067E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:298
+; 		arrayX[i] = arrayX[i] + 1.0 + 5.0*d_randn(seed, i);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000005050: BF8C0070
+	v_cvt_f64_f32_e32 v[11:12], v11                            // 000000005054: 7E16210B
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_cvt_f32_i32_e32 v15, v10                                 // 000000005058: 7E1E0B0A
+	s_brev_b32 s24, 12                                         // 00000000505C: BE98088C
+	v_mov_b32_e32 v16, 0x3c0881c4                              // 000000005060: 7E2002FF 3C0881C4
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:298
+; 		arrayX[i] = arrayX[i] + 1.0 + 5.0*d_randn(seed, i);
+	v_add_f64 v[10:11], v[11:12], 1.0                          // 000000005068: D280000A 0001E50B
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_mul_f32_e32 v12, s24, v15                                // 000000005070: 0A181E18
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_mul_f32_e32 v15, v13, v13                                // 000000005074: 0A1E1B0D
+	v_mac_f32_e32 v16, 0xb94c1982, v15                         // 000000005078: 2C201EFF B94C1982
+	v_madak_f32 v16, v15, v16, 0xbe2aaa9d                      // 000000005080: 3020210F BE2AAA9D
+	v_mul_f32_e32 v16, v15, v16                                // 000000005088: 0A20210F
+	v_mac_f32_e32 v13, v13, v16                                // 00000000508C: 2C1A210D
+	v_mov_b32_e32 v16, 0xbab64f3b                              // 000000005090: 7E2002FF BAB64F3B
+	v_mac_f32_e32 v16, 0x37d75334, v15                         // 000000005098: 2C201EFF 37D75334
+	v_madak_f32 v16, v15, v16, 0x3d2aabf7                      // 0000000050A0: 3020210F 3D2AABF7
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:83
+; 	float rt = -2*log(u);
+	v_log_f32_e64 v12, |v12|                                   // 0000000050A8: D161010C 0000010C
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_madak_f32 v16, v15, v16, 0xbf000004                      // 0000000050B0: 3020210F BF000004
+	v_mad_f32 v15, v15, v16, 1.0                               // 0000000050B8: D1C1000F 03CA210F
+	v_and_b32_e32 v16, 1, v14                                  // 0000000050C0: 26201C81
+	v_cmp_eq_u32_e32 vcc, 0, v16                               // 0000000050C4: 7D942080
+	v_cndmask_b32_e64 v13, -v13, v15, vcc                      // 0000000050C8: D100000D 21AA1F0D
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:83
+; 	float rt = -2*log(u);
+	v_and_b32_e32 v15, 0xfffff000, v12                         // 0000000050D0: 261E18FF FFFFF000
+	v_sub_f32_e32 v16, v12, v15                                // 0000000050D8: 04201F0C
+	s_mov_b32 s12, 0x3805fdf4                                  // 0000000050DC: BE8C00FF 3805FDF4
+	v_mul_f32_e32 v17, s12, v16                                // 0000000050E4: 0A22200C
+	s_movk_i32 s9, 0x207                                       // 0000000050E8: B0090207
+	v_mac_f32_e32 v17, s12, v15                                // 0000000050EC: 2C221E0C
+	s_mov_b32 s12, 0x3f317000                                  // 0000000050F0: BE8C00FF 3F317000
+	v_mac_f32_e32 v17, s12, v16                                // 0000000050F8: 2C22200C
+	v_cmp_class_f32_e64 vcc, v12, s9                           // 0000000050FC: D010006A 0000130C
+	s_mov_b32 s9, 0x41c64e6d                                   // 000000005104: BE8900FF 41C64E6D
+	v_mac_f32_e32 v17, s12, v15                                // 00000000510C: 2C221E0C
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:64
+; 	int num = A*seed[index] + C;
+	v_mul_lo_u32 v8, v8, s9                                    // 000000005110: D2850008 00001308
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:83
+; 	float rt = -2*log(u);
+	v_cndmask_b32_e32 v12, v17, v12, vcc                       // 000000005118: 00181911
+	v_mul_f32_e32 v12, -2.0, v12                               // 00000000511C: 0A1818F5
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_lshlrev_b32_e32 v14, 30, v14                             // 000000005120: 241C1C9E
+	s_movk_i32 s30, 0x3039                                     // 000000005124: B01E3039
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:84
+; 	return sqrt(rt)*cosine;
+	v_sqrt_f32_e32 v12, v12                                    // 000000005128: 7E184F0C
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_and_b32_e32 v14, 0x80000000, v14                         // 00000000512C: 261C1CFF 80000000
+	s_mov_b32 s7, 0x7f800000                                   // 000000005134: BE8700FF 7F800000
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:64
+; 	int num = A*seed[index] + C;
+	v_add_u32_e32 v15, vcc, s30, v8                            // 00000000513C: 321E101E
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_xor_b32_e32 v13, v14, v13                                // 000000005140: 2A1A1B0E
+	v_cmp_gt_u32_e32 vcc, s7, v9                               // 000000005144: 7D981207
+	v_mov_b32_e32 v14, 0x7fc00000                              // 000000005148: 7E1C02FF 7FC00000
+	v_cndmask_b32_e32 v8, v14, v13, vcc                        // 000000005150: 00101B0E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:84
+; 	return sqrt(rt)*cosine;
+	v_mul_f32_e32 v8, v12, v8                                  // 000000005154: 0A10110C
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:298
+; 		arrayX[i] = arrayX[i] + 1.0 + 5.0*d_randn(seed, i);
+	v_cvt_f64_f32_e32 v[8:9], v8                               // 000000005158: 7E102108
+	s_mov_b32 s6, 0                                            // 00000000515C: BE860080
+	s_mov_b32 s7, 0x40140000                                   // 000000005160: BE8700FF 40140000
+	s_mov_b32 s12, 0x40000001                                  // 000000005168: BE8C00FF 40000001
+	v_fma_f64 v[9:10], v[8:9], s[6:7], v[10:11]                // 000000005170: D1CC0009 04280D08
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_mul_hi_i32 v16, v15, s12                                 // 000000005178: D2870010 0000190F
+	s_brev_b32 s13, -2                                         // 000000005180: BE8D08C2
+	s_mov_b32 s6, 0x40c90fdb                                   // 000000005184: BE8600FF 40C90FDB
+	v_lshrrev_b32_e32 v12, 31, v16                             // 00000000518C: 2018209F
+	v_ashrrev_i32_e32 v13, 29, v16                             // 000000005190: 221A209D
+	v_add_u32_e32 v12, vcc, v13, v12                           // 000000005194: 3218190D
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:298
+; 		arrayX[i] = arrayX[i] + 1.0 + 5.0*d_randn(seed, i);
+	v_cvt_f32_f64_e32 v9, v[9:10]                              // 000000005198: 7E121F09
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_mul_lo_u32 v12, v12, s13                                 // 00000000519C: D285000C 00001B0C
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:298
+; 		arrayX[i] = arrayX[i] + 1.0 + 5.0*d_randn(seed, i);
+	flat_store_dword v[4:5], v9                                // 0000000051A4: DC700000 00000904
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:299
+; 		arrayY[i] = arrayY[i] - 2.0 + 2.0*d_randn(seed, i);
+	flat_load_dword v5, v[2:3]                                 // 0000000051AC: DC500000 05000002
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_sub_u32_e32 v8, vcc, v15, v12                            // 0000000051B4: 3410190F
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:64
+; 	int num = A*seed[index] + C;
+	v_mul_lo_u32 v11, v8, s9                                   // 0000000051B8: D285000B 00001308
+	v_add_u32_e32 v11, vcc, s30, v11                           // 0000000051C0: 3216161E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	v_mul_hi_i32 v12, v11, s12                                 // 0000000051C4: D287000C 0000190B
+	v_lshrrev_b32_e32 v10, 31, v12                             // 0000000051CC: 2014189F
+	v_ashrrev_i32_e32 v12, 29, v12                             // 0000000051D0: 2218189D
+	v_add_u32_e32 v10, vcc, v12, v10                           // 0000000051D4: 3214150C
+	v_mul_lo_u32 v10, v10, s13                                 // 0000000051D8: D285000A 00001B0A
+	v_sub_u32_e32 v4, vcc, v11, v10                            // 0000000051E0: 3408150B
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_cvt_f32_i32_e32 v9, v4                                   // 0000000051E4: 7E120B04
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:65
+; 	seed[index] = num % M;
+	flat_store_dword v[6:7], v4                                // 0000000051E8: DC700000 00000406
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_mul_f32_e32 v4, s24, v9                                  // 0000000051F0: 0A081218
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_mul_f32_e64 v10, |v4|, s6                                // 0000000051F4: D105010A 00000D04
+	s_brev_b32 s6, 18                                          // 0000000051FC: BE860892
+	v_and_b32_e32 v4, s13, v10                                 // 000000005200: 2608140D
+	v_and_b32_e32 v6, s13, v10                                 // 000000005204: 260C140D
+	v_cmp_nlt_f32_e64 s[6:7], |v10|, s6                        // 000000005208: D04E0106 00000D0A
+	s_and_saveexec_b64 s[12:13], s[6:7]                        // 000000005210: BE8C2006
+	s_xor_b64 s[6:7], exec, s[12:13]                           // 000000005214: 88860C7E
+	s_cbranch_execz BB3_7                                      // 000000005218: BF8800AF
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_and_b32_e32 v9, 0x7fffff, v10                            // 00000000521C: 261214FF 007FFFFF
+	v_or_b32_e32 v9, 0x800000, v9                              // 000000005224: 281212FF 00800000
+	s_mov_b32 s9, 0xfe5163ab                                   // 00000000522C: BE8900FF FE5163AB
+	v_mul_lo_u32 v10, v9, s9                                   // 000000005234: D285000A 00001309
+	v_mul_hi_u32 v11, v9, s9                                   // 00000000523C: D286000B 00001309
+	s_mov_b32 s9, 0x3c439041                                   // 000000005244: BE8900FF 3C439041
+	v_mul_lo_u32 v12, v9, s9                                   // 00000000524C: D285000C 00001309
+	v_mul_hi_u32 v13, v9, s9                                   // 000000005254: D286000D 00001309
+	s_mov_b32 s9, 0xdb629599                                   // 00000000525C: BE8900FF DB629599
+	v_mul_lo_u32 v14, v9, s9                                   // 000000005264: D285000E 00001309
+	v_add_u32_e32 v11, vcc, v12, v11                           // 00000000526C: 3216170C
+	v_lshrrev_b32_e32 v7, 23, v4                               // 000000005270: 200E0897
+	s_mov_b32 s12, 0x39fda000                                  // 000000005274: BE8C00FF 39FDA000
+	v_addc_u32_e32 v12, vcc, v14, v13, vcc                     // 00000000527C: 38181B0E
+	v_mul_hi_u32 v13, v9, s9                                   // 000000005280: D286000D 00001309
+	s_mov_b32 s9, 0xf534ddc0                                   // 000000005288: BE8900FF F534DDC0
+	v_mul_lo_u32 v14, v9, s9                                   // 000000005290: D285000E 00001309
+	v_mul_hi_u32 v15, v9, s9                                   // 000000005298: D286000F 00001309
+	s_mov_b32 s9, 0xfc2757d1                                   // 0000000052A0: BE8900FF FC2757D1
+	v_mul_lo_u32 v16, v9, s9                                   // 0000000052A8: D2850010 00001309
+	v_addc_u32_e32 v13, vcc, v14, v13, vcc                     // 0000000052B0: 381A1B0E
+	v_addc_u32_e32 v14, vcc, v16, v15, vcc                     // 0000000052B4: 381C1F10
+	v_mul_hi_u32 v15, v9, s9                                   // 0000000052B8: D286000F 00001309
+	s_mov_b32 s9, 0x4e441529                                   // 0000000052C0: BE8900FF 4E441529
+	v_mul_lo_u32 v16, v9, s9                                   // 0000000052C8: D2850010 00001309
+	v_mul_hi_u32 v17, v9, s9                                   // 0000000052D0: D2860011 00001309
+	s_mov_b32 s9, 0xa2f9836e                                   // 0000000052D8: BE8900FF A2F9836E
+	v_mul_lo_u32 v18, v9, s9                                   // 0000000052E0: D2850012 00001309
+	v_mul_hi_u32 v9, v9, s9                                    // 0000000052E8: D2860009 00001309
+	v_addc_u32_e32 v15, vcc, v16, v15, vcc                     // 0000000052F0: 381E1F10
+	s_movk_i32 s9, 0xff88                                      // 0000000052F4: B009FF88
+	v_addc_u32_e32 v16, vcc, v18, v17, vcc                     // 0000000052F8: 38202312
+	v_addc_u32_e32 v9, vcc, 0, v9, vcc                         // 0000000052FC: 38121280
+	v_add_u32_e32 v7, vcc, s9, v7                              // 000000005300: 320E0E09
+	v_cmp_lt_u32_e32 vcc, 31, v7                               // 000000005304: 7D920E9F
+	v_cndmask_b32_e32 v9, v9, v16, vcc                         // 000000005308: 00122109
+	v_cndmask_b32_e32 v16, v16, v15, vcc                       // 00000000530C: 00201F10
+	v_cndmask_b32_e32 v15, v15, v14, vcc                       // 000000005310: 001E1D0F
+	v_cndmask_b32_e32 v14, v14, v13, vcc                       // 000000005314: 001C1B0E
+	v_cndmask_b32_e32 v13, v13, v12, vcc                       // 000000005318: 001A190D
+	v_cndmask_b32_e32 v12, v12, v11, vcc                       // 00000000531C: 0018170C
+	v_cndmask_b32_e32 v10, v11, v10, vcc                       // 000000005320: 0014150B
+	v_cndmask_b32_e64 v11, 0, 1, vcc                           // 000000005324: D100000B 01A90280
+	v_lshlrev_b32_e32 v11, 5, v11                              // 00000000532C: 24161685
+	v_sub_u32_e32 v7, vcc, v7, v11                             // 000000005330: 340E1707
+	v_cmp_lt_u32_e32 vcc, 31, v7                               // 000000005334: 7D920E9F
+	v_cndmask_b32_e32 v11, v16, v15, vcc                       // 000000005338: 00161F10
+	v_cndmask_b32_e32 v15, v15, v14, vcc                       // 00000000533C: 001E1D0F
+	v_cndmask_b32_e32 v14, v14, v13, vcc                       // 000000005340: 001C1B0E
+	v_cndmask_b32_e32 v13, v13, v12, vcc                       // 000000005344: 001A190D
+	v_cndmask_b32_e32 v10, v12, v10, vcc                       // 000000005348: 0014150C
+	v_cndmask_b32_e64 v12, 0, 1, vcc                           // 00000000534C: D100000C 01A90280
+	v_lshlrev_b32_e32 v12, 5, v12                              // 000000005354: 24181885
+	v_cndmask_b32_e32 v9, v9, v16, vcc                         // 000000005358: 00122109
+	v_sub_u32_e32 v7, vcc, v7, v12                             // 00000000535C: 340E1907
+	v_cmp_lt_u32_e32 vcc, 31, v7                               // 000000005360: 7D920E9F
+	v_cndmask_b32_e32 v12, v15, v14, vcc                       // 000000005364: 00181D0F
+	v_cndmask_b32_e32 v14, v14, v13, vcc                       // 000000005368: 001C1B0E
+	v_cndmask_b32_e32 v10, v13, v10, vcc                       // 00000000536C: 0014150D
+	v_cndmask_b32_e64 v13, 0, 1, vcc                           // 000000005370: D100000D 01A90280
+	v_lshlrev_b32_e32 v13, 5, v13                              // 000000005378: 241A1A85
+	v_cndmask_b32_e32 v9, v9, v11, vcc                         // 00000000537C: 00121709
+	v_cndmask_b32_e32 v11, v11, v15, vcc                       // 000000005380: 00161F0B
+	v_sub_u32_e32 v7, vcc, v7, v13                             // 000000005384: 340E1B07
+	v_cmp_lt_u32_e32 vcc, 31, v7                               // 000000005388: 7D920E9F
+	v_cndmask_b32_e64 v13, 0, 1, vcc                           // 00000000538C: D100000D 01A90280
+	v_lshlrev_b32_e32 v13, 5, v13                              // 000000005394: 241A1A85
+	v_cndmask_b32_e32 v9, v9, v11, vcc                         // 000000005398: 00121709
+	v_cndmask_b32_e32 v11, v11, v12, vcc                       // 00000000539C: 0016190B
+	v_cndmask_b32_e32 v12, v12, v14, vcc                       // 0000000053A0: 00181D0C
+	v_cndmask_b32_e32 v10, v14, v10, vcc                       // 0000000053A4: 0014150E
+	v_sub_u32_e32 v7, vcc, v7, v13                             // 0000000053A8: 340E1B07
+	v_sub_u32_e32 v13, vcc, 32, v7                             // 0000000053AC: 341A0EA0
+	v_alignbit_b32 v14, v9, v11, v13                           // 0000000053B0: D1CE000E 04361709
+	v_alignbit_b32 v15, v11, v12, v13                          // 0000000053B8: D1CE000F 0436190B
+	v_cmp_ne_u32_e32 vcc, 0, v7                                // 0000000053C0: 7D9A0E80
+	v_cndmask_b32_e32 v9, v9, v14, vcc                         // 0000000053C4: 00121D09
+	v_alignbit_b32 v13, v12, v10, v13                          // 0000000053C8: D1CE000D 0436150C
+	v_cndmask_b32_e32 v7, v11, v15, vcc                        // 0000000053D0: 000E1F0B
+	v_cndmask_b32_e32 v11, v12, v13, vcc                       // 0000000053D4: 00161B0C
+	v_alignbit_b32 v13, v9, v7, 30                             // 0000000053D8: D1CE000D 027A0F09
+	v_bfe_i32 v14, v9, 29, 1                                   // 0000000053E0: D1C9000E 02053B09
+	v_alignbit_b32 v7, v7, v11, 30                             // 0000000053E8: D1CE0007 027A1707
+	v_alignbit_b32 v10, v11, v10, 30                           // 0000000053F0: D1CE000A 027A150B
+	v_xor_b32_e32 v13, v14, v13                                // 0000000053F8: 2A1A1B0E
+	v_xor_b32_e32 v7, v14, v7                                  // 0000000053FC: 2A0E0F0E
+	v_xor_b32_e32 v10, v14, v10                                // 000000005400: 2A14150E
+	v_ffbh_u32_e32 v14, v13                                    // 000000005404: 7E1C5B0D
+	v_cmp_ne_u32_e32 vcc, 0, v13                               // 000000005408: 7D9A1A80
+	v_cndmask_b32_e32 v14, 32, v14, vcc                        // 00000000540C: 001C1CA0
+	v_lshrrev_b32_e32 v12, 29, v9                              // 000000005410: 2018129D
+	v_sub_u32_e32 v15, vcc, 31, v14                            // 000000005414: 341E1C9F
+	v_alignbit_b32 v13, v13, v7, v15                           // 000000005418: D1CE000D 043E0F0D
+	v_alignbit_b32 v7, v7, v10, v15                            // 000000005420: D1CE0007 043E1507
+	v_lshlrev_b32_e32 v12, 31, v12                             // 000000005428: 2418189F
+	v_lshlrev_b32_e32 v10, 23, v14                             // 00000000542C: 24141C97
+	v_lshrrev_b32_e32 v15, 9, v13                              // 000000005430: 201E1A89
+	v_sub_u32_e32 v10, vcc, v12, v10                           // 000000005434: 3414150C
+	v_or_b32_e32 v10, v10, v15                                 // 000000005438: 28141F0A
+	v_alignbit_b32 v13, v13, v7, 9                             // 00000000543C: D1CE000D 02260F0D
+	v_add_u32_e32 v10, vcc, 0.5, v10                           // 000000005444: 321414F0
+	v_ffbh_u32_e32 v15, v13                                    // 000000005448: 7E1E5B0D
+	v_cmp_ne_u32_e32 vcc, 0, v13                               // 00000000544C: 7D9A1A80
+	v_cndmask_b32_e32 v15, 32, v15, vcc                        // 000000005450: 001E1EA0
+	v_sub_u32_e32 v16, vcc, 31, v15                            // 000000005454: 34201E9F
+	v_alignbit_b32 v7, v13, v7, v16                            // 000000005458: D1CE0007 04420F0D
+	v_add_u32_e32 v13, vcc, v15, v14                           // 000000005460: 321A1D0F
+	v_lshlrev_b32_e32 v13, 23, v13                             // 000000005464: 241A1A97
+	s_mov_b32 s9, 0x33000000                                   // 000000005468: BE8900FF 33000000
+	v_sub_u32_e32 v13, vcc, s9, v13                            // 000000005470: 341A1A09
+	v_or_b32_e32 v12, v13, v12                                 // 000000005474: 2818190D
+	v_lshrrev_b32_e32 v7, 9, v7                                // 000000005478: 200E0E89
+	v_or_b32_e32 v7, v12, v7                                   // 00000000547C: 280E0F0C
+	v_and_b32_e32 v12, 0xbffff000, v10                         // 000000005480: 261814FF BFFFF000
+	v_mul_f32_e32 v14, 0xbfc90fda, v10                         // 000000005488: 0A1C14FF BFC90FDA
+	s_mov_b32 s9, 0x3fc90000                                   // 000000005490: BE8900FF 3FC90000
+	v_mac_f32_e32 v14, s9, v12                                 // 000000005498: 2C1C1809
+	v_sub_f32_e32 v13, v10, v12                                // 00000000549C: 041A190A
+	v_mac_f32_e32 v14, s12, v12                                // 0000000054A0: 2C1C180C
+	v_mac_f32_e32 v14, s9, v13                                 // 0000000054A4: 2C1C1A09
+	v_mul_f32_e32 v12, 0x33a22168, v10                         // 0000000054A8: 0A1814FF 33A22168
+	s_mov_b32 s9, 0x3fc90fda                                   // 0000000054B0: BE8900FF 3FC90FDA
+	v_mac_f32_e32 v14, s12, v13                                // 0000000054B8: 2C1C1A0C
+	v_mac_f32_e32 v12, s9, v7                                  // 0000000054BC: 2C180E09
+	v_add_f32_e32 v7, v14, v12                                 // 0000000054C0: 020E190E
+	v_bfe_u32 v11, v9, 29, 1                                   // 0000000054C4: D1C8000B 02053B09
+	v_lshrrev_b32_e32 v9, 30, v9                               // 0000000054CC: 2012129E
+	v_mac_f32_e32 v7, s9, v10                                  // 0000000054D0: 2C0E1409
+	v_add_u32_e32 v9, vcc, v11, v9                             // 0000000054D4: 3212130B
+
+00000000000054d8 <BB3_7>:
+	s_or_saveexec_b64 s[6:7], s[6:7]                           // 0000000054D8: BE862106
+	s_xor_b64 exec, exec, s[6:7]                               // 0000000054DC: 88FE067E
+	s_cbranch_execz BB3_9                                      // 0000000054E0: BF88002F
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_mul_f32_e32 v7, 0x3f22f983, v6                           // 0000000054E4: 0A0E0CFF 3F22F983
+	v_rndne_f32_e32 v10, v7                                    // 0000000054EC: 7E143D07
+	s_mov_b32 s9, 0x3fc90fda                                   // 0000000054F0: BE8900FF 3FC90FDA
+	v_and_b32_e32 v7, 0xfffff000, v10                          // 0000000054F8: 260E14FF FFFFF000
+	v_mul_f32_e32 v11, s9, v10                                 // 000000005500: 0A161409
+	s_mov_b32 s12, 0x3fc90000                                  // 000000005504: BE8C00FF 3FC90000
+	v_mad_f32 v11, v7, s12, -v11                               // 00000000550C: D1C1000B 842C1907
+	s_mov_b32 s13, 0x39fda000                                  // 000000005514: BE8D00FF 39FDA000
+	v_mad_f32 v12, -v10, s9, v6                                // 00000000551C: D1C1000C 2418130A
+	v_sub_f32_e32 v9, v10, v7                                  // 000000005524: 04120F0A
+	v_mac_f32_e32 v11, s13, v7                                 // 000000005528: 2C160E0D
+	v_mac_f32_e32 v11, s12, v9                                 // 00000000552C: 2C16120C
+	v_sub_f32_e32 v6, v6, v12                                  // 000000005530: 040C1906
+	v_mad_f32 v6, -v10, s9, v6                                 // 000000005534: D1C10006 2418130A
+	v_mac_f32_e32 v11, s13, v9                                 // 00000000553C: 2C16120D
+	v_sub_f32_e32 v6, v6, v11                                  // 000000005540: 040C1706
+	v_add_f32_e32 v6, v12, v6                                  // 000000005544: 020C0D0C
+	s_mov_b32 s9, 0x33a22168                                   // 000000005548: BE8900FF 33A22168
+	v_mad_f32 v11, -v10, s9, v6                                // 000000005550: D1C1000B 2418130A
+	v_sub_f32_e32 v6, v6, v11                                  // 000000005558: 040C1706
+	v_mad_f32 v6, -v10, s9, v6                                 // 00000000555C: D1C10006 2418130A
+	v_mul_f32_e32 v12, 0xb3a22168, v10                         // 000000005564: 0A1814FF B3A22168
+	s_mov_b32 s9, 0x33a22000                                   // 00000000556C: BE8900FF 33A22000
+	v_mac_f32_e32 v12, s9, v7                                  // 000000005574: 2C180E09
+	s_mov_b32 s12, 0x2c340000                                  // 000000005578: BE8C00FF 2C340000
+	v_mac_f32_e32 v12, s12, v7                                 // 000000005580: 2C180E0C
+	v_mac_f32_e32 v12, s9, v9                                  // 000000005584: 2C181209
+	v_mac_f32_e32 v12, s12, v9                                 // 000000005588: 2C18120C
+	v_cvt_i32_f32_e32 v9, v10                                  // 00000000558C: 7E12110A
+	v_sub_f32_e32 v6, v6, v12                                  // 000000005590: 040C1906
+	v_add_f32_e32 v7, v11, v6                                  // 000000005594: 020E0D0B
+	v_mac_f32_e32 v7, 0xa7c234c4, v10                          // 000000005598: 2C0E14FF A7C234C4
+
+00000000000055a0 <BB3_9>:
+	s_or_b64 exec, exec, s[6:7]                                // 0000000055A0: 87FE067E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_mul_f32_e32 v10, v7, v7                                  // 0000000055A4: 0A140F07
+	v_mov_b32_e32 v11, 0x3c0881c4                              // 0000000055A8: 7E1602FF 3C0881C4
+	v_mac_f32_e32 v11, 0xb94c1982, v10                         // 0000000055B0: 2C1614FF B94C1982
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_cvt_f32_i32_e32 v8, v8                                   // 0000000055B8: 7E100B08
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_madak_f32 v11, v10, v11, 0xbe2aaa9d                      // 0000000055BC: 3016170A BE2AAA9D
+	v_mul_f32_e32 v11, v10, v11                                // 0000000055C4: 0A16170A
+	v_mac_f32_e32 v7, v7, v11                                  // 0000000055C8: 2C0E1707
+	v_mov_b32_e32 v11, 0xbab64f3b                              // 0000000055CC: 7E1602FF BAB64F3B
+	v_mac_f32_e32 v11, 0x37d75334, v10                         // 0000000055D4: 2C1614FF 37D75334
+; d_randu():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:66
+; 	return fabs(seed[index] / ((float) M));
+	v_mul_f32_e32 v8, 0x30000000, v8                           // 0000000055DC: 0A1010FF 30000000
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_madak_f32 v11, v10, v11, 0x3d2aabf7                      // 0000000055E4: 3016170A 3D2AABF7
+	v_madak_f32 v11, v10, v11, 0xbf000004                      // 0000000055EC: 3016170A BF000004
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:83
+; 	float rt = -2*log(u);
+	v_log_f32_e64 v8, |v8|                                     // 0000000055F4: D1610108 00000108
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_mad_f32 v10, v10, v11, 1.0                               // 0000000055FC: D1C1000A 03CA170A
+	v_and_b32_e32 v11, 1, v9                                   // 000000005604: 26161281
+	v_lshlrev_b32_e32 v9, 30, v9                               // 000000005608: 2412129E
+	v_cmp_eq_u32_e32 vcc, 0, v11                               // 00000000560C: 7D941680
+	v_cndmask_b32_e64 v7, -v7, v10, vcc                        // 000000005610: D1000007 21AA1507
+	v_and_b32_e32 v9, 0x80000000, v9                           // 000000005618: 261212FF 80000000
+	v_xor_b32_e32 v7, v9, v7                                   // 000000005620: 2A0E0F09
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:83
+; 	float rt = -2*log(u);
+	v_and_b32_e32 v9, 0xfffff000, v8                           // 000000005624: 261210FF FFFFF000
+	v_sub_f32_e32 v10, v8, v9                                  // 00000000562C: 04141308
+	s_mov_b32 s13, 0x3805fdf4                                  // 000000005630: BE8D00FF 3805FDF4
+	v_mul_f32_e32 v11, s13, v10                                // 000000005638: 0A16140D
+	v_mac_f32_e32 v11, s13, v9                                 // 00000000563C: 2C16120D
+	s_mov_b32 s13, 0x3f317000                                  // 000000005640: BE8D00FF 3F317000
+	v_mac_f32_e32 v11, s13, v10                                // 000000005648: 2C16140D
+	s_movk_i32 s12, 0x207                                      // 00000000564C: B00C0207
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:299
+; 		arrayY[i] = arrayY[i] - 2.0 + 2.0*d_randn(seed, i);
+	s_waitcnt vmcnt(1) lgkmcnt(1)                              // 000000005650: BF8C0171
+	v_cvt_f64_f32_e32 v[5:6], v5                               // 000000005654: 7E0A2105
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:83
+; 	float rt = -2*log(u);
+	v_mac_f32_e32 v11, s13, v9                                 // 000000005658: 2C16120D
+	v_cmp_class_f32_e64 vcc, v8, s12                           // 00000000565C: D010006A 00001908
+	v_cndmask_b32_e32 v8, v11, v8, vcc                         // 000000005664: 0010110B
+	v_mul_f32_e32 v8, -2.0, v8                                 // 000000005668: 0A1010F5
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:84
+; 	return sqrt(rt)*cosine;
+	v_sqrt_f32_e32 v8, v8                                      // 00000000566C: 7E104F08
+	s_mov_b32 s9, 0x7f800000                                   // 000000005670: BE8900FF 7F800000
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:299
+; 		arrayY[i] = arrayY[i] - 2.0 + 2.0*d_randn(seed, i);
+	v_add_f64 v[5:6], v[5:6], -2.0                             // 000000005678: D2800005 0001EB05
+; d_randn():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:82
+; 	float cosine = cos(2*pi*v);
+	v_mov_b32_e32 v9, 0x7fc00000                               // 000000005680: 7E1202FF 7FC00000
+	v_cmp_gt_u32_e32 vcc, s9, v4                               // 000000005688: 7D980809
+	v_cndmask_b32_e32 v4, v9, v7, vcc                          // 00000000568C: 00080F09
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:84
+; 	return sqrt(rt)*cosine;
+	v_mul_f32_e32 v4, v8, v4                                   // 000000005690: 0A080908
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:299
+; 		arrayY[i] = arrayY[i] - 2.0 + 2.0*d_randn(seed, i);
+	v_cvt_f64_f32_e32 v[7:8], v4                               // 000000005694: 7E0E2104
+	s_mov_b64 s[6:7], exec                                     // 000000005698: BE86017E
+	v_fma_f64 v[4:5], v[7:8], 2.0, v[5:6]                      // 00000000569C: D1CC0004 0415E907
+	v_cvt_f32_f64_e32 v4, v[4:5]                               // 0000000056A4: 7E081F04
+	flat_store_dword v[2:3], v4                                // 0000000056A8: DC700000 00000402
+
+00000000000056b0 <BB3_10>:
+	s_or_b64 exec, exec, s[4:5]                                // 0000000056B0: 87FE047E
+	s_xor_b64 s[4:5], s[6:7], -1                               // 0000000056B4: 8884C106
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:303
+; 	barrier(CLK_GLOBAL_MEM_FENCE);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000056B8: BF8C0070
+	s_barrier                                                  // 0000000056BC: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000056C0: BF8C007F
+	s_and_saveexec_b64 s[6:7], s[4:5]                          // 0000000056C4: BE862004
+	s_xor_b64 s[4:5], exec, s[6:7]                             // 0000000056C8: 8884067E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:331
+; 		buffer[thread_id] = weights[i];
+	v_ashrrev_i32_e32 v2, 31, v1                               // 0000000056CC: 2204029F
+	s_or_saveexec_b64 s[4:5], s[4:5]                           // 0000000056D0: BE842104
+	s_xor_b64 exec, exec, s[4:5]                               // 0000000056D4: 88FE047E
+	s_cbranch_execz BB3_19                                     // 0000000056D8: BF8800AE
+	v_ashrrev_i32_e32 v2, 31, v1                               // 0000000056DC: 2204029F
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:307
+; 		for(y = 0; y < countOnes; y++){
+	s_cmp_lt_i32 s25, 1                                        // 0000000056E0: BF048119
+	v_mov_b32_e32 v5, 0                                        // 0000000056E4: 7E0A0280
+	s_cbranch_scc1 BB3_18                                      // 0000000056E8: BF850075
+	v_lshlrev_b64 v[3:4], 2, v[1:2]                            // 0000000056EC: D28F0003 00020282
+	v_mov_b32_e32 v6, s37                                      // 0000000056F4: 7E0C0225
+	v_add_u32_e32 v5, vcc, s36, v3                             // 0000000056F8: 320A0624
+	v_addc_u32_e32 v6, vcc, v6, v4, vcc                        // 0000000056FC: 380C0906
+	flat_load_dword v6, v[5:6]                                 // 000000005700: DC500000 06000005
+	v_mov_b32_e32 v5, s39                                      // 000000005708: 7E0A0227
+	v_add_u32_e32 v3, vcc, s38, v3                             // 00000000570C: 32060626
+	v_addc_u32_e32 v4, vcc, v5, v4, vcc                        // 000000005710: 38080905
+	flat_load_dword v3, v[3:4]                                 // 000000005714: DC500000 03000003
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:307
+; 		for(y = 0; y < countOnes; y++){
+	v_mul_lo_u32 v5, s25, v1                                   // 00000000571C: D2850005 00020219
+	v_mov_b32_e32 v7, s17                                      // 000000005724: 7E0E0211
+	s_mov_b32 s6, s25                                          // 000000005728: BE860019
+; dev_round_float():
+	s_waitcnt vmcnt(1) lgkmcnt(1)                              // 00000000572C: BF8C0171
+	v_cvt_i32_f32_e32 v8, v6                                   // 000000005730: 7E101106
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:307
+; 		for(y = 0; y < countOnes; y++){
+	v_ashrrev_i32_e32 v6, 31, v5                               // 000000005734: 220C0A9F
+; dev_round_float():
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000005738: BF8C0070
+	v_cvt_i32_f32_e32 v9, v3                                   // 00000000573C: 7E121103
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:307
+; 		for(y = 0; y < countOnes; y++){
+	v_lshlrev_b64 v[3:4], 2, v[5:6]                            // 000000005740: D28F0003 00020A82
+; dev_round_float():
+	v_cvt_f32_i32_e32 v5, v8                                   // 000000005748: 7E0A0B08
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:307
+; 		for(y = 0; y < countOnes; y++){
+	v_add_u32_e32 v3, vcc, s16, v3                             // 00000000574C: 32060610
+; dev_round_float():
+	v_cvt_f32_i32_e32 v6, v9                                   // 000000005750: 7E0C0B09
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:307
+; 		for(y = 0; y < countOnes; y++){
+	v_addc_u32_e32 v4, vcc, v7, v4, vcc                        // 000000005754: 38080907
+	v_mov_b32_e32 v8, v4                                       // 000000005758: 7E100304
+	v_mov_b32_e32 v7, v3                                       // 00000000575C: 7E0E0303
+
+0000000000005760 <BB3_15>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:309
+; 			indX = dev_round_float(arrayX[i]) + objxy[y*2 + 1];
+	v_mov_b32_e32 v9, s18                                      // 000000005760: 7E120212
+	v_mov_b32_e32 v10, s19                                     // 000000005764: 7E140213
+	flat_load_dwordx2 v[9:10], v[9:10]                         // 000000005768: DC540000 09000009
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:307
+; 		for(y = 0; y < countOnes; y++){
+	s_add_i32 s6, s6, -1                                       // 000000005770: 8106C106
+	s_add_u32 s18, s18, 8                                      // 000000005774: 80128812
+	s_addc_u32 s19, s19, 0                                     // 000000005778: 82138013
+	s_cmp_lg_u32 s6, 0                                         // 00000000577C: BF078006
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:309
+; 			indX = dev_round_float(arrayX[i]) + objxy[y*2 + 1];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000005780: BF8C0070
+	v_cvt_f32_i32_e32 v10, v10                                 // 000000005784: 7E140B0A
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:310
+; 			indY = dev_round_float(arrayY[i]) + objxy[y*2];
+	v_cvt_f32_i32_e32 v9, v9                                   // 000000005788: 7E120B09
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:309
+; 			indX = dev_round_float(arrayX[i]) + objxy[y*2 + 1];
+	v_add_f32_e32 v10, v5, v10                                 // 00000000578C: 02141505
+	v_cvt_i32_f32_e32 v10, v10                                 // 000000005790: 7E14110A
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:310
+; 			indY = dev_round_float(arrayY[i]) + objxy[y*2];
+	v_add_f32_e32 v9, v6, v9                                   // 000000005794: 02121306
+	v_cvt_i32_f32_e32 v9, v9                                   // 000000005798: 7E121109
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:312
+; 			ind[i*countOnes + y] = abs(indX*IszY*Nfr + indY*Nfr + k);
+	v_mul_lo_u32 v10, v10, s28                                 // 00000000579C: D285000A 0000390A
+	v_add_u32_e32 v9, vcc, v10, v9                             // 0000000057A4: 3212130A
+	v_mul_lo_u32 v9, v9, s29                                   // 0000000057A8: D2850009 00003B09
+	v_add_u32_e32 v9, vcc, s27, v9                             // 0000000057B0: 3212121B
+	v_ashrrev_i32_e32 v10, 31, v9                              // 0000000057B4: 2214129F
+	v_add_u32_e32 v9, vcc, v9, v10                             // 0000000057B8: 32121509
+	v_xor_b32_e32 v9, v9, v10                                  // 0000000057BC: 2A121509
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:313
+; 			if(ind[i*countOnes + y] >= max_size)
+	v_cmp_gt_i32_e32 vcc, s26, v9                              // 0000000057C0: 7D88121A
+	v_cndmask_b32_e32 v9, 0, v9, vcc                           // 0000000057C4: 00121280
+	flat_store_dword v[7:8], v9                                // 0000000057C8: DC700000 00000907
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:307
+; 		for(y = 0; y < countOnes; y++){
+	v_add_u32_e32 v7, vcc, 4, v7                               // 0000000057D0: 320E0E84
+	v_addc_u32_e32 v8, vcc, 0, v8, vcc                         // 0000000057D4: 38101080
+	s_cbranch_scc1 BB3_15                                      // 0000000057D8: BF85FFE1
+	v_mov_b32_e32 v5, 0                                        // 0000000057DC: 7E0A0280
+	s_movk_i32 s6, 0xff9c                                      // 0000000057E0: B006FF9C
+	s_mov_b32 s13, 0x40490000                                  // 0000000057E4: BE8D00FF 40490000
+	s_mov_b32 s12, 0                                           // 0000000057EC: BE8C0080
+	s_mov_b32 s7, s25                                          // 0000000057F0: BE870019
+
+00000000000057f4 <BB3_17>:
+; calcLikelihoodSum():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:36
+; 		likelihoodSum += (pow((float)(I[ind[index*numOnes + x]] - 100),2) - pow((float)(I[ind[index*numOnes + x]]-228),2))/50.0;
+	flat_load_dword v6, v[3:4]                                 // 0000000057F4: DC500000 06000003
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:35
+; 	for(x = 0; x < numOnes; x++)
+	v_add_u32_e32 v3, vcc, 4, v3                               // 0000000057FC: 32060684
+	v_addc_u32_e32 v4, vcc, 0, v4, vcc                         // 000000005800: 38080880
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:36
+; 		likelihoodSum += (pow((float)(I[ind[index*numOnes + x]] - 100),2) - pow((float)(I[ind[index*numOnes + x]]-228),2))/50.0;
+	v_mov_b32_e32 v7, s23                                      // 000000005804: 7E0E0217
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:35
+; 	for(x = 0; x < numOnes; x++)
+	s_add_i32 s7, s7, -1                                       // 000000005808: 8107C107
+	s_cmp_lg_u32 s7, 0                                         // 00000000580C: BF078007
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:36
+; 		likelihoodSum += (pow((float)(I[ind[index*numOnes + x]] - 100),2) - pow((float)(I[ind[index*numOnes + x]]-228),2))/50.0;
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000005810: BF8C0070
+	v_ashrrev_i32_e32 v8, 31, v6                               // 000000005814: 22100C9F
+	v_add_u32_e32 v6, vcc, s22, v6                             // 000000005818: 320C0C16
+	v_addc_u32_e32 v7, vcc, v7, v8, vcc                        // 00000000581C: 380E1107
+	flat_load_ubyte v6, v[6:7]                                 // 000000005820: DC400000 06000006
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000005828: BF8C0070
+	v_add_u32_e32 v7, vcc, 0xffffff1c, v6                      // 00000000582C: 320E0CFF FFFFFF1C
+	v_add_u32_e32 v6, vcc, s6, v6                              // 000000005834: 320C0C06
+	v_cvt_f32_i32_e32 v7, v7                                   // 000000005838: 7E0E0B07
+	v_cvt_f32_i32_e32 v6, v6                                   // 00000000583C: 7E0C0B06
+	v_mul_f32_e32 v7, v7, v7                                   // 000000005840: 0A0E0F07
+	v_mad_f32 v6, v6, v6, -v7                                  // 000000005844: D1C10006 841E0D06
+	v_cvt_f64_f32_e32 v[6:7], v6                               // 00000000584C: 7E0C2106
+	s_setreg_imm32_b32 hwreg(HW_REG_MODE, 2, 2), 0             // 000000005850: BA000881 00000000
+	v_div_scale_f64 v[8:9], s[16:17], s[12:13], s[12:13], v[6:7]// 000000005858: D1E11008 0418180C
+	v_div_scale_f64 v[10:11], vcc, v[6:7], s[12:13], v[6:7]    // 000000005860: D1E16A0A 04181906
+	v_rcp_f64_e32 v[12:13], v[8:9]                             // 000000005868: 7E184B08
+	v_fma_f64 v[14:15], -v[8:9], v[12:13], 1.0                 // 00000000586C: D1CC000E 23CA1908
+	v_fma_f64 v[12:13], v[12:13], v[14:15], v[12:13]           // 000000005874: D1CC000C 04321D0C
+	v_fma_f64 v[14:15], -v[8:9], v[12:13], 1.0                 // 00000000587C: D1CC000E 23CA1908
+	v_fma_f64 v[12:13], v[12:13], v[14:15], v[12:13]           // 000000005884: D1CC000C 04321D0C
+	v_mul_f64 v[14:15], v[10:11], v[12:13]                     // 00000000588C: D281000E 0002190A
+	v_fma_f64 v[8:9], -v[8:9], v[14:15], v[10:11]              // 000000005894: D1CC0008 242A1D08
+	v_div_fmas_f64 v[8:9], v[8:9], v[12:13], v[14:15]          // 00000000589C: D1E30008 043A1908
+	v_div_fixup_f64 v[6:7], v[8:9], s[12:13], v[6:7]           // 0000000058A4: D1DF0006 04181908
+	v_cvt_f64_f32_e32 v[8:9], v5                               // 0000000058AC: 7E102105
+	v_add_f64 v[5:6], v[6:7], v[8:9]                           // 0000000058B0: D2800005 00021106
+	v_cvt_f32_f64_e32 v5, v[5:6]                               // 0000000058B8: 7E0A1F05
+	s_cbranch_scc1 BB3_17                                      // 0000000058BC: BF85FFCD
+
+00000000000058c0 <BB3_18>:
+; likelihood_kernel():
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:318
+; 		likelihood[i] = likelihood[i]/countOnes-SCALE_FACTOR;
+	v_cvt_f32_i32_e32 v6, s25                                  // 0000000058C0: 7E0C0A19
+	s_mov_b32 s6, 0x6f800000                                   // 0000000058C4: BE8600FF 6F800000
+	v_mov_b32_e32 v8, 0x2f800000                               // 0000000058CC: 7E1002FF 2F800000
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:316
+; 		likelihood[i] = calcLikelihoodSum(I, ind, countOnes, i);
+	v_lshlrev_b64 v[3:4], 2, v[1:2]                            // 0000000058D4: D28F0003 00020282
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:318
+; 		likelihood[i] = likelihood[i]/countOnes-SCALE_FACTOR;
+	v_cmp_gt_f32_e64 vcc, |v6|, s6                             // 0000000058DC: D044016A 00000D06
+	v_cndmask_b32_e32 v8, 1.0, v8, vcc                         // 0000000058E4: 001010F2
+	v_mul_f32_e32 v6, v6, v8                                   // 0000000058E8: 0A0C1106
+	v_rcp_f32_e32 v9, v6                                       // 0000000058EC: 7E124506
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:316
+; 		likelihood[i] = calcLikelihoodSum(I, ind, countOnes, i);
+	v_mov_b32_e32 v7, s21                                      // 0000000058F0: 7E0E0215
+	v_add_u32_e32 v6, vcc, s20, v3                             // 0000000058F4: 320C0614
+	v_addc_u32_e32 v7, vcc, v7, v4, vcc                        // 0000000058F8: 380E0907
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:318
+; 		likelihood[i] = likelihood[i]/countOnes-SCALE_FACTOR;
+	v_mul_f32_e32 v5, v5, v9                                   // 0000000058FC: 0A0A1305
+	v_madak_f32 v5, v8, v5, 0xc3960000                         // 000000005900: 300A0B08 C3960000
+	flat_store_dword v[6:7], v5                                // 000000005908: DC700000 00000506
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:320
+; 		weights[i] = weights[i] * exp(likelihood[i]); //Donnie Newell - added the missing exponential function call
+	v_mov_b32_e32 v6, s11                                      // 000000005910: 7E0C020B
+	v_add_u32_e32 v3, vcc, s10, v3                             // 000000005914: 3206060A
+	v_addc_u32_e32 v4, vcc, v6, v4, vcc                        // 000000005918: 38080906
+	v_and_b32_e32 v6, 0xfffff000, v5                           // 00000000591C: 260C0AFF FFFFF000
+	v_sub_f32_e32 v7, v5, v6                                   // 000000005924: 040E0D05
+	s_mov_b32 s6, 0x39a3b295                                   // 000000005928: BE8600FF 39A3B295
+	v_mul_f32_e32 v8, s6, v7                                   // 000000005930: 0A100E06
+	s_mov_b32 s7, 0x3fb8a000                                   // 000000005934: BE8700FF 3FB8A000
+	v_mac_f32_e32 v8, s7, v7                                   // 00000000593C: 2C100E07
+	v_mac_f32_e32 v8, s6, v6                                   // 000000005940: 2C100C06
+	v_exp_f32_e32 v7, v8                                       // 000000005944: 7E0E4108
+	flat_load_dword v8, v[3:4]                                 // 000000005948: DC500000 08000003
+	v_mul_f32_e32 v6, s7, v6                                   // 000000005950: 0A0C0C07
+	v_exp_f32_e32 v6, v6                                       // 000000005954: 7E0C4106
+	s_mov_b32 s6, 0xc2aeac50                                   // 000000005958: BE8600FF C2AEAC50
+	v_cmp_ngt_f32_e32 vcc, s6, v5                              // 000000005960: 7C960A06
+	s_mov_b32 s6, 0x42b17218                                   // 000000005964: BE8600FF 42B17218
+	v_mul_f32_e32 v6, v6, v7                                   // 00000000596C: 0A0C0F06
+	v_cndmask_b32_e32 v6, 0, v6, vcc                           // 000000005970: 000C0C80
+	v_mov_b32_e32 v7, 0x7f800000                               // 000000005974: 7E0E02FF 7F800000
+	v_cmp_nlt_f32_e32 vcc, s6, v5                              // 00000000597C: 7C9C0A06
+	v_cndmask_b32_e32 v5, v7, v6, vcc                          // 000000005980: 000A0D07
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000005984: BF8C0070
+	v_mul_f32_e32 v5, v8, v5                                   // 000000005988: 0A0A0B08
+	flat_store_dword v[3:4], v5                                // 00000000598C: DC700000 00000503
+
+0000000000005994 <BB3_19>:
+	s_or_b64 exec, exec, s[4:5]                                // 000000005994: 87FE047E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:324
+; 	buffer[thread_id] = 0.0; // DEBUG!!!!!!!!!!!!!!!!!!!!!!!!
+	v_lshlrev_b32_e32 v3, 2, v0                                // 000000005998: 24060082
+	v_add_u32_e32 v3, vcc, s2, v3                              // 00000000599C: 32060602
+	v_mov_b32_e32 v4, 0                                        // 0000000059A0: 7E080280
+	s_mov_b32 m0, -1                                           // 0000000059A4: BEFC00C1
+	ds_write_b32 v3, v4                                        // 0000000059A8: D81A0000 00000403
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:327
+; 	barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000059B0: BF8C0070
+	s_barrier                                                  // 0000000059B4: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000059B8: BF8C007F
+	s_and_saveexec_b64 s[4:5], s[0:1]                          // 0000000059BC: BE842000
+	s_cbranch_execz BB3_21                                     // 0000000059C0: BF88000A
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:331
+; 		buffer[thread_id] = weights[i];
+	v_lshlrev_b64 v[1:2], 2, v[1:2]                            // 0000000059C4: D28F0001 00020282
+	v_mov_b32_e32 v4, s11                                      // 0000000059CC: 7E08020B
+	v_add_u32_e32 v1, vcc, s10, v1                             // 0000000059D0: 3202020A
+	v_addc_u32_e32 v2, vcc, v4, v2, vcc                        // 0000000059D4: 38040504
+	flat_load_dword v1, v[1:2]                                 // 0000000059D8: DC500000 01000001
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000059E0: BF8C0070
+	ds_write_b32 v3, v1                                        // 0000000059E4: D81A0000 00000103
+
+00000000000059ec <BB3_21>:
+	s_or_b64 exec, exec, s[4:5]                                // 0000000059EC: 87FE047E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:338
+; 	for(unsigned int s=THREADS_PER_BLOCK/2; s>0; s>>=1)
+	s_lshr_b32 s0, s3, 1                                       // 0000000059F0: 8F008103
+	v_cmp_eq_u16_e64 s[4:5], s0, 0                             // 0000000059F4: D0AA0004 00010000
+	s_and_b64 vcc, exec, s[4:5]                                // 0000000059FC: 86EA047E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:334
+; 	barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 000000005A00: BF8C007F
+	s_barrier                                                  // 000000005A04: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000005A08: BF8C007F
+	s_cbranch_vccz BB3_26                                      // 000000005A0C: BF860017
+
+0000000000005a10 <BB3_22>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:346
+; 	if(thread_id == 0)
+	v_cmp_eq_u32_e32 vcc, 0, v0                                // 000000005A10: 7D940080
+	s_and_saveexec_b64 s[0:1], vcc                             // 000000005A14: BE80206A
+	s_cbranch_execz BB3_24                                     // 000000005A18: BF88000C
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:348
+; 		partial_sums[block_id] = buffer[0];
+	v_mov_b32_e32 v0, s2                                       // 000000005A1C: 7E000202
+	s_ashr_i32 s9, s8, 31                                      // 000000005A20: 90099F08
+	ds_read_b32 v2, v0                                         // 000000005A24: D86C0000 02000000
+	s_lshl_b64 s[0:1], s[8:9], 2                               // 000000005A2C: 8E808208
+	s_add_u32 s0, s14, s0                                      // 000000005A30: 8000000E
+	s_addc_u32 s1, s15, s1                                     // 000000005A34: 8201010F
+	v_mov_b32_e32 v0, s0                                       // 000000005A38: 7E000200
+	v_mov_b32_e32 v1, s1                                       // 000000005A3C: 7E020201
+	s_waitcnt lgkmcnt(0)                                       // 000000005A40: BF8C007F
+	flat_store_dword v[0:1], v2                                // 000000005A44: DC700000 00000200
+
+0000000000005a4c <BB3_24>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:351
+; }//*/
+	s_endpgm                                                   // 000000005A4C: BF810000
+
+0000000000005a50 <BB3_25>:
+	s_or_b64 exec, exec, s[4:5]                                // 000000005A50: 87FE047E
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:338
+; 	for(unsigned int s=THREADS_PER_BLOCK/2; s>0; s>>=1)
+	s_lshr_b32 s0, s0, 1                                       // 000000005A54: 8F008100
+	s_cmp_eq_u32 s0, 0                                         // 000000005A58: BF068000
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:344
+; 		barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 000000005A5C: BF8C007F
+	s_barrier                                                  // 000000005A60: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000005A64: BF8C007F
+	s_cbranch_scc1 BB3_22                                      // 000000005A68: BF85FFE9
+
+0000000000005a6c <BB3_26>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:340
+; 		if(thread_id < s)
+	v_cmp_gt_u32_e32 vcc, s0, v0                               // 000000005A6C: 7D980000
+	s_and_saveexec_b64 s[4:5], vcc                             // 000000005A70: BE84206A
+	s_cbranch_execz BB3_25                                     // 000000005A74: BF88FFF6
+; /root/mgvm/mgpusim/benchmarks/rodinia/particlefilter/native/kernel/particle_single.cl:342
+; 			buffer[thread_id] += buffer[thread_id + s];
+	s_lshl_b32 s1, s0, 2                                       // 000000005A78: 8E018200
+	v_add_u32_e32 v1, vcc, s1, v3                              // 000000005A7C: 32020601
+	ds_read_b32 v1, v1                                         // 000000005A80: D86C0000 01000001
+	ds_read_b32 v2, v3                                         // 000000005A88: D86C0000 02000003
+	s_waitcnt lgkmcnt(0)                                       // 000000005A90: BF8C007F
+	v_add_f32_e32 v1, v1, v2                                   // 000000005A94: 02020501
+	ds_write_b32 v3, v1                                        // 000000005A98: D81A0000 00000103
+	s_branch BB3_25                                            // 000000005AA0: BF82FFEB

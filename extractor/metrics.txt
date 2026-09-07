@@ -1,0 +1,35 @@
+# extractor/metrics.txt
+#
+# List of `what` column values to pull from every benchmark CSV in a run dir.
+# One per line. Lines starting with `#` are comments. Blank lines ignored.
+# Whitespace around each name is stripped — leading/trailing spaces are fine.
+#
+# To use a different set without editing this file, pass --metrics on the CLI:
+#   python3 extract.py <run-id> --metrics simulation_time,inst_count
+#
+# Edit freely. The default below is a starter set; add or remove as needed.
+
+# --- Driver-level scalars (one row per benchmark) ---
+# simulation_time
+total-kernel-time
+# pte-caching-read-hit-count
+
+# --- Aggregate / per-component metrics ---
+# inst_count
+# hit-rate
+# read-hit-rate
+# write-hit-rate
+# l2-total-hit-rate
+# l2-total-miss-rate
+
+# --- Latency ---
+# req_average_latency
+# req-latency
+# translation-latency
+
+# --- RDMA / inter-chiplet ---
+# incoming_trans_count
+# outgoing_trans_count
+# incoming_trans_latency
+# outgoing_trans_latency
+# total-transaction

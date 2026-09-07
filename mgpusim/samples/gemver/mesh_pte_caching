@@ -1,0 +1,25 @@
+#!/bin/bash
+go build
+
+NAME=gemver
+
+N=16384
+
+MAX_INST=100000000
+
+./$NAME \
+    -n=$N \
+    -timing \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition="Ydiv, Xdiv, Ydiv" \
+    -data-partitioning=kernel-wide \
+    -use-pte-caching \
+    -xDim=6 \
+    -yDim=6 \
+    -metric-file-name=gemver_mesh_pte_caching_6x6

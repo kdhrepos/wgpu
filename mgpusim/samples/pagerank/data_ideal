@@ -1,0 +1,28 @@
+#!/bin/bash
+go build
+
+NODE=2048
+SPARSITY=0.5
+ITER=1
+
+MAX_INST=30000000
+
+./pagerank \
+    -node=$NODE \
+    -sparsity=$SPARSITY \
+    -iterations=$ITER \
+    -timing \
+    -report-all \
+    -verbose \
+    -fast-h2d \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=data-ideal \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=6 \
+    -yDim=6 \
+    -metric-file-name=pagerank_data_ideal_6x6 \
+    "$@"

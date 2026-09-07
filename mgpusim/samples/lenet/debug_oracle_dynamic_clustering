@@ -1,0 +1,26 @@
+#!/bin/bash
+go build -gcflags="all=-N -l" -o lenet
+
+MAX_INST=657032366
+X_DIM=${1:-6}
+Y_DIM=$X_DIM
+
+dlv exec ./lenet -- \
+    -benchmark=lenet \
+    -epoch=10 \
+    -batch-size=256 \
+    -timing \
+    -verbose \
+    -report-all \
+    -no-progress-bar \
+    -max-inst=$MAX_INST \
+    -platform-type=dynamic-clustering \
+    -use-oracle-pc-table \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=$X_DIM \
+    -yDim=$Y_DIM \
+    -metric-file-name=lenet_oracle_dynamic_clustering_${X_DIM}x${Y_DIM} \
+    -trace-dist-filename=lenet_oracle_dynamic_clustering_${X_DIM}x${Y_DIM}_dist_trace

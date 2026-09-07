@@ -1,0 +1,22 @@
+#!/bin/bash
+go build
+
+NODE=16384
+SPARSITY=0.5
+ITER=1
+
+./pagerank \
+    -node=$NODE \
+    -sparsity=$SPARSITY \
+    -iterations=$ITER \
+    -timing \
+    -report-all \
+    -verify \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=1 \
+    -yDim=1

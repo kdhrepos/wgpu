@@ -1,0 +1,29 @@
+#!/bin/bash
+go build
+
+#SIZE=12000000
+SIZE=64000000
+COUNT=2000000
+
+MAX_INST=30000000
+
+./bptree \
+    -size=$SIZE \
+    -count=$COUNT \
+    -timing \
+    -verbose \
+    -fast-h2d \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -data-partitioning=kernel-wide \
+    -xDim=6 \
+    -yDim=6 \
+    -metric-file-name=bptree_mesh_6x6 \
+    -trace-memory-access \
+    -trace-memory-access-filename=bptree_mesh_6x6_memory_trace

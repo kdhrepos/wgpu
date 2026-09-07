@@ -1,0 +1,32 @@
+#!/bin/bash
+go build
+
+NAME=color
+
+NUM_NODES=3145728  # 2^20 * 3
+NUM_EDGES=15728640 # 2^20 * 15
+
+# NUM_NODES=4194304  # from main.go
+# NUM_EDGES=16777216 # from main.go
+
+MAX_INST=100000000
+
+./$NAME \
+    -num-nodes=$NUM_NODES \
+    -num-edges=$NUM_EDGES \
+    -timing \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -metric-file-name="${MAX_INST}_4x4_mesh" \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="${NAME}_4x4_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="${NAME}_4x4_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

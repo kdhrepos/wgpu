@@ -1,0 +1,24 @@
+#!/bin/bash
+go build
+
+NAME=bfs
+
+NUM_NODE=4194304
+DEGREE=250
+DEPTH=3
+
+./$NAME \
+    -node=$NUM_NODE \
+    -degree=$DEGREE \
+    -depth=$DEPTH \
+    -timing \
+    -report-all \
+    -no-progress-bar \
+    -platform-type=ideal \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=6 \
+    -yDim=6 \
+    -metric-file-name=bfs_ideal_6x6 \

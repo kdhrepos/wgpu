@@ -1,0 +1,1 @@
+./convolution2d -timing -report-all -ni=8192 -nj=8192 -no-progress-bar -platform-type mesh -mem-allocator-type lasp -use-lasp-mem-alloc -scheduling lasp -sched-partition Xdiv

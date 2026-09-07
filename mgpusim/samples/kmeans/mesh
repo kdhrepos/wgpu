@@ -1,0 +1,30 @@
+#!/bin/bash
+go build
+
+NAME=kmeans
+
+POINTS=524288
+FEATURES=32
+CLUSTERS=20
+MAX_ITER=1
+
+./$NAME \
+    -points=$POINTS \
+    -features=$FEATURES \
+    -clusters=$CLUSTERS \
+    -max-iter=$MAX_ITER \
+    -report-all \
+    -no-progress-bar \
+    -verbose \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=2 \
+    -yDim=2
+
+#     -trace-access-count-per-addrs=true \
+#     -trace-access-count-per-addrs-filename="${NAME}_4x4_access_count" \
+#     -trace-evicted-cacheline=true \
+#     -trace-evicted-cacheline-filename="${NAME}_4x4_evicted_cachelines" \

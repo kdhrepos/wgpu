@@ -1,0 +1,373 @@
+
+kernel.hsaco:	file format elf64-amdgpu
+
+
+Disassembly of section .text:
+
+0000000000002000 <kernel_gpu_opencl$local>:
+; kernel_gpu_opencl():
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:33
+; {
+	v_cndmask_b32_e32 v0, s1, v0, vcc                          // 000000002000: 00000001
+	v_cndmask_b32_e32 v0, s2, v0, vcc                          // 000000002004: 00000002
+	v_cndmask_b32_e32 v4, s1, v0, vcc                          // 000000002008: 00080001
+	v_cndmask_b32_e32 v1, s0, v128, vcc                        // 00000000200C: 00030000
+	v_cndmask_b32_e32 v0, v0, v0, vcc                          // 000000002010: 00000100
+		...
+	v_cndmask_b32_e32 v86, -7, v0, vcc                         // 000000002030: 00AC00C7
+	v_cndmask_b32_e32 v0, 12, v0, vcc                          // 000000002034: 0000008C
+	v_cndmask_b32_e32 v5, s9, v0, vcc                          // 000000002038: 000A0009
+	v_cndmask_b32_e32 v0, s0, v0, vcc                          // 00000000203C: 00000000
+	v_cndmask_b32_e32 v0, s16, v7, vcc                         // 000000002040: 00000E10
+	v_cndmask_b32_e32 v0, s0, v0, vcc                          // 000000002044: 00000000
+	v_cndmask_b32_e32 v0, ttmp0, v0, vcc                       // 000000002048: 00000070
+		...
+	v_cndmask_b32_e32 v16, s26, v0, vcc                        // 000000002054: 0020001A
+		...
+	v_subrev_f32_e32 v2, s4, v2                                // 000000002064: 06040404
+	.long 0xffffffff                                           // 000000002068: FFFFFFFF
+		...
+	s_load_dwordx2 s[2:3], s[4:5], 0x0                         // 000000002100: C0060082 00000000
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:42
+; 	if (bx < number_boxes) {
+	s_waitcnt lgkmcnt(0)                                       // 000000002108: BF8C007F
+	s_cmp_ge_i32 s6, s3                                        // 00000000210C: BF030306
+	s_cbranch_scc1 BB0_14                                      // 000000002110: BF8500F9
+	s_load_dwordx8 s[8:15], s[4:5], 0x8                        // 000000002114: C00E0202 00000008
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:45
+; 		long first_i = d_offsets[bx];
+	s_ashr_i32 s7, s6, 31                                      // 00000000211C: 90079F06
+	s_lshl_b64 s[0:1], s[6:7], 3                               // 000000002120: 8E808306
+	s_movk_i32 s3, 0x64                                        // 000000002124: B0030064
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:66
+; 				rB_shared[wtx] = d_rv_gpu[first_j + wtx];
+	s_mov_b32 m0, -1                                           // 000000002128: BEFC00C1
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:45
+; 		long first_i = d_offsets[bx];
+	s_waitcnt lgkmcnt(0)                                       // 00000000212C: BF8C007F
+	s_add_u32 s16, s8, s0                                      // 000000002130: 80100008
+	s_addc_u32 s17, s9, s1                                     // 000000002134: 82110109
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:46
+; 		int  nn      = d_nn[bx];
+	s_lshl_b64 s[18:19], s[6:7], 2                             // 000000002138: 8E928206
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:45
+; 		long first_i = d_offsets[bx];
+	s_load_dwordx2 s[16:17], s[16:17], 0x0                     // 00000000213C: C0060408 00000000
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:46
+; 		int  nn      = d_nn[bx];
+	s_add_u32 s10, s10, s18                                    // 000000002144: 800A120A
+	s_addc_u32 s11, s11, s19                                   // 000000002148: 820B130B
+	s_load_dword s7, s[10:11], 0x0                             // 00000000214C: C00201C5 00000000
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:48
+; 		while (wtx < NUMBER_PAR_PER_BOX) {
+	v_cmp_gt_u32_e64 s[0:1], s3, v0                            // 000000002154: D0CC0000 00020003
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:49
+; 			rA_shared[wtx] = d_rv_gpu[first_i + wtx];
+	s_waitcnt lgkmcnt(0)                                       // 00000000215C: BF8C007F
+	v_mov_b32_e32 v1, s17                                      // 000000002160: 7E020211
+	v_add_u32_e32 v6, vcc, s16, v0                             // 000000002164: 320C0010
+	v_addc_u32_e32 v7, vcc, 0, v1, vcc                         // 000000002168: 380E0280
+	s_and_saveexec_b64 s[10:11], s[0:1]                        // 00000000216C: BE8A2000
+	s_cbranch_execz BB0_3                                      // 000000002170: BF88000D
+	v_lshlrev_b64 v[1:2], 4, v[6:7]                            // 000000002174: D28F0001 00020C84
+	v_mov_b32_e32 v3, s15                                      // 00000000217C: 7E06020F
+	v_add_u32_e32 v1, vcc, s14, v1                             // 000000002180: 3202020E
+	v_addc_u32_e32 v2, vcc, v3, v2, vcc                        // 000000002184: 38040503
+	flat_load_dwordx4 v[1:4], v[1:2]                           // 000000002188: DC5C0000 01000001
+	v_lshlrev_b32_e32 v5, 4, v0                                // 000000002190: 240A0084
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000002194: BF8C0070
+	ds_write2_b32 v5, v3, v4 offset0:2 offset1:3               // 000000002198: D81C0302 00040305
+	ds_write2_b32 v5, v1, v2 offset1:1                         // 0000000021A0: D81C0100 00020105
+
+00000000000021a8 <BB0_3>:
+	s_or_b64 exec, exec, s[10:11]                              // 0000000021A8: 87FE0A7E
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:55
+; 		for (int k = 0; k < 1 + nn; k++) {
+	s_cmp_lt_i32 s7, 0                                         // 0000000021AC: BF048007
+	s_mov_b32 s10, 0                                           // 0000000021B0: BE8A0080
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:53
+; 		barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt lgkmcnt(0)                                       // 0000000021B4: BF8C007F
+	s_barrier                                                  // 0000000021B8: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 0000000021BC: BF8C007F
+	s_cbranch_scc1 BB0_14                                      // 0000000021C0: BF8500CD
+	s_load_dwordx4 s[16:19], s[4:5], 0x28                      // 0000000021C4: C00A0402 00000028
+	v_mul_f32_e64 v1, s2, -2.0                                 // 0000000021CC: D1050001 0001EA02
+	v_mul_f32_e32 v1, s2, v1                                   // 0000000021D4: 0A020202
+	v_lshlrev_b32_e32 v2, 4, v0                                // 0000000021D8: 24040084
+	s_movk_i32 s2, 0x7d0                                       // 0000000021DC: B00207D0
+	v_lshlrev_b32_e32 v4, 2, v0                                // 0000000021E0: 24080082
+	s_movk_i32 s5, 0x640                                       // 0000000021E4: B0050640
+	v_lshlrev_b64 v[6:7], 4, v[6:7]                            // 0000000021E8: D28F0006 00020C84
+	v_add_u32_e32 v3, vcc, s2, v2                              // 0000000021F0: 32060402
+	v_add_u32_e32 v4, vcc, s5, v4                              // 0000000021F4: 32080805
+	s_waitcnt lgkmcnt(0)                                       // 0000000021F8: BF8C007F
+	v_mov_b32_e32 v8, s19                                      // 0000000021FC: 7E100213
+	v_add_u32_e32 v6, vcc, s18, v6                             // 000000002200: 320C0C12
+	v_addc_u32_e32 v7, vcc, v8, v7, vcc                        // 000000002204: 380E0F08
+	s_lshl_b32 s4, s6, 5                                       // 000000002208: 8E048506
+	v_add_u32_e32 v8, vcc, 8, v6                               // 00000000220C: 32100C88
+	s_add_i32 s4, s4, -1                                       // 000000002210: 8104C104
+	v_or_b32_e32 v5, 8, v2                                     // 000000002214: 280A0488
+	v_addc_u32_e32 v9, vcc, 0, v7, vcc                         // 000000002218: 38120E80
+	s_mov_b32 s11, 0x39a3b295                                  // 00000000221C: BE8B00FF 39A3B295
+	s_mov_b32 s18, 0x3fb8a000                                  // 000000002224: BE9200FF 3FB8A000
+	s_mov_b32 s19, 0xc2aeac50                                  // 00000000222C: BE9300FF C2AEAC50
+	s_mov_b32 s20, 0x42b17218                                  // 000000002234: BE9400FF 42B17218
+	s_branch BB0_6                                             // 00000000223C: BF820008
+
+0000000000002240 <BB0_5>:
+	s_or_b64 exec, exec, s[22:23]                              // 000000002240: 87FE167E
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:55
+; 		for (int k = 0; k < 1 + nn; k++) {
+	s_add_i32 s2, s10, 1                                       // 000000002244: 8102810A
+	s_cmp_lg_u32 s10, s7                                       // 000000002248: BF07070A
+	s_mov_b32 s10, s2                                          // 00000000224C: BE8A0002
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:97
+; 			barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 000000002250: BF8C0070
+	s_barrier                                                  // 000000002254: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000002258: BF8C007F
+	s_cbranch_scc0 BB0_14                                      // 00000000225C: BF8400A6
+
+0000000000002260 <BB0_6>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:57
+; 			if (k == 0) {
+	s_cmp_eq_u32 s10, 0                                        // 000000002260: BF06800A
+	v_mov_b32_e32 v10, s6                                      // 000000002264: 7E140206
+	s_cbranch_scc1 BB0_8                                       // 000000002268: BF850009
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:60
+; 				pointer = d_nei_numbers[bx * NEI_STRIDE + (k - 1)];
+	s_add_i32 s2, s4, s10                                      // 00000000226C: 81020A04
+	s_ashr_i32 s3, s2, 31                                      // 000000002270: 90039F02
+	s_lshl_b64 s[2:3], s[2:3], 2                               // 000000002274: 8E828202
+	s_add_u32 s2, s12, s2                                      // 000000002278: 8002020C
+	s_addc_u32 s3, s13, s3                                     // 00000000227C: 8203030D
+	v_mov_b32_e32 v11, s3                                      // 000000002280: 7E160203
+	v_mov_b32_e32 v10, s2                                      // 000000002284: 7E140202
+	flat_load_dword v10, v[10:11]                              // 000000002288: DC500000 0A00000A
+
+0000000000002290 <BB0_8>:
+	s_mov_b64 s[2:3], 0                                        // 000000002290: BE820180
+	s_and_saveexec_b64 s[22:23], s[0:1]                        // 000000002294: BE962000
+	s_cbranch_execz BB0_10                                     // 000000002298: BF880023
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:63
+; 			long first_j = d_offsets[pointer];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 00000000229C: BF8C0070
+	v_ashrrev_i32_e32 v11, 31, v10                             // 0000000022A0: 2216149F
+	v_lshlrev_b64 v[10:11], 3, v[10:11]                        // 0000000022A4: D28F000A 00021483
+	v_mov_b32_e32 v12, s9                                      // 0000000022AC: 7E180209
+	v_add_u32_e32 v10, vcc, s8, v10                            // 0000000022B0: 32141408
+	v_addc_u32_e32 v11, vcc, v12, v11, vcc                     // 0000000022B4: 3816170C
+	flat_load_dwordx2 v[10:11], v[10:11]                       // 0000000022B8: DC540000 0A00000A
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:66
+; 				rB_shared[wtx] = d_rv_gpu[first_j + wtx];
+	v_mov_b32_e32 v16, s15                                     // 0000000022C0: 7E20020F
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:67
+; 				qB_shared[wtx] = d_qv_gpu[first_j + wtx];
+	v_mov_b32_e32 v17, s17                                     // 0000000022C4: 7E220211
+	s_mov_b64 s[2:3], exec                                     // 0000000022C8: BE82017E
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:66
+; 				rB_shared[wtx] = d_rv_gpu[first_j + wtx];
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000022CC: BF8C0070
+	v_add_u32_e32 v10, vcc, v10, v0                            // 0000000022D0: 3214010A
+	v_addc_u32_e32 v11, vcc, 0, v11, vcc                       // 0000000022D4: 38161680
+	v_lshlrev_b64 v[12:13], 4, v[10:11]                        // 0000000022D8: D28F000C 00021484
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:67
+; 				qB_shared[wtx] = d_qv_gpu[first_j + wtx];
+	v_lshlrev_b64 v[14:15], 2, v[10:11]                        // 0000000022E0: D28F000E 00021482
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:66
+; 				rB_shared[wtx] = d_rv_gpu[first_j + wtx];
+	v_add_u32_e32 v10, vcc, s14, v12                           // 0000000022E8: 3214180E
+	v_addc_u32_e32 v11, vcc, v16, v13, vcc                     // 0000000022EC: 38161B10
+	flat_load_dwordx4 v[10:13], v[10:11]                       // 0000000022F0: DC5C0000 0A00000A
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 0000000022F8: BF8C0070
+	ds_write2_b32 v3, v12, v13 offset0:2 offset1:3             // 0000000022FC: D81C0302 000D0C03
+	ds_write2_b32 v3, v10, v11 offset1:1                       // 000000002304: D81C0100 000B0A03
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:67
+; 				qB_shared[wtx] = d_qv_gpu[first_j + wtx];
+	v_add_u32_e32 v10, vcc, s16, v14                           // 00000000230C: 32141C10
+	v_addc_u32_e32 v11, vcc, v17, v15, vcc                     // 000000002310: 38161F11
+	flat_load_dword v10, v[10:11]                              // 000000002314: DC500000 0A00000A
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 00000000231C: BF8C0070
+	ds_write_b32 v4, v10                                       // 000000002320: D81A0000 00000A04
+
+0000000000002328 <BB0_10>:
+	s_or_b64 exec, exec, s[22:23]                              // 000000002328: 87FE167E
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:71
+; 			barrier(CLK_LOCAL_MEM_FENCE);
+	s_waitcnt vmcnt(0) lgkmcnt(0)                              // 00000000232C: BF8C0070
+	s_barrier                                                  // 000000002330: BF8A0000
+	s_waitcnt lgkmcnt(0)                                       // 000000002334: BF8C007F
+	s_and_saveexec_b64 s[22:23], s[2:3]                        // 000000002338: BE962002
+	s_cbranch_execz BB0_5                                      // 00000000233C: BF88FFC0
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:89
+; 					d_fv_gpu[first_i + wtx].v += qB_shared[j] * vij;
+	flat_load_dwordx2 v[10:11], v[6:7]                         // 000000002340: DC540000 0A000006
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:91
+; 					d_fv_gpu[first_i + wtx].y += qB_shared[j] * fyij;
+	flat_load_dwordx2 v[19:20], v[8:9]                         // 000000002348: DC540000 13000008
+	ds_read2_b32 v[12:13], v2 offset1:1                        // 000000002350: D86E0100 0C000002
+	ds_read2_b32 v[14:15], v5 offset1:1                        // 000000002358: D86E0100 0E000005
+	s_mov_b32 s21, 0                                           // 000000002360: BE950080
+	v_mov_b32_e32 v18, 0x7d0                                   // 000000002364: 7E2402FF 000007D0
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:91
+; 					d_fv_gpu[first_i + wtx].y += qB_shared[j] * fyij;
+	s_waitcnt vmcnt(0) lgkmcnt(2)                              // 00000000236C: BF8C0270
+	v_mov_b32_e32 v16, v20                                     // 000000002370: 7E200314
+	v_mov_b32_e32 v17, v19                                     // 000000002374: 7E220313
+
+0000000000002378 <BB0_12>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:76
+; 						  - DOT(rA_shared[wtx], rB_shared[j]);
+	ds_read2_b32 v[19:20], v18 offset0:2 offset1:3             // 000000002378: D86E0302 13000012
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:75
+; 					fp r2 = rA_shared[wtx].v + rB_shared[j].v
+	ds_read2_b32 v[21:22], v18 offset0:4 offset1:5             // 000000002380: D86E0504 15000012
+	ds_read2_b32 v[23:24], v18 offset1:1                       // 000000002388: D86E0100 17000012
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:76
+; 						  - DOT(rA_shared[wtx], rB_shared[j]);
+	s_waitcnt lgkmcnt(2)                                       // 000000002390: BF8C027F
+	v_mul_f32_e32 v25, v14, v19                                // 000000002394: 0A32270E
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:86
+; 					d.z = rA_shared[wtx].z - rB_shared[j].z;
+	v_sub_f32_e32 v26, v15, v20                                // 000000002398: 0434290F
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:76
+; 						  - DOT(rA_shared[wtx], rB_shared[j]);
+	s_waitcnt lgkmcnt(0)                                       // 00000000239C: BF8C007F
+	v_mac_f32_e32 v25, v13, v24                                // 0000000023A0: 2C32310D
+	v_mac_f32_e32 v25, v15, v20                                // 0000000023A4: 2C32290F
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:86
+; 					d.z = rA_shared[wtx].z - rB_shared[j].z;
+	v_sub_f32_e32 v27, v14, v19                                // 0000000023A8: 0436270E
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:76
+; 						  - DOT(rA_shared[wtx], rB_shared[j]);
+	ds_read2_b32 v[19:20], v18 offset0:6 offset1:7             // 0000000023AC: D86E0706 13000012
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:75
+; 					fp r2 = rA_shared[wtx].v + rB_shared[j].v
+	v_add_f32_e32 v23, v12, v23                                // 0000000023B4: 022E2F0C
+	v_add_f32_e32 v21, v12, v21                                // 0000000023B8: 022A2B0C
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:82
+; 					d.x = rA_shared[wtx].x - rB_shared[j].x;
+	v_sub_f32_e32 v24, v13, v24                                // 0000000023BC: 0430310D
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:76
+; 						  - DOT(rA_shared[wtx], rB_shared[j]);
+	s_waitcnt lgkmcnt(0)                                       // 0000000023C0: BF8C007F
+	v_mul_f32_e32 v28, v14, v19                                // 0000000023C4: 0A38270E
+	v_mac_f32_e32 v28, v13, v22                                // 0000000023C8: 2C382D0D
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:86
+; 					d.z = rA_shared[wtx].z - rB_shared[j].z;
+	v_sub_f32_e32 v29, v14, v19                                // 0000000023CC: 043A270E
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:76
+; 						  - DOT(rA_shared[wtx], rB_shared[j]);
+	v_mac_f32_e32 v28, v15, v20                                // 0000000023D0: 2C38290F
+	v_sub_f32_e32 v19, v23, v25                                // 0000000023D4: 04263317
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:86
+; 					d.z = rA_shared[wtx].z - rB_shared[j].z;
+	v_sub_f32_e32 v30, v15, v20                                // 0000000023D8: 043C290F
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:76
+; 						  - DOT(rA_shared[wtx], rB_shared[j]);
+	v_sub_f32_e32 v20, v21, v28                                // 0000000023DC: 04283915
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:78
+; 					fp vij = exp(-u2);
+	v_mul_f32_e32 v21, v1, v19                                 // 0000000023E0: 0A2A2701
+	v_and_b32_e32 v23, 0xfffff000, v21                         // 0000000023E4: 262E2AFF FFFFF000
+	v_mad_f32 v19, v1, v19, -v23                               // 0000000023EC: D1C10013 845E2701
+	v_mul_f32_e32 v25, s11, v19                                // 0000000023F4: 0A32260B
+	v_mac_f32_e32 v25, s18, v19                                // 0000000023F8: 2C322612
+	v_mul_f32_e32 v19, v1, v20                                 // 0000000023FC: 0A262901
+	v_and_b32_e32 v28, 0xfffff000, v19                         // 000000002400: 263826FF FFFFF000
+	v_mad_f32 v20, v1, v20, -v28                               // 000000002408: D1C10014 84722901
+	v_mul_f32_e32 v31, s11, v20                                // 000000002410: 0A3E280B
+	v_mac_f32_e32 v31, s18, v20                                // 000000002414: 2C3E2812
+	v_mul_f32_e32 v20, s18, v23                                // 000000002418: 0A282E12
+	v_mac_f32_e32 v25, s11, v23                                // 00000000241C: 2C322E0B
+	v_exp_f32_e32 v20, v20                                     // 000000002420: 7E284114
+	v_exp_f32_e32 v23, v25                                     // 000000002424: 7E2E4119
+	v_mac_f32_e32 v31, s11, v28                                // 000000002428: 2C3E380B
+	v_exp_f32_e32 v25, v31                                     // 00000000242C: 7E32411F
+	v_cmp_ngt_f32_e32 vcc, s19, v19                            // 000000002430: 7C962613
+	v_mul_f32_e32 v20, v20, v23                                // 000000002434: 0A282F14
+	v_mul_f32_e32 v23, s18, v28                                // 000000002438: 0A2E3812
+	v_exp_f32_e32 v23, v23                                     // 00000000243C: 7E2E4117
+	v_cmp_ngt_f32_e64 s[2:3], s19, v21                         // 000000002440: D04B0002 00022A13
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:82
+; 					d.x = rA_shared[wtx].x - rB_shared[j].x;
+	v_sub_f32_e32 v22, v13, v22                                // 000000002448: 042C2D0D
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:78
+; 					fp vij = exp(-u2);
+	v_mul_f32_e32 v23, v23, v25                                // 00000000244C: 0A2E3317
+	v_cndmask_b32_e32 v23, 0, v23, vcc                         // 000000002450: 002E2E80
+	v_cmp_nlt_f32_e32 vcc, s20, v19                            // 000000002454: 7C9C2614
+	v_mov_b32_e32 v25, 0x7f800000                              // 000000002458: 7E3202FF 7F800000
+	v_cndmask_b32_e64 v19, 0, v20, s[2:3]                      // 000000002460: D1000013 000A2880
+	v_cmp_nlt_f32_e64 s[2:3], s20, v21                         // 000000002468: D04E0002 00022A14
+	v_cndmask_b32_e64 v21, v25, v19, s[2:3]                    // 000000002470: D1000015 000A2719
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:89
+; 					d_fv_gpu[first_i + wtx].v += qB_shared[j] * vij;
+	s_add_i32 s2, s21, s5                                      // 000000002478: 81020515
+	v_mov_b32_e32 v19, s2                                      // 00000000247C: 7E260202
+	ds_read2_b32 v[19:20], v19 offset1:1                       // 000000002480: D86E0100 13000013
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:78
+; 					fp vij = exp(-u2);
+	v_cndmask_b32_e32 v23, v25, v23, vcc                       // 000000002488: 002E2F19
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:74
+; 				for (int j = 0; j < NUMBER_PAR_PER_BOX; j++) {
+	s_add_i32 s21, s21, 8                                      // 00000000248C: 81158815
+	v_add_u32_e32 v18, vcc, 32, v18                            // 000000002490: 322424A0
+	s_cmpk_eq_i32 s21, 0x190                                   // 000000002494: B1150190
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:89
+; 					d_fv_gpu[first_i + wtx].v += qB_shared[j] * vij;
+	s_waitcnt lgkmcnt(0)                                       // 000000002498: BF8C007F
+	v_mac_f32_e32 v10, v19, v21                                // 00000000249C: 2C142B13
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:79
+; 					fp fs  = 2 * vij;
+	v_add_f32_e32 v21, v21, v21                                // 0000000024A0: 022A2B15
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:83
+; 					fp fxij = fs * d.x;
+	v_mul_f32_e32 v24, v24, v21                                // 0000000024A4: 0A302B18
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:87
+; 					fp fzij = fs * d.z;
+	v_mul_f32_e32 v25, v27, v21                                // 0000000024A8: 0A322B1B
+	v_mul_f32_e32 v21, v26, v21                                // 0000000024AC: 0A2A2B1A
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:79
+; 					fp fs  = 2 * vij;
+	v_add_f32_e32 v26, v23, v23                                // 0000000024B0: 02342F17
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:83
+; 					fp fxij = fs * d.x;
+	v_mul_f32_e32 v22, v22, v26                                // 0000000024B4: 0A2C3516
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:90
+; 					d_fv_gpu[first_i + wtx].x += qB_shared[j] * fxij;
+	v_mac_f32_e32 v11, v19, v24                                // 0000000024B8: 2C163113
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:87
+; 					fp fzij = fs * d.z;
+	v_mul_f32_e32 v27, v30, v26                                // 0000000024BC: 0A36351E
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:92
+; 					d_fv_gpu[first_i + wtx].z += qB_shared[j] * fzij;
+	v_mad_f32 v16, v19, v21, v16                               // 0000000024C0: D1C10010 04422B13
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:87
+; 					fp fzij = fs * d.z;
+	v_mul_f32_e32 v26, v29, v26                                // 0000000024C8: 0A34351D
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:92
+; 					d_fv_gpu[first_i + wtx].z += qB_shared[j] * fzij;
+	v_mac_f32_e32 v17, v19, v25                                // 0000000024CC: 2C223313
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:89
+; 					d_fv_gpu[first_i + wtx].v += qB_shared[j] * vij;
+	v_mac_f32_e32 v10, v20, v23                                // 0000000024D0: 2C142F14
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:90
+; 					d_fv_gpu[first_i + wtx].x += qB_shared[j] * fxij;
+	v_mac_f32_e32 v11, v20, v22                                // 0000000024D4: 2C162D14
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:92
+; 					d_fv_gpu[first_i + wtx].z += qB_shared[j] * fzij;
+	v_mac_f32_e32 v17, v20, v26                                // 0000000024D8: 2C223514
+	v_mac_f32_e32 v16, v20, v27                                // 0000000024DC: 2C203714
+	s_cbranch_scc0 BB0_12                                      // 0000000024E0: BF84FFA5
+	v_mov_b32_e32 v12, v17                                     // 0000000024E4: 7E180311
+	v_mov_b32_e32 v13, v16                                     // 0000000024E8: 7E1A0310
+	flat_store_dwordx4 v[6:7], v[10:13]                        // 0000000024EC: DC7C0000 00000A06
+	s_branch BB0_5                                             // 0000000024F4: BF82FF52
+
+00000000000024f8 <BB0_14>:
+; /root/mgvm/mgpusim/benchmarks/rodinia/lavamd/lavamd_kernel.cl:100
+; }
+	s_endpgm                                                   // 0000000024F8: BF810000

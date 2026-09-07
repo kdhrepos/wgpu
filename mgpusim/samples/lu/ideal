@@ -1,0 +1,24 @@
+#!/bin/bash
+go build
+
+N=6500
+K=1
+
+./lu \
+    -n=$N \
+    -k=$K \
+    -timing \
+    -report-all \
+    -no-progress-bar \
+    -platform-type=ideal \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -metric-file-name="${MAX_INST}_4x4_ideal" \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="lu_4x4_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="lu_4x4_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

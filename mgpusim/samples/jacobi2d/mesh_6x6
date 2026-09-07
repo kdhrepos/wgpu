@@ -1,0 +1,20 @@
+#!/bin/bash
+go build
+
+N=4096
+STEPS=1
+
+./jacobi2d \
+    -n=$N \
+    -steps=$STEPS \
+    -timing \
+    -report-all \
+    -verbose \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Ydiv \
+    -xDim=6 \
+    -yDim=6

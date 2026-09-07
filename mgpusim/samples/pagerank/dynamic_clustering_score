@@ -1,0 +1,60 @@
+#!/bin/bash
+go build
+
+MAX_INST=30000000
+
+X_DIM=${1:-6}
+Y_DIM=$X_DIM
+
+NODE=${2:-2048}
+SPARSITY=0.5
+ITER=1
+
+# Probabilistic L2 hotness promotion on read hit (0 disables = original behavior).
+# Override with: PROMOTE=50 ./dynamic_clustering_score ...
+PROMOTE=${3:-0}
+
+# PC hotness classifier. "score" = weighted (reuse, sharing, hop) scoring with
+# hop-gated warm-up shrink; "threshold" = the original decision tree.
+# Override with: CLASSIFIER=threshold ./dynamic_clustering_score ...
+CLASSIFIER=${CLASSIFIER:-score}
+
+# Score-mode weights (only consulted when CLASSIFIER=score). Defaults match
+# the runner's CLI defaults. Override via env, e.g. WHOP=0.5 WARMUP=0.9 ...
+WREUSE=${WREUSE:-0.40}   # reuse weight
+WSHARE=${WSHARE:-0.30}   # sharing weight
+WHOP=${WHOP:-0.30}       # hop weight
+HOPREF=${HOPREF:-0}      # hop normalization ref (0 = auto: mesh diameter)
+WARMUP=${WARMUP:-0.7}    # hop-gated warm-up shrink (0 disables shrink)
+
+# Output filenames encode the PC classifier basis so score / threshold runs
+# do not overwrite each other.
+OUT=pagerank_dynamic_clustering_pc-$CLASSIFIER"_"$X_DIM"x"$Y_DIM
+
+./pagerank \
+    -benchmark=pagerank_test \
+    -node=$NODE \
+    -sparsity=$SPARSITY \
+    -iterations=$ITER \
+    -timing \
+    -fast-h2d \
+    -verbose \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=dynamic-clustering \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -xDim=$X_DIM \
+    -yDim=$Y_DIM \
+    -pc-classifier=$CLASSIFIER \
+    -pc-score-w-reuse=$WREUSE \
+    -pc-score-w-share=$WSHARE \
+    -pc-score-w-hop=$WHOP \
+    -pc-score-hop-ref=$HOPREF \
+    -pc-score-warmup-shrink=$WARMUP \
+    -metric-file-name=$OUT \
+    -trace-dist-filename=$OUT"_"dist_trace \
+    "$@"

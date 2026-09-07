@@ -1,0 +1,30 @@
+#!/bin/bash
+go build
+
+NPARTICLES=67108864
+ISZ_X=2048
+ISZ_Y=2048
+NFR=2
+
+MAX_INST=100000000
+
+./particlefilter \
+    -nparticles=$NPARTICLES \
+    -isz-x=$ISZ_X \
+    -isz-y=$ISZ_Y \
+    -nfr=$NFR \
+    -max-inst=$MAX_INST \
+    -timing \
+    -report-all \
+    -fast-h2d \
+    -verbose \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv,Xdiv,Xdiv \
+    -data-partitioning=kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide,kernel-wide \
+    -xDim=6 \
+    -yDim=6 \
+    "$@"

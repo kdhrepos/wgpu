@@ -1,0 +1,31 @@
+#!/bin/bash
+go build
+
+NAME=gramschmidt
+
+NI=1024
+NJ=1024
+K=1
+
+MAX_INST=10000000
+
+./$NAME \
+    -ni=$NI \
+    -nj=$NJ \
+    -k=$K \
+    -timing \
+    -report-all \
+    -max-inst=$MAX_INST \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -metric-file-name="${MAX_INST}_4x4_mesh" \
+    -sched-partition=Ydiv \
+    -trace-access-count-per-addrs=true \
+    -trace-access-count-per-addrs-filename="${NAME}_4x4_access_count" \
+    -trace-evicted-cacheline=true \
+    -trace-evicted-cacheline-filename="${NAME}_4x4_evicted_cachelines" \
+    -xDim=4 \
+    -yDim=4

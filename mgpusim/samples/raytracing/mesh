@@ -1,0 +1,28 @@
+#!/bin/bash
+go build
+
+WIDTH=1024
+HEIGHT=1024
+
+MAX_INST=30000000
+
+./raytracing \
+    -width=$WIDTH \
+    -height=$HEIGHT \
+    -timing \
+    -report-all \
+    -fast-h2d \
+    -verbose \
+    -no-progress-bar \
+    -platform-type=mesh \
+    -mem-allocator-type=lasp \
+    -use-lasp-mem-alloc \
+    -scheduling=lasp \
+    -sched-partition=Xdiv \
+    -data-partitioning=kernel-wide \
+    -metric-file-name=raytracing_mesh_6x6 \
+    -trace-memory-access \
+    -trace-memory-access-filename=raytracing_mesh_6x6_memory_trace \
+    -xDim=6 \
+    -yDim=6 \
+    "$@"
