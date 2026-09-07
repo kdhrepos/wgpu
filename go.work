@@ -1,0 +1,11 @@
+go 1.25.5
+
+use (
+	./akita
+	./lmf
+	./mem
+	./mgpusim
+	./noc
+	./protocol
+	./util
+)
