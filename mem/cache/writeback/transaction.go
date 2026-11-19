@@ -57,11 +57,6 @@ type transaction struct {
 	// cycle, which would otherwise inflate the count by the stall duration).
 	failTraced bool
 
-	// fetchSentTime: when this L2 miss was sent below (DRAM or RDMA).
-	// Used to measure the below-L2 round-trip, split local (DRAM) vs
-	// remote (RDMA/network) in the response handlers.
-	fetchSentTime akita.VTimeInSec
-
 	// mshrBlockedAt is the simulation time when this transaction first hit
 	// a full MSHR (mshr-fail). Non-zero iff the transaction stalled waiting
 	// for an MSHR slot; cleared implicitly once the transaction advances.

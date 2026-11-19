@@ -291,7 +291,6 @@ func (wb *writeBufferStage) fetchFromBottom(
 	}
 
 	trans.fetchReadReq = read
-	trans.fetchSentTime = now
 	// wb.inflightFetch = append(wb.inflightFetch, trans)
 	wb.inflightFetch.Push(trans)
 
@@ -426,11 +425,6 @@ func (wb *writeBufferStage) processDataReadyRspFromDram(
 	wb.removeInflightFetch(trans)
 	wb.cache.BottomToDramPort.Retrieve(now)
 
-	if trans.fetchSentTime != 0 {
-		wb.cache.LocalWaitSum += now - trans.fetchSentTime
-		wb.cache.LocalWaitCount++
-	}
-
 	tracing.TraceReqFinalize(trans.fetchReadReq, now, wb.cache)
 
 	return true
@@ -506,11 +500,6 @@ func (wb *writeBufferStage) processDataReadyRspFromRdma(
 
 	wb.removeInflightFetch(trans)
 	wb.cache.BottomToRdmaPort.Retrieve(now)
-
-	if trans.fetchSentTime != 0 {
-		wb.cache.RemoteWaitSum += now - trans.fetchSentTime
-		wb.cache.RemoteWaitCount++
-	}
 
 	tracing.TraceReqFinalize(trans.fetchReadReq, now, wb.cache)
 

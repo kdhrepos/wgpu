@@ -87,14 +87,6 @@ type Cache struct {
 
 	numToRemote uint64
 
-	// below-L2 round-trip split (per L2 miss): time from sending the fetch
-	// below to receiving the response. Local = DRAM, Remote = RDMA/network.
-	// Remote is the inter-chiplet network round-trip (the mesh-vs-ideal lever).
-	LocalWaitSum    akita.VTimeInSec
-	LocalWaitCount  uint64
-	RemoteWaitSum   akita.VTimeInSec
-	RemoteWaitCount uint64
-
 	// only used for memory trace
 	virtualAddrTable    lmf.LowModuleFinder
 	HomeNodeFinder      *lmf.HomeNodeFinder

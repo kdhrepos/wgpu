@@ -17,20 +17,11 @@ type transaction struct {
 	translationReq  *device.TranslationReq
 	translationRsp  *device.TranslationRsp
 	translationDone bool
-
-	arriveTime   akita.VTimeInSec // req.SendTime (ROB forwarded)
-	pickTime     akita.VTimeInSec // translate() picked it from TopPort
-	xlatDoneTime akita.VTimeInSec // parseTranslation() got the rsp
 }
 
 type reqToBottom struct {
 	reqFromTop  protocol.AccessReq
 	reqToBottom protocol.AccessReq
-
-	arriveTime   akita.VTimeInSec
-	pickTime     akita.VTimeInSec
-	xlatDoneTime akita.VTimeInSec
-	dataSentTime akita.VTimeInSec // sendToBottom forwarded data req to L1V
 }
 
 // AddressTranslator is a element that is being simulated in Akita.
@@ -65,25 +56,6 @@ type DefaultAddressTranslator struct {
 
 	transactions        []*transaction
 	inflightReqToBottom []reqToBottom
-
-	// ServiceSum/ServiceCount: per-request time from arrival (req.SendTime,
-	// set by the ROB when it forwarded) to the translated req being sent to
-	// the L1V — i.e. the address-translation (TLB lookup / page walk) stage.
-	ServiceSum   akita.VTimeInSec
-	ServiceCount uint64
-
-	// Fine breakdown of one req's residency inside the AT. The first three
-	// sum to ServiceSum (the translation stage); DataRTSum is the data
-	// round-trip below the AT (L1V$ + L2$ + network + DRAM) as the AT sees it.
-	//   IngressQSum   = pick    - arrive    (wait in AT.TopPort queue)
-	//   XlatRTSum     = xlatDone - pick      (L1TLB + L2TLB + MMU round-trip)
-	//   EgressBlockSum= dataSent - xlatDone  (blocked on L1V$ accepting)
-	//   DataRTSum     = dataDone - dataSent  (data fetch round-trip)
-	IngressQSum    akita.VTimeInSec
-	XlatRTSum      akita.VTimeInSec
-	EgressBlockSum akita.VTimeInSec
-	DataRTSum      akita.VTimeInSec
-	DataRTCount    uint64
 }
 
 // DeadlockSummary reports per-port pending flags + in-flight req counts.
@@ -207,8 +179,6 @@ func (t *DefaultAddressTranslator) translate(now akita.VTimeInSec) bool {
 	translation := &transaction{
 		incomingReqs:   []protocol.AccessReq{req},
 		translationReq: transReq,
-		arriveTime:     req.Meta().SendTime,
-		pickTime:       now,
 	}
 	t.transactions = append(t.transactions, translation)
 
@@ -255,7 +225,6 @@ func (t *DefaultAddressTranslator) parseTranslation(now akita.VTimeInSec) bool {
 
 	transaction.translationRsp = transRsp
 	transaction.translationDone = true
-	transaction.xlatDoneTime = now
 
 	t.TranslationPort.Retrieve(now)
 
@@ -288,22 +257,10 @@ func (t *DefaultAddressTranslator) sendToBottom(now akita.VTimeInSec) bool {
 				return false
 			}
 
-			if a := transaction.arriveTime; a != 0 {
-				t.ServiceSum += now - a
-				t.ServiceCount++
-				t.IngressQSum += transaction.pickTime - a
-				t.XlatRTSum += transaction.xlatDoneTime - transaction.pickTime
-				t.EgressBlockSum += now - transaction.xlatDoneTime
-			}
-
 			t.inflightReqToBottom = append(t.inflightReqToBottom,
 				reqToBottom{
-					reqFromTop:   reqFromTop,
-					reqToBottom:  translatedReq,
-					arriveTime:   transaction.arriveTime,
-					pickTime:     transaction.pickTime,
-					xlatDoneTime: transaction.xlatDoneTime,
-					dataSentTime: now,
+					reqFromTop:  reqFromTop,
+					reqToBottom: translatedReq,
 				})
 			transaction.incomingReqs = transaction.incomingReqs[1:]
 			if len(transaction.incomingReqs) == 0 {
@@ -367,11 +324,6 @@ func (t *DefaultAddressTranslator) respond(now akita.VTimeInSec) bool {
 		}
 
 		t.removeReqToBottomByID(rsp.(protocol.AccessRsp).GetRespondTo())
-
-		if d := reqToBottomCombo.dataSentTime; d != 0 {
-			t.DataRTSum += now - d
-			t.DataRTCount++
-		}
 
 		tracing.AddTaskStep(
 			tracing.AddrTransStatsTaskID(reqToBottomCombo.reqFromTop.Meta().ID),

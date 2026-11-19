@@ -205,8 +205,6 @@ var useUnifiedMemoryFlag = flag.Bool("use-unified-memory", false,
 	"Run benchmark with Unified Memory or not")
 var reportAll = flag.Bool("report-all", false, "Report all metrics to .csv file.")
 var reportEssential = flag.Bool("report-essential", false, "Report essential metrics to .csv file.")
-var reportWarpStallFlag = flag.Bool("report-warp-stall", false,
-	"Report per-CU warp stall breakdown and average memory request latency.")
 var filenameFlag = flag.String("metric-file-name", "metrics",
 	"Modify the name of the output csv file.")
 var platformType = flag.String("platform-type", "mesh",
@@ -529,7 +527,6 @@ type Runner struct {
 	ReportTLBMSHRStallTracing       bool
 	ReportTLBReqStalls              bool
 	ReportTLBMSHRWait               bool
-	ReportWarpStall                 bool
 	UseUnifiedMemory                bool
 	UseLASPMemoryAlloc              bool
 	metricsCollector                *collector
@@ -772,13 +769,8 @@ func (r *Runner) ParseFlag() *Runner {
 		r.TracePortQueue = true
 	}
 
-	if *reportWarpStallFlag {
-		r.ReportWarpStall = true
-	}
-
 	if *reportAll {
 		r.ReportInstCount = true
-		r.ReportWarpStall = true
 		r.ReportCacheLatency = true
 		// r.ReportTLBLatency = true
 		// r.ReportPageWalkLatency = true
@@ -876,7 +868,6 @@ func (r *Runner) Init() *Runner {
 	r.addMaxInstStopper()
 	r.addKernelTimeTracer()
 	r.addInstCountTracer()
-	r.enableWarpStallTracing()
 	r.addCacheLatencyTracer()
 	r.addDRAMLatencyTracer()
 	r.addDRAMTracer()
@@ -1182,7 +1173,6 @@ func (r *Runner) collectAllMetrics() {
 	r.reportDispatchProgress()   // always-on WG progress (no flag)
 	r.reportWorkgroupDimension() // custom tracer
 	r.reportInstCount()
-	r.reportWarpStall()
 	r.reportDRAMTransactionCount()
 	r.reportPageWalkLatency()
 	r.reportCacheLatency()

@@ -165,28 +165,6 @@ type ComputeUnit struct {
 	currentFlushReq   *coreprotocol.CUPipelineFlushReq
 	currentRestartReq *coreprotocol.CUPipelineRestartReq
 
-	// Warp stall tracing — enabled via -report-warp-stall.
-	EnableStallTracing bool
-	lastStallSampledAt akita.VTimeInSec
-	StallCounters      [NumStallReasons]uint64 // total cycles spent in each stall reason (wf-cycle sum)
-	StallEventCount    [NumStallReasons]uint64 // number of times a wf entered each stall reason
-	CUStateCounters    [NumCUStates]uint64
-	VMemLatSum         akita.VTimeInSec
-	VMemLatCount       uint64
-	SMemLatSum         akita.VTimeInSec
-	SMemLatCount       uint64
-
-	// vmem latency decomposition (gated by EnableStallTracing):
-	// VMemQueueSum = IssueTime → DispatchTime  (CU-side queue/backpressure
-	//   before the transaction is accepted into the memory hierarchy)
-	// VMemMemSum   = DispatchTime → return     (ROB + L1 + L2 + network +
-	//   DRAM round-trip once dispatched)
-	// vmemDispatchTime maps a sent vmem request ID to its dispatch time.
-	VMemQueueSum     akita.VTimeInSec
-	VMemMemSum       akita.VTimeInSec
-	VMemSplitCount   uint64
-	vmemDispatchTime map[uint64]akita.VTimeInSec
-
 	// vgprLoadWrite records the last vector-memory load that wrote each VGPR,
 	// keyed by "SIMD/waveOffset/lane/regIndex". Debug-only (-ooo-debug): used by
 	// dumpAddrVGPRProvenance to explain a stale/NULL FLAT address register —
@@ -703,11 +681,6 @@ func (cu *ComputeUnit) handleScalarDataLoadReturn(
 	cu.logInstTask(now, wf, info.Inst, true)
 	tracing.TraceReqFinalize(req, now, cu)
 
-	if cu.EnableStallTracing {
-		cu.SMemLatSum += now - info.IssueTime
-		cu.SMemLatCount++
-	}
-
 	if cu.isLastRead(req) {
 		wf.OutstandingScalarMemAccess--
 	}
@@ -809,12 +782,6 @@ func (cu *ComputeUnit) handleVectorDataLoadReturn(
 		cu.InFlightVectorMemAccess[:idx],
 		cu.InFlightVectorMemAccess[idx+1:]...)
 	tracing.TraceReqFinalize(info.Read, now, cu)
-
-	if cu.EnableStallTracing {
-		cu.VMemLatSum += now - info.IssueTime
-		cu.VMemLatCount++
-		cu.recordVMemSplit(now, rsp.RespondTo, info.IssueTime)
-	}
 
 	for _, laneInfo := range info.laneInfo {
 		offset := laneInfo.addrOffsetInCacheLine
@@ -1231,12 +1198,6 @@ func (cu *ComputeUnit) handleVectorDataStoreRsp(
 		cu.InFlightVectorMemAccess[idx+1:]...)
 	tracing.TraceReqFinalize(info.Write, now, cu)
 
-	if cu.EnableStallTracing {
-		cu.VMemLatSum += now - info.IssueTime
-		cu.VMemLatCount++
-		cu.recordVMemSplit(now, rsp.RespondTo, info.IssueTime)
-	}
-
 	if cu.instFullyReturned(inst) {
 		cu.retireVMemInsts(now, wf, inst)
 	}
@@ -1265,41 +1226,6 @@ func (cu *ComputeUnit) flushCUBuffers() {
 	cu.InFlightInstFetch = nil
 	cu.InFlightScalarMemAccess = nil
 	cu.InFlightVectorMemAccess = nil
-	// Drop stale dispatch timestamps: their transactions were flushed and
-	// will be re-issued with fresh IDs, so the old keys would never return.
-	if cu.vmemDispatchTime != nil {
-		for k := range cu.vmemDispatchTime {
-			delete(cu.vmemDispatchTime, k)
-		}
-	}
-}
-
-// noteVMemDispatch stamps the dispatch time of a vmem request when it is
-// successfully sent toward the memory hierarchy. Gated by EnableStallTracing.
-func (cu *ComputeUnit) noteVMemDispatch(id uint64, now akita.VTimeInSec) {
-	if !cu.EnableStallTracing || cu.vmemDispatchTime == nil {
-		return
-	}
-	cu.vmemDispatchTime[id] = now
-}
-
-// recordVMemSplit splits one completed vmem transaction's latency into the
-// CU-side queue portion (issue → dispatch) and the memory-hierarchy portion
-// (dispatch → return). Caller already checked EnableStallTracing.
-func (cu *ComputeUnit) recordVMemSplit(
-	now akita.VTimeInSec, id uint64, issueTime akita.VTimeInSec,
-) {
-	if cu.vmemDispatchTime == nil {
-		return
-	}
-	dt, ok := cu.vmemDispatchTime[id]
-	if !ok {
-		return
-	}
-	cu.VMemQueueSum += dt - issueTime
-	cu.VMemMemSum += now - dt
-	cu.VMemSplitCount++
-	delete(cu.vmemDispatchTime, id)
 }
 
 func (cu *ComputeUnit) logInstTask(
@@ -1429,7 +1355,6 @@ func (cu *ComputeUnit) sendVectorShadowBufferAccesses(
 			req.SendTime = now
 			err := cu.ToVectorMem.Send(req)
 			if err == nil {
-				cu.noteVMemDispatch(req.ID, now)
 				cu.InFlightVectorMemAccess = append(
 					cu.InFlightVectorMemAccess, info)
 				cu.shadowInFlightVectorMemAccess = cu.shadowInFlightVectorMemAccess[1:]
@@ -1441,7 +1366,6 @@ func (cu *ComputeUnit) sendVectorShadowBufferAccesses(
 			req.SendTime = now
 			err := cu.ToVectorMem.Send(req)
 			if err == nil {
-				cu.noteVMemDispatch(req.ID, now)
 				cu.InFlightVectorMemAccess = append(cu.InFlightVectorMemAccess, info)
 				cu.shadowInFlightVectorMemAccess = cu.shadowInFlightVectorMemAccess[1:]
 				return true
@@ -1515,139 +1439,4 @@ func NewComputeUnit(
 	cu.ToCP = akita.NewLimitNumMsgPort(cu, 4, name+".ToCP")
 
 	return cu
-}
-
-// StallReason classifies why a wavefront could not issue on a given cycle.
-// Categories are mutually exclusive; classifyStall picks one per (wf, cycle).
-type StallReason int
-
-const (
-	StallRunning StallReason = iota
-	StallBarrier
-	StallFetchInflight
-	StallInstBufferEmpty
-	StallMemWaitVMem
-	StallMemWaitLGKM
-	StallExeUnitBusy
-	StallOther
-	NumStallReasons
-)
-
-var stallReasonNames = [NumStallReasons]string{
-	"running",
-	"barrier",
-	"fetch_inflight",
-	"inst_buffer_empty",
-	"mem_wait_vmem",
-	"mem_wait_lgkm",
-	"exe_unit_busy",
-	"other",
-}
-
-// String returns the metric-suffix used in the CSV ("stall_<name>").
-func (r StallReason) String() string {
-	if r < 0 || r >= NumStallReasons {
-		return "unknown"
-	}
-	return stallReasonNames[r]
-}
-
-// CUState classifies the CU as a whole on a given cycle, so we can quantify
-// latency hiding. The four categories are mutually exclusive and their sum
-// equals the simulated cycle count.
-type CUState int
-
-const (
-	CUIssueActive  CUState = iota // any wf issued this cycle -> memory wait hidden
-	CUMemExposed                  // no wf issued, but at least one wf has outstanding mem -> exposed memory latency
-	CUOtherStalled                // no wf issued, no wf waiting on memory -> barrier/fetch/etc.
-	CUIdle                        // no wavefronts dispatched on this CU
-	NumCUStates
-)
-
-var cuStateNames = [NumCUStates]string{
-	"issue_active",
-	"mem_exposed",
-	"other_stalled",
-	"idle",
-}
-
-// String returns the metric-suffix used in the CSV ("cu_<name>").
-func (s CUState) String() string {
-	if s < 0 || s >= NumCUStates {
-		return "unknown"
-	}
-	return cuStateNames[s]
-}
-
-func classifyStall(wf *wavefront.Wavefront, now akita.VTimeInSec) StallReason {
-	if wf.LastIssueCycle == now {
-		return StallRunning
-	}
-	if wf.State == wavefront.WfAtBarrier {
-		return StallBarrier
-	}
-	if wf.IsFetching {
-		return StallFetchInflight
-	}
-	if wf.State == wavefront.WfReady && wf.InstToIssue == nil && len(wf.InstBuffer) == 0 {
-		return StallInstBufferEmpty
-	}
-	if wf.OutstandingVectorMemAccess > 0 {
-		return StallMemWaitVMem
-	}
-	if wf.OutstandingScalarMemAccess > 0 {
-		return StallMemWaitLGKM
-	}
-	if wf.InstToIssue != nil {
-		return StallExeUnitBusy
-	}
-	return StallOther
-}
-
-// SampleStallReasons walks all wavefronts on the CU and tallies one bucket
-// per (wf, cycle). It also tallies one CU-level state bucket per cycle, so
-// the four CUStateCounters sum to the simulated cycle count of the CU.
-// Safe to call multiple times per cycle: the second call short-circuits.
-func (cu *ComputeUnit) SampleStallReasons(now akita.VTimeInSec) {
-	if !cu.EnableStallTracing {
-		return
-	}
-	if cu.lastStallSampledAt == now {
-		return
-	}
-	cu.lastStallSampledAt = now
-
-	issueHappened := false
-	anyDispatched := false
-	anyMemWait := false
-	for _, pool := range cu.WfPools {
-		for _, wf := range pool.wfs {
-			anyDispatched = true
-			reason := classifyStall(wf, now)
-			cu.StallCounters[reason]++
-			if int(reason) != wf.PrevStallReason {
-				// transition: a new stall (or running) episode just began
-				cu.StallEventCount[reason]++
-				wf.PrevStallReason = int(reason)
-			}
-			if reason == StallRunning {
-				issueHappened = true
-			}
-			if wf.OutstandingVectorMemAccess > 0 || wf.OutstandingScalarMemAccess > 0 {
-				anyMemWait = true
-			}
-		}
-	}
-
-	switch {
-	case !anyDispatched:
-		cu.CUStateCounters[CUIdle]++
-	case issueHappened:
-		cu.CUStateCounters[CUIssueActive]++
-	case anyMemWait:
-		cu.CUStateCounters[CUMemExposed]++
-	default:
-		cu.CUStateCounters[CUOtherStalled]++
-	}
 }

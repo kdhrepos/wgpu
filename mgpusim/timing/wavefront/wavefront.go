@@ -61,9 +61,6 @@ type Wavefront struct {
 	// instruction that finishes first must be held until all older ones retire.
 	vmemIssueOrder []*Inst
 	vmemCompleted  map[*Inst]bool
-
-	LastIssueCycle  akita.VTimeInSec
-	PrevStallReason int // last classified StallReason; -1 = unset
 }
 
 // VMemIssueOrder returns a snapshot of unretired vmem insts in issue order.
@@ -123,7 +120,6 @@ func NewWavefront(raw *kernels.Wavefront) *Wavefront {
 
 	wf.scratchpad = make([]byte, 4096)
 	wf.InstBuffer = make([]byte, 0, 256)
-	wf.PrevStallReason = -1
 
 	return wf
 }

@@ -66,7 +66,6 @@ func (s *SchedulerImpl) Run(now akita.VTimeInSec) bool {
 		madeProgress = s.DoIssue(now) || madeProgress
 		madeProgress = s.DoFetch(now) || madeProgress
 	}
-	s.cu.SampleStallReasons(now)
 	if !madeProgress {
 		s.cyclesNoProgress++
 	} else {
@@ -185,7 +184,6 @@ func (s *SchedulerImpl) DoIssue(now akita.VTimeInSec) bool {
 
 				unit.AcceptWave(wf, now)
 				wf.State = wavefront.WfRunning
-				wf.LastIssueCycle = now
 				//s.removeStaleInstBuffer(wf)
 
 				madeProgress = true
@@ -200,7 +198,6 @@ func (s *SchedulerImpl) issueToInternal(wf *wavefront.Wavefront, now akita.VTime
 	wf.InstToIssue = nil
 	s.internalExecuting = append(s.internalExecuting, wf)
 	wf.State = wavefront.WfRunning
-	wf.LastIssueCycle = now
 	//s.removeStaleInstBuffer(wf)
 
 	s.cu.logInstTask(now, wf, wf.DynamicInst(), false)

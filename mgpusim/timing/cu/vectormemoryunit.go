@@ -430,8 +430,6 @@ func (u *VectorMemoryUnit) sendRequest(now akita.VTimeInSec) bool {
 		u.postTransactionPipelineBuffer.Pop()
 		u.numTransactionInFlight--
 
-		u.cu.noteVMemDispatch(req.Meta().ID, now)
-
 		tracing.TraceReqInitiate(req, now, u.cu, info.Inst.ID)
 
 		// if info.Read != nil {

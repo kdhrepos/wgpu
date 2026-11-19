@@ -18,22 +18,6 @@ import (
 	"gitlab.com/akita/util/tracing"
 )
 
-// enableWarpStallTracing turns on per-CU warp stall and memory latency
-// counters when -report-warp-stall is set. The counters are dumped at the
-// end of simulation by reportWarpStall().
-func (r *Runner) enableWarpStallTracing() {
-	if !r.ReportWarpStall {
-		return
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, comp := range gpu.CUs {
-			if c, ok := comp.(*cupkg.ComputeUnit); ok {
-				c.EnableStallTracing = true
-			}
-		}
-	}
-}
-
 func (r *Runner) addLocalRemoteTracer() {
 	r.LocalRemoteTracer = tracing.NewLocalRemoteTracer()
 

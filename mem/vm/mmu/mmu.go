@@ -53,8 +53,6 @@ type transaction struct {
 	PPN               uint64
 	vAddr             uint64
 	remoteMemAccesses int
-	startTime         akita.VTimeInSec // parseFromTop accepted the walk
-	lastReqTime       akita.VTimeInSec // when current PWC/mem read was sent
 }
 
 // MMUImpl is the default mmu implementation. It is also an akita Component.
@@ -77,21 +75,6 @@ type MMUImpl struct {
 	pageTable *device.PageTableImpl
 	//	latency             int
 	maxRequestsInFlight int
-
-	// WalkSum/WalkCount: per-walk service time inside the MMU, from
-	// parseFromTop accepting the walk to doPageWalkHit sending the response
-	// (PWC lookups + PTE fetch + network). Isolates the walk itself from the
-	// queueing to enter the MMU.
-	WalkSum   akita.VTimeInSec
-	WalkCount uint64
-
-	// Per-round-trip split of a walk. PwcWaitSum/PwcReqCount = PWC lookups;
-	// MemWaitSum/MemReqCount = page-table memory (L2$/DRAM) reads. Counts
-	// tell how many of each happen per walk; sums give avg round-trip time.
-	PwcWaitSum  akita.VTimeInSec
-	PwcReqCount uint64
-	MemWaitSum  akita.VTimeInSec
-	MemReqCount uint64
 
 	walkingTranslations []transaction
 
@@ -203,12 +186,11 @@ func (mmu *MMUImpl) startWalking(req *device.TranslationReq, now akita.VTimeInSe
 	translationInPipeline := transaction{
 		req: req,
 		//cycleLeft: mmu.latency,
-		level:     0,
-		msgID:     0,
-		state:     newTransaction,
-		vAddr:     rearrangedVAddr,
-		PPN:       root,
-		startTime: now,
+		level: 0,
+		msgID: 0,
+		state: newTransaction,
+		vAddr: rearrangedVAddr,
+		PPN:   root,
 	}
 
 	mmu.walkingTranslations = append(mmu.walkingTranslations, translationInPipeline)
@@ -277,11 +259,6 @@ func (mmu *MMUImpl) handleMemResponse(rsp *protocol.DataReadyRsp, now akita.VTim
 				now,
 				mmu,
 			)
-
-			if trans.lastReqTime != 0 {
-				mmu.MemWaitSum += now - trans.lastReqTime
-				mmu.MemReqCount++
-			}
 
 			rawPPN := binary.LittleEndian.Uint64(rsp.Data)
 			trans.PPN = rawPPN
@@ -353,10 +330,6 @@ func (mmu *MMUImpl) doPageWalkHit(
 		Build()
 
 	mmu.topSender.Send(rsp)
-	if walking.startTime != 0 {
-		mmu.WalkSum += now - walking.startTime
-		mmu.WalkCount++
-	}
 	// mmu.toRemoveFromPTW = append(mmu.toRemoveFromPTW, walkingIndex)
 	// tracing.StartTracingNetworkReq(rsp, now, mmu, walking.req)
 	tracing.TraceReqComplete(walking.req, now, mmu)
@@ -423,10 +396,6 @@ func (mmu *MMUImpl) handlePageWalkCacheResponse(
 				}
 			}
 			trans.state = pageWalkCacheDone
-			if trans.lastReqTime != 0 {
-				mmu.PwcWaitSum += now - trans.lastReqTime
-				mmu.PwcReqCount++
-			}
 			//trace point
 		}
 	}
@@ -487,7 +456,6 @@ func (mmu *MMUImpl) sendToPageWalkCache(now akita.VTimeInSec, i int) bool {
 	err := mmu.pageWalkCachePort.Send(readReq)
 	if err == nil {
 		trans.state = sentToPageWalkCache
-		trans.lastReqTime = now
 
 		return true
 	}
@@ -589,7 +557,6 @@ func (mmu *MMUImpl) sendToMem(now akita.VTimeInSec, i int) bool {
 		)
 
 		trans.state = sentToMem
-		trans.lastReqTime = now
 		trans.vAddr = mmu.pageTable.NextLevel(trans.vAddr)
 
 		return true

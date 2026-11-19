@@ -15,23 +15,8 @@ type transaction struct {
 	reqToBottom   protocol.AccessReq
 	rspFromBottom protocol.AccessRsp
 
-	// timestamps for the deschedule-independent latency split:
-	//   entryWait    = topDown time - req.SendTime (waited at ROB.TopPort
-	//                  for room; ROB-full backpressure)
-	//   sentToBottom = topDown forwarded the req downstream
-	//   rspArrive    = parseBottom received the response
-	// downstream round-trip = rspArrive - sentToBottom (AT+L1V+L2+net+DRAM)
-	// in-order ROB hold     = release - rspArrive (waiting to reach FIFO head)
-	entryWait    akita.VTimeInSec
-	sentToBottom akita.VTimeInSec
-	rspArrive    akita.VTimeInSec
-
-	// wfID is the issuing wavefront (from the request). blockedCrossWf is set
-	// when this transaction's response arrived while a DIFFERENT wavefront's
-	// transaction occupied the FIFO head — i.e. its hold time is head-of-line
-	// blocking that a per-wavefront ROB split would eliminate.
-	wfID           string
-	blockedCrossWf bool
+	// wfID is the issuing wavefront (from the request).
+	wfID string
 }
 
 // ReorderBuffer can maintain the returning order of memory transactions.
@@ -68,27 +53,6 @@ type ReorderBuffer struct {
 	wfOrder          []string // insertion order of distinct wfIDs (stale entries skipped)
 	wfCursor         int      // round-robin scan start position
 	totalLen         int      // aggregate count across sub-FIFOs (for isFull)
-
-	// Per-transaction latency split (deschedule-independent: stamped at
-	// event time, not sampled per tick). Accumulated at retirement:
-	//   DownstreamSum = Σ (rspArrive - sentToBottom)  memory round-trip
-	//                   below the ROB (AT + L1V + L2 + network + DRAM)
-	//   HoldSum       = Σ (release  - rspArrive)       in-order ROB hold:
-	//                   data already back but waiting to reach the FIFO head
-	//   RetireCount   = number of transactions retired
-	// Hold/(Downstream+Hold) tells us how much of vmem latency is ROB
-	// head-of-line blocking vs the actual memory round-trip.
-	EntrySum      akita.VTimeInSec
-	DownstreamSum akita.VTimeInSec
-	HoldSum       akita.VTimeInSec
-	RetireCount   uint64
-
-	// HoldCrossWfSum / HoldIntraWfSum split HoldSum by whether the hold was
-	// caused by a different wavefront occupying the head (cross) or the same
-	// wavefront / no other-wf blocker (intra). HoldCrossWf/(Hold) estimates how
-	// much rob_hold a per-wavefront ROB split would remove.
-	HoldCrossWfSum akita.VTimeInSec
-	HoldIntraWfSum akita.VTimeInSec
 
 	// readyElems is a queue of elements in `transactions` whose rspFromBottom
 	// has arrived. Used only when !perWfSubFifo && outOfOrder to avoid the
@@ -287,10 +251,6 @@ func (b *ReorderBuffer) topDown(now akita.VTimeInSec) bool {
 		return false
 	}
 
-	trans.sentToBottom = now
-	if st := req.Meta().SendTime; st != 0 {
-		trans.entryWait = now - st
-	}
 	b.addTransaction(trans)
 	b.TopPort.Retrieve(now)
 
@@ -315,16 +275,6 @@ func (b *ReorderBuffer) parseBottom(now akita.VTimeInSec) bool {
 	if found {
 		trans := transElement.Value.(*transaction)
 		trans.rspFromBottom = rsp
-		trans.rspArrive = now
-
-		if !b.perWfSubFifo {
-			if front := b.transactions.Front(); front != nil {
-				headTrans := front.Value.(*transaction)
-				if headTrans != trans && headTrans.wfID != trans.wfID {
-					trans.blockedCrossWf = true
-				}
-			}
-		}
 		if b.outOfOrder {
 			b.readyElems = append(b.readyElems, transElement)
 		}
@@ -414,19 +364,6 @@ func (b *ReorderBuffer) bottomUp(now akita.VTimeInSec) bool {
 
 	if b.perWfSubFifo && chosenSubIdx >= 0 {
 		b.wfCursor = (chosenSubIdx + 1) % len(b.wfOrder)
-	}
-
-	if trans.sentToBottom != 0 && trans.rspArrive != 0 {
-		b.EntrySum += trans.entryWait
-		b.DownstreamSum += trans.rspArrive - trans.sentToBottom
-		holdTime := now - trans.rspArrive
-		b.HoldSum += holdTime
-		if trans.blockedCrossWf {
-			b.HoldCrossWfSum += holdTime
-		} else {
-			b.HoldIntraWfSum += holdTime
-		}
-		b.RetireCount++
 	}
 
 	b.deleteTransaction(elem)

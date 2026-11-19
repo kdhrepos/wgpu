@@ -105,7 +105,6 @@ func (b *Builder) Build(name string) *ComputeUnit {
 	cu.Decoder = insts.NewDisassembler()
 	cu.WfDispatcher = NewWfDispatcher(cu)
 	cu.InFlightVectorMemAccessLimit = 512
-	cu.vmemDispatchTime = make(map[uint64]akita.VTimeInSec)
 
 	b.alu = emu.NewALU(nil)
 	b.scratchpadPreparer = NewScratchpadPreparerImpl(cu)

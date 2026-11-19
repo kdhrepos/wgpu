@@ -89,11 +89,6 @@ func (p *bottomParser) processDataReady(
 	p.removeTransaction(trans)
 	p.cache.BottomPort.Retrieve(now)
 
-	if st := trans.readToBottom.Meta().SendTime; st != 0 {
-		p.cache.BelowWaitSum += now - st
-		p.cache.BelowWaitCount++
-	}
-
 	tracing.TraceReqFinalize(trans.readToBottom, now, p.cache)
 
 	return true

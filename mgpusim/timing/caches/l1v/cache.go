@@ -43,13 +43,6 @@ type Cache struct {
 	isPaused bool
 
 	chipletId uint64
-
-	// below-L1V wait: per L1 miss, time from sending the fetch to L2
-	// (readToBottom.SendTime) until the L2/remote response returns. This is
-	// the L2 + network + DRAM portion of the downstream round-trip, measured
-	// at the L1V so we can split "downstream" into L1V-local vs below-L1V.
-	BelowWaitSum   akita.VTimeInSec
-	BelowWaitCount uint64
 }
 
 // DeadlockSummary reports every port + every internal buffer that can hold
