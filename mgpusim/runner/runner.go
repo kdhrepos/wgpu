@@ -213,8 +213,8 @@ var reportWarpStallFlag = flag.Bool("report-warp-stall", false,
 	"Report per-CU warp stall breakdown and average memory request latency.")
 var filenameFlag = flag.String("metric-file-name", "metrics",
 	"Modify the name of the output csv file.")
-var platformType = flag.String("platform-type", "mcmgpu",
-	"Name of the platform to build (ideal, mcmgpu, distlb, etc)")
+var platformType = flag.String("platform-type", "mesh",
+	"Name of the platform to build (mesh, ideal)")
 var schedulingAlg = flag.String("scheduling", "chiplet-aware",
 	"Name of the scheduling algorithm to use (chiplet-aware, greedy, round-robin, lasp)")
 var useCoalescingRTU = flag.Bool("use-coalescing-rtu", false,

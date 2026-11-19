@@ -46,7 +46,9 @@ func NewDeviceMemoryState(
 	// }
 
 	switch memAllocatorType {
-	case "default" /*AllocatorTypeDefault*/ :
+	case "default", "interleaved":
+		// Sequential page allocation; chiplet interleaving comes from the
+		// striped physical address mapping.
 		return newDeviceRegularMemoryState(log2pagesize)
 	// case "buddy" /*AllocatorTypeBuddy*/ :
 	// return newDeviceBuddyMemoryState(log2pagesize)
