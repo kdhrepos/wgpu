@@ -22,8 +22,7 @@ type Builder struct {
 	numDispatchers  int
 	schedulingAlg   string
 
-	partition         string
-	customHSLpmdUnits uint64
+	partition string
 
 	numChiplets uint64
 }
@@ -71,12 +70,6 @@ func (b Builder) WithAlg(alg string) Builder {
 // WithAlg sets the scheduling algorithm.
 func (b Builder) WithPartition(partition string) Builder {
 	b.partition = partition
-	return b
-}
-
-// WithAlg sets the scheduling algorithm.
-func (b Builder) WithCustomHSLpmdUnits(customHSLpmdUnits uint64) Builder {
-	b.customHSLpmdUnits = customHSLpmdUnits
 	return b
 }
 
@@ -133,8 +126,6 @@ func (b Builder) Build(name string) *CommandProcessor {
 		make(map[uint64]*coreprotocol.MemCopyD2HReq)
 
 	b.buildDispatchers(cp)
-
-	cp.customHSLpmdUnits = b.customHSLpmdUnits
 
 	if b.visTracer != nil {
 		tracing.CollectTrace(cp, b.visTracer)

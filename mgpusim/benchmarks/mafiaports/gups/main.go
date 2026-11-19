@@ -34,9 +34,8 @@ type Benchmark struct {
 	DevTable, DevStarts            driver.GPUPtr
 	HostTable, HostStarts          []uint64
 
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 }
 
 // NewBenchmark makes a new benchmark
@@ -63,11 +62,6 @@ func (b *Benchmark) SetUnifiedMemory() {
 // SetLASPMemoryAlloc use Unified Memory
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
-}
-
-// SetLASPMemoryAlloc use Unified Memory
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
 }
 
 func (b *Benchmark) loadProgram() {
@@ -174,9 +168,6 @@ func (b *Benchmark) initMem() {
 		b.DevTable = b.driver.AllocateUnifiedMemory(b.context, uint64(size))
 		b.DevStarts = b.driver.AllocateUnifiedMemory(b.context, uint64(startsSize))
 	} else if b.useLASPMemoryAlloc {
-		b.DevTable = b.driver.AllocateMemoryLASP(b.context, uint64(size), "div4")
-		b.DevStarts = b.driver.AllocateMemoryLASP(b.context, uint64(startsSize), "div4")
-	} else if b.useLASPHSLMemoryAlloc {
 		b.DevTable = b.driver.AllocateMemoryLASP(b.context, uint64(size), "div4")
 		b.DevStarts = b.driver.AllocateMemoryLASP(b.context, uint64(startsSize), "div4")
 	} else {

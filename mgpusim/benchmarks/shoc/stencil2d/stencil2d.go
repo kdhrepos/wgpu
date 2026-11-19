@@ -65,10 +65,8 @@ type Benchmark struct {
 	pad                           int
 	localRows, localCols          int
 
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
-	useCustomHSL          bool
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 }
 
 // NewBenchmark returns a benchmark
@@ -100,15 +98,6 @@ func (b *Benchmark) SetUnifiedMemory() {
 // SetLASPMemoryAlloc use Unified Memory
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
-}
-
-// SetLASPMemoryAlloc use Unified Memory
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
-}
-
-func (b *Benchmark) SetCustomHSL() {
-	b.useCustomHSL = true
 }
 
 //go:embed kernels.hsaco
@@ -157,11 +146,6 @@ func (b *Benchmark) initMem() {
 		b.dData2 = b.driver.AllocateUnifiedMemory(b.context,
 			uint64(b.paddedDataSize*4))
 	} else if b.useLASPMemoryAlloc {
-		b.dData1 = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.paddedDataSize*4), "div4")
-		b.dData2 = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.paddedDataSize*4), "div4")
-	} else if b.useLASPHSLMemoryAlloc {
 		b.dData1 = b.driver.AllocateMemoryLASP(b.context,
 			uint64(b.paddedDataSize*4), "div4")
 		b.dData2 = b.driver.AllocateMemoryLASP(b.context,

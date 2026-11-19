@@ -38,9 +38,8 @@ type Benchmark struct {
 	cOutput     []float32
 	dA, dC      driver.GPUPtr
 
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 }
 
 // NewBenchmark makes a new benchmark
@@ -112,11 +111,6 @@ func (b *Benchmark) initMem() {
 			uint64(b.NI*b.NJ*4), "div4")
 		b.dC = b.driver.AllocateMemoryLASP(b.context,
 			uint64(b.NI*b.NI*4), "div4")
-	} else if b.useLASPHSLMemoryAlloc {
-		b.dA = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.NI*b.NJ*4), "div4")
-		b.dC = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.NI*b.NI*4), "div4")
 	} else {
 		b.dA = b.driver.AllocateMemory(b.context,
 			uint64(b.NI*b.NJ*4))
@@ -181,9 +175,4 @@ func (b *Benchmark) cpusyrk() {
 // SetLASPMemoryAlloc use Unified Memory
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
-}
-
-// SetLASPMemoryAlloc use Unified Memory
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
 }

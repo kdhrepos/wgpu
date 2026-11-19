@@ -62,9 +62,8 @@ type Benchmark struct {
 	gpus    []int
 	queues  []*driver.CommandQueue
 
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 
 	kernel *insts.HsaCo
 
@@ -105,9 +104,6 @@ func (b *Benchmark) SetUnifiedMemory() { b.useUnifiedMemory = true }
 
 // SetLASPMemoryAlloc switches allocation to the LASP allocator.
 func (b *Benchmark) SetLASPMemoryAlloc() { b.useLASPMemoryAlloc = true }
-
-// SetLASPHSLMemoryAlloc switches allocation to the LASP-HSL allocator.
-func (b *Benchmark) SetLASPHSLMemoryAlloc() { b.useLASPHSLMemoryAlloc = true }
 
 func (b *Benchmark) loadProgram() {
 	b.kernel = kernels.LoadProgramFromMemory(hsacoBytes, "csrmv_batched")
@@ -156,7 +152,7 @@ func (b *Benchmark) initMem() {
 		switch {
 		case b.useUnifiedMemory:
 			return b.driver.AllocateUnifiedMemory(b.context, n)
-		case b.useLASPMemoryAlloc, b.useLASPHSLMemoryAlloc:
+		case b.useLASPMemoryAlloc:
 			return b.driver.AllocateMemoryLASP(b.context, n, "div4")
 		default:
 			return b.driver.AllocateMemory(b.context, n)

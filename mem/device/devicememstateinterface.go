@@ -21,30 +21,6 @@ func NewDeviceMemoryState(
 	memAllocatorType string,
 ) DeviceMemoryState {
 
-	// This particular part is in poor taste, but is the faster way to get HSL
-	// type information to the memory allocator right now
-	// the order is important!!!
-	// if strings.Contains(memAllocatorType, "hugehslaware") {
-	// 	hslSubType = strings.Split(memAllocatorType, "-")[1]
-	// 	memAllocatorType = "hugehslaware"
-	// } else if strings.Contains(memAllocatorType, "hslaware") {
-	// 	hslSubType = strings.Split(memAllocatorType, "-")[1]
-	// 	memAllocatorType = "hslaware"
-	// }
-
-	// var blkSize uint64
-	// var err error
-	// if strings.Contains(memAllocatorType, "lasp-") {
-	// 	strBlkSize := strings.Split(memAllocatorType, "-")[1]
-	// 	blkSize, err = strconv.ParseUint(strBlkSize, 10, 64)
-
-	// 	if err != nil {
-	// 		panic("something's wrong with lasp blksize!!!")
-	// 	}
-
-	// 	memAllocatorType = "laspsizeaware"
-	// }
-
 	switch memAllocatorType {
 	case "default", "interleaved":
 		// Sequential page allocation; chiplet interleaving comes from the
@@ -72,12 +48,8 @@ func NewDeviceMemoryState(
 	// return newdeviceLaspTppMemState(log2pagesize)
 	// case "laspnaivept":
 	// 	return newdeviceLASPnaivePTMemState(log2pagesize)
-	// case "hslaware":
-	// 	return newdevicePartitionedHSLAwareMemState(log2pagesize, hslSubType)
 	// case "hugelasp":
 	// 	return newdeviceHugePageLASPMemState(log2pagesize)
-	// case "hugehslaware":
-	// 	return newdeviceHugePageHSLMemState(log2pagesize, hslSubType)
 	default:
 		panic("Invalid memory allocator type")
 	}

@@ -63,9 +63,8 @@ type Benchmark struct {
 
 	gpuRMSE float64
 
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 }
 
 // NewBenchmark makes a new benchmark
@@ -109,11 +108,6 @@ func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
 }
 
-// SetLASPMemoryAlloc use Unified Memory
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
-}
-
 // Run runs
 func (b *Benchmark) Run() {
 	b.driver.SelectGPU(b.context, b.gpus[0])
@@ -133,14 +127,6 @@ func (b *Benchmark) initMem() {
 	} else if b.useLASPMemoryAlloc {
 		b.dFeatures = b.driver.AllocateMemoryLASP(
 			b.context, uint64(b.NumPoints*b.NumFeatures*4), "div4")
-		b.dFeaturesSwap = b.driver.AllocateMemoryLASP(
-			b.context, uint64(b.NumPoints*b.NumFeatures*4), "div4")
-		b.dMembership = b.driver.AllocateMemoryLASP(
-			b.context, uint64(b.NumPoints*4), "div4")
-	} else if b.useLASPHSLMemoryAlloc {
-		b.dFeatures = b.driver.AllocateMemoryLASP(
-			b.context,
-			uint64(b.NumPoints*b.NumFeatures*4), "div4")
 		b.dFeaturesSwap = b.driver.AllocateMemoryLASP(
 			b.context, uint64(b.NumPoints*b.NumFeatures*4), "div4")
 		b.dMembership = b.driver.AllocateMemoryLASP(
@@ -170,9 +156,6 @@ func (b *Benchmark) initMem() {
 			b.dClusters[i] = b.driver.AllocateUnifiedMemory(
 				b.context, uint64(b.NumClusters*b.NumFeatures*4))
 		} else if b.useLASPMemoryAlloc {
-			b.dClusters[i] = b.driver.AllocateMemoryLASP(
-				b.context, uint64(b.NumClusters*b.NumFeatures*4), "div4")
-		} else if b.useLASPHSLMemoryAlloc {
 			b.dClusters[i] = b.driver.AllocateMemoryLASP(
 				b.context, uint64(b.NumClusters*b.NumFeatures*4), "div4")
 		} else {

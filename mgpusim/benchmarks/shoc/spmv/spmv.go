@@ -30,14 +30,12 @@ type KernelArgs struct {
 
 // Benchmark set up test parameters
 type Benchmark struct {
-	driver                *driver.Driver
-	context               *driver.Context
-	gpus                  []int
-	queues                []*driver.CommandQueue
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
-	useCustomHSL          bool
+	driver             *driver.Driver
+	context            *driver.Context
+	gpus               []int
+	queues             []*driver.CommandQueue
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 
 	spmvKernel *insts.HsaCo
 
@@ -78,11 +76,6 @@ func (b *Benchmark) SetUnifiedMemory() {
 // SetLASPMemoryAlloc use Unified Memory
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
-}
-
-// SetLASPMemoryAlloc use Unified Memory
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
 }
 
 func (b *Benchmark) loadProgram() {
@@ -138,17 +131,6 @@ func (b *Benchmark) initMem() {
 			uint64(b.Dim*4), "div4")
 		b.dColsData = b.driver.AllocateMemoryLASP(b.context,
 			uint64(b.nItems*4), "div4")
-		b.dRowDData = b.driver.AllocateMemoryLASP(b.context,
-			uint64((b.Dim+1)*4), "div4")
-		b.dOutData = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.Dim*4), "div4")
-	} else if b.useLASPHSLMemoryAlloc {
-		b.dValData = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.nItems*4), "div4")
-		b.dColsData = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.nItems*4), "div4")
-		b.dVecData = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.Dim*4), "div4")
 		b.dRowDData = b.driver.AllocateMemoryLASP(b.context,
 			uint64((b.Dim+1)*4), "div4")
 		b.dOutData = b.driver.AllocateMemoryLASP(b.context,
@@ -247,8 +229,4 @@ func (b *Benchmark) spmvCPU() []float32 {
 		cpuOutput[i] = t
 	}
 	return cpuOutput
-}
-
-func (b *Benchmark) SetCustomHSL() {
-	b.useCustomHSL = true
 }

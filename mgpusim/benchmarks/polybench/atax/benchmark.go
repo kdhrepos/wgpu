@@ -43,9 +43,8 @@ type Benchmark struct {
 	dA, dX, dY, dTmp      driver.GPUPtr
 	cpuY                  []float32
 
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 }
 
 // NewBenchmark makes a new benchmark
@@ -70,10 +69,6 @@ func (b *Benchmark) SetUnifiedMemory() {
 // SetLASPMemoryAlloc use Unified Memory
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
-}
-
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
 }
 
 func (b *Benchmark) loadProgram() {

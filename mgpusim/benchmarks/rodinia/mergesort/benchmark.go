@@ -63,7 +63,6 @@ type Benchmark struct {
 
 	useUnifiedMemory   bool
 	useLASPMemoryAlloc bool
-	useCustomHSL       bool
 }
 
 // NewBenchmark makes a new benchmark

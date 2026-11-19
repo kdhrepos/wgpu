@@ -8,6 +8,4 @@ type Benchmark interface {
 	Verify()
 	SetUnifiedMemory()
 	SetLASPMemoryAlloc()
-	// SetLASPHSLMemoryAlloc()
-	// SetCustomHSL()
 }

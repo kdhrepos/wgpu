@@ -55,7 +55,7 @@ Opt-in LASP: add `-mem-allocator-type=lasp -use-lasp-mem-alloc -scheduling=lasp 
 
 - **Platform**: `-platform-type` (`mesh` default, `ideal`), `-xDim`, `-yDim`, `-num-req-per-cycle`, `-switch-latency`.
 - **Scheduling**: `-scheduling` (chiplet-aware default, greedy, round-robin, old-chiplet-aware, lasp), `-sched-partition` (Xdiv/Ydiv, comma-sep per kernel), `-data-partitioning` (kernel-wide, row-based, col-based, stride-aware), `-data-strides`, `-col-size-for-lasp`.
-- **Memory**: `-mem-allocator-type` (interleaved default, lasp), `-use-lasp-mem-alloc`, `-use-lasp-hsl-mem-alloc`, `-log2-page-size`, `-use-pte-caching`.
+- **Memory**: `-mem-allocator-type` (interleaved default, lasp), `-use-lasp-mem-alloc`, `-log2-page-size`, `-use-pte-caching`.
 - **Reports**: `-report-all`, `-report-essential`, and many `-report-<thing>` flags emitting CSV columns. Output to `<-metric-file-name>.csv`.
 - **Tracers**: `-trace-mem`, `-trace-tlb`, `-trace-vis`, `-trace-access-count-per-addrs`, `-trace-memory-access`, `-trace-pte-access`, `-trace-l2sql`. Output is `*.trace` (gitignored) or MySQL.
 - **Sim control**: `-timing` (else functional), `-parallel` (parallel engine), `-max-inst`, `-time-limit` (hours), `-verify`, `-debug-isa`, `-refresh`.

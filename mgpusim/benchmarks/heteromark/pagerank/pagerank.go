@@ -49,9 +49,8 @@ type Benchmark struct {
 	dValues        driver.GPUPtr
 	dLocalValues   driver.LocalPtr
 
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 }
 
 // NewBenchmark returns a benchmark
@@ -76,11 +75,6 @@ func (b *Benchmark) SetUnifiedMemory() {
 // SetLASPMemoryAlloc use Unified Memory
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
-}
-
-// SetLASPMemoryAlloc use Unified Memory
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
 }
 
 func (b *Benchmark) loadProgram() {
@@ -139,17 +133,6 @@ func (b *Benchmark) initMem() {
 			b.context, uint64(b.NumConnections*4), "div4")
 		b.dValues = b.driver.AllocateMemoryLASP(
 			b.context, uint64(b.NumConnections*4), "div4")
-	} else if b.useLASPHSLMemoryAlloc {
-		b.dColumnNumbers = b.driver.AllocateMemoryLASP(
-			b.context, uint64(b.NumConnections*4), "div4")
-		b.dValues = b.driver.AllocateMemoryLASP(
-			b.context, uint64(b.NumConnections*4), "div4")
-		b.dPageRank = b.driver.AllocateMemoryLASP(
-			b.context, uint64(b.NumNodes*4), "div4")
-		b.dPageRankTemp = b.driver.AllocateMemoryLASP(
-			b.context, uint64(b.NumNodes*4), "div4")
-		b.dRowOffsets = b.driver.AllocateMemoryLASP(
-			b.context, uint64((b.NumNodes+1)*4), "div4")
 	} else {
 		b.dPageRank = b.driver.AllocateMemory(
 			b.context, uint64(b.NumNodes*4))

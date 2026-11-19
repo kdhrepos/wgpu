@@ -331,7 +331,3 @@ func (b *Benchmark) Verify() {
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
 }
-
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPSHLMemoryAlloc = true
-}

@@ -10,7 +10,7 @@ Architecture-agnostic discrete-event simulator framework. Everything else in thi
 
 - `Component` (`component.go`) — base unit. Owns `Port`s, registers `Hook`s, lives on an `Engine`. Concrete components elsewhere embed `*ComponentBase`.
 - `Port` (`port.go`) — bidirectional message endpoint on a `Component`. `Send`/`Recv` of `Msg` (`msg.go`).
-- `Connection` (`connection.go`, `directconnection.go`, `switching.go`) — routes `Msg`s between `Port`s, may add latency. `DirectConnection` is zero-latency; `Switching` is a switch with internal arbitration.
+- `Connection` (`connection.go`, `directconnection.go`) — routes `Msg`s between `Port`s, may add latency. `DirectConnection` is zero-latency.
 - `Engine` (`engine.go`, `serialengine.go`, `parallelengine.go`) — schedules `Event`s. The runner picks one via `-parallel`. The `EventQueue` (`eventqueue.go`) is a min-heap keyed by `Time`.
 - `Event` (`event.go`) — `Handle()`d by the component at its scheduled `VTimeInSec`.
 - `Hook` (`hook.go`, `loghook.go`, `portmsglogger.go`) — observer that fires on component/port lifecycle and message events. Tracing in `util/tracing` is built on top of this.

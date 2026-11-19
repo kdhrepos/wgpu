@@ -75,7 +75,6 @@ type CommonPlatformBuilder struct {
 	useCoalescingRTU         bool
 	pteCaching               bool
 	memAllocatorType         string
-	customHSLpmdUnits        uint64
 
 	switchLatency int
 
@@ -176,10 +175,6 @@ func (b *CommonPlatformBuilder) UseCoalescingRTU(u bool) {
 
 func (b *CommonPlatformBuilder) WithMemAllocatorType(allocatorType string) {
 	b.memAllocatorType = allocatorType
-}
-
-func (b *CommonPlatformBuilder) WithCustomHSL(pmdUnits uint64) {
-	b.customHSLpmdUnits = pmdUnits
 }
 
 // WithNumChiplets sets the number of chiplets in the GPU.

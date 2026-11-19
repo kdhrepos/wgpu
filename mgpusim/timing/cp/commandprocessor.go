@@ -80,8 +80,6 @@ type CommandProcessor struct {
 	bottomMemCopyH2DReqIDToTopReqMap   map[uint64]*coreprotocol.MemCopyH2DReq
 	bottomMemCopyD2HReqIDToTopReqMap   map[uint64]*coreprotocol.MemCopyD2HReq
 
-	customHSLpmdUnits uint64
-
 	// simplified
 	ChipRdmaEngines []rdma.RDMAEngine
 }

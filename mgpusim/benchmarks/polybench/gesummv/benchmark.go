@@ -47,7 +47,6 @@ type Benchmark struct {
 
 	useUnifiedMemory   bool
 	useLASPMemoryAlloc bool
-	useLASPHSLMemoryAlloc bool
 }
 
 // NewBenchmark makes a new benchmark
@@ -72,10 +71,6 @@ func (b *Benchmark) SetUnifiedMemory() {
 // SetLASPMemoryAlloc use Unified Memory
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
-}
-
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
 }
 
 func (b *Benchmark) loadProgram() {

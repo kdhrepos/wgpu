@@ -53,8 +53,6 @@ type LatTLB struct {
 	LowModuleFinder lmf.LowModuleFinder
 	TLBFinder       lmf.LowModuleFinder
 
-	HashFuncHSL func(address uint64) uint64
-
 	log2PageSize   uint64
 	log2NumSets    uint64
 	setMask        uint64

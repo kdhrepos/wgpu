@@ -227,8 +227,6 @@ var fastH2D = flag.Bool("fast-h2d", false,
 		"invisible to -trace-mem and related metrics.")
 var useLASPMemoryAllocFlag = flag.Bool("use-lasp-mem-alloc", false,
 	"Set this if we are going to use the LASP memory allocation API in applications.")
-var useLASPHSLMemoryAllocFlag = flag.Bool("use-lasp-hsl-mem-alloc", false,
-	"Set this if we are going to use HSL directed rearranged of data.")
 var pteCaching = flag.Bool("use-pte-caching", true,
 	"Specify if page table pages should be cached locally")
 var log2PageSize = flag.Uint64("log2-page-size", 12,
@@ -243,10 +241,6 @@ var log2PageSize = flag.Uint64("log2-page-size", 12,
 // (mem/device/devicelaspmemstate.go:setInitialAddress), so it is auto-derived
 // via CommonBuilder.chipletInterleavingSize(). To experiment with the bank
 // stripe, call WithLog2MemoryBankInterleavingSize on the builder.
-var useCustomHSL = flag.Bool("use-custom-hsl", false,
-	"Specify if to use custom HSL as defined in program")
-var customHSL = flag.Uint64("custom-hsl", 1,
-	"Specify the value of custom HSL directly to the builder")
 var logDataAllocation = flag.Bool("log-data-allocation", false,
 	"Specify the data allocation logging interval")
 var logDataAllocationFilename = flag.String(
@@ -553,8 +547,6 @@ type Runner struct {
 	ReportWarpStall                    bool
 	UseUnifiedMemory                   bool
 	UseLASPMemoryAlloc                 bool
-	UseLASPHSLMemoryAlloc              bool
-	UseCustomHSL                       bool
 	metricsCollector                   *collector
 
 	// custom tracing
@@ -672,14 +664,6 @@ func (r *Runner) ParseFlag() *Runner {
 
 	if *useLASPMemoryAllocFlag {
 		r.UseLASPMemoryAlloc = true
-	}
-
-	if *useLASPHSLMemoryAllocFlag {
-		r.UseLASPHSLMemoryAlloc = true
-	}
-
-	if *useCustomHSL {
-		r.UseCustomHSL = true
 	}
 
 	if *instCountReportFlag {
@@ -1086,13 +1070,6 @@ func (r *Runner) AddBenchmark(b benchmarks.Benchmark) {
 	if r.UseLASPMemoryAlloc {
 		b.SetLASPMemoryAlloc()
 	}
-
-	// if r.UseLASPHSLMemoryAlloc {
-	// 	b.SetLASPHSLMemoryAlloc()
-	// }
-	// if r.UseCustomHSL {
-	// 	b.SetCustomHSL()
-	// }
 	r.Benchmarks = append(r.Benchmarks, b)
 }
 

@@ -17,13 +17,12 @@ type MatrixMultiplier interface {
 // A GPUMatrixMultiplier is a MatrixMultiplier that runs the
 // MatrixMultiplication on GCN3 simulator.
 type GPUMatrixMultiplier struct {
-	driver                *driver.Driver
-	context               *driver.Context
-	gpus                  []int
-	kernel                *insts.HsaCo
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
+	driver             *driver.Driver
+	context            *driver.Context
+	gpus               []int
+	kernel             *insts.HsaCo
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 }
 
 // NewGPUMatrixMultiplier creates a new GPUMatrixMultiplier, injecting the

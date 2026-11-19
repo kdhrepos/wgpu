@@ -48,9 +48,8 @@ type Benchmark struct {
 	a_outputFromGPU []float32
 	b_outputFromGPU []float32
 
-	useUnifiedMemory      bool
-	useLASPMemoryAlloc    bool
-	useLASPHSLMemoryAlloc bool
+	useUnifiedMemory   bool
+	useLASPMemoryAlloc bool
 }
 
 // NewBenchmark makes a new benchmark
@@ -75,11 +74,6 @@ func (b *Benchmark) SetUnifiedMemory() {
 // SetLASPMemoryAlloc use Unified Memory
 func (b *Benchmark) SetLASPMemoryAlloc() {
 	b.useLASPMemoryAlloc = true
-}
-
-// SetLASPMemoryAlloc use Unified Memory
-func (b *Benchmark) SetLASPHSLMemoryAlloc() {
-	b.useLASPHSLMemoryAlloc = true
 }
 
 func (b *Benchmark) loadProgram() {
@@ -128,11 +122,6 @@ func (b *Benchmark) initMem() {
 		b.db = b.driver.AllocateUnifiedMemory(b.context,
 			uint64(b.N*b.N*4))
 	} else if b.useLASPMemoryAlloc {
-		b.da = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.N*b.N*4), "div4")
-		b.db = b.driver.AllocateMemoryLASP(b.context,
-			uint64(b.N*b.N*4), "div4")
-	} else if b.useLASPHSLMemoryAlloc {
 		b.da = b.driver.AllocateMemoryLASP(b.context,
 			uint64(b.N*b.N*4), "div4")
 		b.db = b.driver.AllocateMemoryLASP(b.context,
