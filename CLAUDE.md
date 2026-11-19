@@ -107,7 +107,7 @@ LASP (Locality-Aware Scheduling and Partitioning, prior work) is kept as an **op
 
 ## Tracing / output
 
-The runner exposes many `-trace-*` and `-report-*` flags (cache hit rate, TLB stats, DRAM latency, RDMA transactions, hop counts, port queueing, etc.) — see the flag declarations at the top of `mgpusim/runner/runner.go`. CSV metrics are written to `<-metric-file-name>.csv`. Memory/access-count traces produce binary `.trace` files that are gitignored.
+The runner exposes many `-trace-*` and `-report-*` flags (cache hit rate, TLB stats, DRAM latency, RDMA transactions, hop counts, etc.) — see the flag declarations at the top of `mgpusim/runner/runner.go`. CSV metrics are written to `<-metric-file-name>.csv`. Memory/access-count traces produce binary `.trace` files that are gitignored.
 
 ## Conventions
 
