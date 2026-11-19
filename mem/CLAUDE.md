@@ -10,30 +10,17 @@ Memory system components for the Akita framework: caches, DRAM controllers, addr
 
 - `storage.go` — flat byte-addressable backing store used by all DRAM/ideal-controller components.
 - `writebuffer.go` — small generic write-coalescing buffer.
-- `idealmemcontroller/` — zero-latency memory used by the `ideal` platform and as a reference oracle.
+- `idealmemcontroller/` — fixed-latency memory controller used as per-bank DRAM by the platforms.
 - `dram/` — timing DRAM controller (`memcontroller.go`, builder, internal scheduler/bank state).
-- `cache/` — see "Cache variants" below.
+- `cache/` — see "Caches" below.
 - `vm/` — virtual memory: `tlb/` (L1/L2 TLBs), `idealtlb/`, `mmu/` (page walker), `addresstranslator/` (caching translator in front of components), `tlbtracer.go`.
-- `device/` — minimal "address-space owning device" abstraction shared by drivers.
+- `device/` — page table, memory allocator, and per-device memory state (`interleaved` sequential allocator, opt-in `lasp`).
 - `trace/` — memory-trace replay/format helpers.
 - `acceptancetests/` — Ginkgo acceptance tests that wire up real components end-to-end.
 
-## Cache variants
+## Caches
 
-`cache/` contains *parallel implementations* of the writeback cache, one per platform family. They share interfaces from `cache.go` / `protocol.go` / `directory.go` / `mshr.go` / `victimfinder.go` but each subdirectory is its own Go package (and `writebackrcr/` is its own *module* with its own `go.mod`):
-
-| Directory | Used by platform |
-| --- | --- |
-| `writeback/` | the standard `mesh`, `direct`, `datadirect`, `ptdirect`, `nearfetch`, `nearfetch2`, `daware`, `infllc` |
-| `writebackd/` | distribution-aware variant |
-| `writeback_dynamic_clustering/` | `dynamic-cluster` |
-| `writeback-dynamic-clustering-rep/` | `dynamic-cluster-rep` |
-| `writeback-dynamic-dist/` | `dynamic-dist`, `dynamic-clustering` |
-| `writebackrcr/`, `writebackrcr2/` | RCR protocol experiments (own module) |
-| `writeback_static_clustering/` | `static-cluster` |
-| `writethrough/` | `meshwt` |
-
-Adding a new variant: copy the closest existing directory, rename the package, and add a `replace gitlab.com/akita/mem/cache/<name> => ../mem/cache/<name>` directive to **every** consuming module's `go.mod` (at minimum `mgpusim/go.mod`).
+`cache/` holds shared interfaces (`cache.go`, `protocol.go`, `directory.go`, `mshr.go`, `victimfinder.go`, `pagewalkcachedirectory.go`) and a single implementation, `cache/writeback/` — the per-bank write-back L2 used by both `mesh` and `ideal` platforms (local-first priority, PTE caching, page-walk cache). L1V is in `mgpusim/timing/caches/l1v`.
 
 ## Low-module finder
 

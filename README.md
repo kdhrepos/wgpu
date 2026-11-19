@@ -1,29 +1,30 @@
 # wgpu — Wafer-Scale GPU Simulator
 
-A cycle-level simulator for a **mesh-based wafer-scale GPU**, extending the
-crossbar-based [MCM-GPU](https://ieeexplore.ieee.org/document/8574585)/[MGPUSim](https://github.com/sarchlab/mgpusim)
-model onto an `xDim x yDim` mesh of chiplets connected by an on-chip network,
-built on the [Akita](https://gitlab.com/akita) discrete-event simulation framework.
+Cycle-level simulator for a **mesh-based wafer-scale GPU**: an `xDim × yDim`
+mesh of GPU chiplets, extending [MGPUSim](https://github.com/sarchlab/mgpusim)
+on the [Akita](https://gitlab.com/akita) discrete-event framework.
 
-This is a cleaned-up export of an internal research tree — trimmed down to the
-general model and stripped of research-only extensions (custom schedulers,
-alternative cache/replication policies, offline analysis tooling). Cleanup is
-still in progress, so a few non-`mesh` platform variants and dormant research
-flags are still present in `mgpusim/platform/` and `mgpusim/runner/`.
+Platforms (`-platform-type`):
+
+- `mesh` (default) — chiplets connected by a 2D-mesh network-on-chip.
+- `ideal` — same chiplets on a contention-free network (upper-bound reference).
+
+Defaults: chiplet-interleaved memory allocation, chiplet-aware workgroup
+scheduling.
 
 ## Layout
 
-Each top-level directory is its own Go module (no single root `go.mod`; wired
-together with `go.work` + `replace` directives):
+Each top-level directory is a Go module, wired together by `go.work`.
 
 | dir | contents |
 |---|---|
-| `akita/` | core discrete-event sim framework: `Component`, `Port`, `Engine`, `Event`, `Connection` |
-| `mem/` | memory hierarchy: caches (`mem/cache/writeback`, `writethrough`), DRAM, TLB/MMU |
-| `noc/` | network-on-chip: flits, mesh/direct chiplet interconnect, routing, arbitration |
-| `protocol/` | coherence/distribution protocol message types |
-| `util/` | shared utilities (tracing, pipelining, cache helpers) |
-| `mgpusim/` | the GPU simulator: ISA decode + functional emulator, timing model (CU/wavefront/caches), driver, and the `mesh` platform builder |
+| `akita/` | discrete-event simulation framework |
+| `mem/` | L2 cache, DRAM, TLB/MMU, page table, allocators |
+| `noc/` | network-on-chip: mesh/ideal chiplet networks, switches, routing |
+| `protocol/` | memory/translation message types |
+| `lmf/` | address → chiplet/bank mapping |
+| `util/` | tracing, pipelining, shared helpers |
+| `mgpusim/` | GPU model (CU, caches, CP, RDMA), driver, platforms, runner, benchmarks |
 | `scripts/compile.py` | builds every benchmark under `mgpusim/samples/` |
 
 ## Build
@@ -31,28 +32,21 @@ together with `go.work` + `replace` directives):
 Requires Go 1.25+.
 
 ```bash
-cd mgpusim
-go build ./...
-```
-
-or build every benchmark:
-
-```bash
-python3 scripts/compile.py
+python3 scripts/compile.py                   # all benchmarks
+cd mgpusim/samples/pagerank && go build      # one benchmark
 ```
 
 ## Run
 
-Each `mgpusim/samples/<benchmark>/` builds a standalone executable named after
-its directory. A ready-to-use `mesh` wrapper script sits next to it, e.g.:
+Every `mgpusim/samples/<benchmark>/` has a `mesh` script that builds and runs
+an example configuration:
 
 ```bash
 cd mgpusim/samples/pagerank
-go build
 ./mesh
 ```
 
-or invoke the runner flags directly:
+Or call the binary directly:
 
 ```bash
 ./pagerank -node=2048 -sparsity=0.5 -iterations=1 \
@@ -60,9 +54,10 @@ or invoke the runner flags directly:
   -platform-type=mesh -xDim=6 -yDim=6
 ```
 
-See `mgpusim/runner/runner.go` for the full flag reference.
+Metrics go to `metrics.csv` (`-metric-file-name`). All flags:
+`mgpusim/runner/runner.go`.
 
 ## License
 
-Each module carries its own `LICENSE` file (MIT), inherited from upstream
-Akita/MGPUSim.
+`akita/`, `mem/`, `noc/`, `util/` and `mgpusim/` keep their upstream MIT
+`LICENSE` files.

@@ -13,7 +13,6 @@ Shared utilities used across the workspace. Two things stand out:
 
 - `tracing/` — one file per tracer (see "Adding a tracer" below). `tracer.go` defines the interface; `task.go` defines the `Task` (start/end time, parent/child). `api.go` provides `StartTask`/`EndTask`/`AddMilestone` used by components. Backends include `jsontracer.go`, `mysqltracer.go`, `mongodbtracer.go`.
 - `global/global.go` — `Global` singleton (verbose flag, LASP partitioning state, data-allocation log, time limit, etc.). Accessed via `global.GetInstance()` (sync.Once-guarded).
-- `global/global_oracle_pctable.go` — separate oracle PC table singleton for the `-use-oracle-pc-table` flag.
 - `akitaext/` — extensions on top of `akita`: `BufferedSender` (most components use this rather than raw `Port.Send`).
 - `pipelining/` — generic pipeline stage helper.
 - `ca/` — cache abstractions shared between cache implementations.
