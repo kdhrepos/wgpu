@@ -51,6 +51,7 @@ __debug_bin*
 /mgpusim/samples/fft/fft
 /mgpusim/samples/fir/fir
 /mgpusim/samples/floydwarshall/floydwarshall
+/mgpusim/samples/fr-simple/fr-simple
 /mgpusim/samples/fr/fr
 /mgpusim/samples/gaussian/gaussian
 /mgpusim/samples/gemm/gemm
@@ -91,6 +92,7 @@ __debug_bin*
 /mgpusim/samples/scan/scan
 /mgpusim/samples/shoc-reduction/shoc-reduction
 /mgpusim/samples/simpleconvolution/simpleconvolution
+/mgpusim/samples/spmm/spmm
 /mgpusim/samples/spmv/spmv
 /mgpusim/samples/sssp/sssp
 /mgpusim/samples/stencil2d/stencil2d
