@@ -298,8 +298,6 @@ var cachelineHopStatsFlag = flag.Bool("trace-cacheline-hop-stats",
 	true, "Accumulate per-cache-line demand-access-count and real-hop-distance "+
 		"stats for the whole run, and add a top-K% hop-distance percentile report "+
 		"to the main metric-file-name CSV at exit")
-var distTraceFileName = flag.String("trace-dist-filename",
-	"distribution_trace", "Filename for tracing hot data distribution")
 var pteAccessTraceFlag = flag.Bool("trace-pte-access",
 	false, "Trace the accesses to the page table entries")
 var pteAccessTraceFileName = flag.String("trace-pte-access-filename",
@@ -313,17 +311,6 @@ var reportHopPerRDMAFlag = flag.Bool("report-hop-count-per-rdma",
 var tracePortQueueFlag = flag.Bool("trace-port-queue",
 	false, "Report per-port queueing delay (Recv→Retrieve wait time) "+
 		"at endpoint NetworkPorts and RDMA engine ports")
-
-// var pcStateTraceFlag = flag.Bool("trace-pc-state", false, "Trace the PC state of the RDMA requests")
-// var pcStateTraceFileName = flag.String("trace-pc-state-filename",
-// 	"pc_state_trace", "Filename for tracing the PC state of the RDMA requests")
-
-var cbfSize = flag.Int("cbf-size", 8192,
-	"Size of the Cluster Bloom Filter (CBF) in number of entries")
-
-// custom tracer for static clustering
-var clusterSizeFlag = flag.Int("cluster-size",
-	9, "Cluster size for static clustering")
 
 // verbose setting for console
 var verbose = flag.Bool("verbose",
@@ -347,36 +334,6 @@ var colSizeForLasp = flag.Int("col-size-for-lasp", 0, "Specify the column size f
 
 var terminated bool
 var lastKernelLaunchTime akita.VTimeInSec
-
-// parameters for proposal
-// oracle pc table
-var useOraclePCTable = flag.Bool("use-oracle-pc-table", false, "Use oracle PC table for distribution decisions")
-
-// shared pc table: online classifier + zero-overhead cross-chiplet
-// hotness sync (each home's live classification is read by any requestor
-// with no simulated traffic).
-var useSharedPCTable = flag.Bool("use-shared-pc-table", false, "Use shared PC table (online classifier, zero-overhead cross-chiplet hotness sync)")
-
-// forced own-cluster local-home lookup (dynamic-clustering)
-var forceLHLookup = flag.Bool("force-lh-lookup", false,
-	"Force lookup of the requestor's own-cluster local home even when off the requestor->global-home path (dynamic-clustering)")
-
-// runtime PCTable classifier configuration.  See
-// util/global/global_pc_classifier.go for semantics.
-var pcClassifierMode = flag.String("pc-classifier", "threshold",
-	"Runtime PCTable classifier: 'threshold' (decision tree on reuse+sharing) or 'score' (weighted reuse+sharing+hop).")
-var pcScoreWReuse = flag.Float64("pc-score-w-reuse", 0.40,
-	"Weight on normalized reuse in score classifier.")
-var pcScoreWShare = flag.Float64("pc-score-w-share", 0.30,
-	"Weight on normalized sharing in score classifier.")
-var pcScoreWHop = flag.Float64("pc-score-w-hop", 0.30,
-	"Weight on normalized hop count in score classifier.")
-var pcScoreHopRef = flag.Float64("pc-score-hop-ref", 0,
-	"Hop normalization denominator for score classifier. 0 = auto (mesh diameter 2*(xDim-1)).")
-var pcScoreWarmupShrink = flag.Float64("pc-score-warmup-shrink", 0.7,
-	"How much a high hop score lowers the warm-up gate (minReqCountForClassification). Range [0,1]; 0 disables.")
-var pcWSDecayInterval = flag.Int("pc-ws-decay-interval", 5,
-	"PCTable WSAddrs rank-decay period in Decay() ticks. 0 = built-in default (3).")
 
 type verificationPreEnablingBenchmark interface {
 	benchmarks.Benchmark
@@ -606,7 +563,6 @@ type Runner struct {
 	TraceMemoryAccess              bool
 	TraceCacheLineHopStats         bool
 	TracePteAccess                 bool
-	TracePCState                   bool
 	ReportWorkgroupCount           bool
 	ReportHopPerRDMA               bool
 	ReportL2MissTrace              bool
@@ -630,28 +586,11 @@ type Runner struct {
 	CacheLineHopTracer             *tracing.CacheLineHopTracer
 	PteAccessTracer                *tracing.PteAccessTracer
 	KernelTracer                   *tracing.KernelTracer
-	LookupTracer                   *tracing.LookupTracer
-	LookupUniqueTracer             *tracing.LookupUniqueTracer
-	LookupOutcomeTracer            *tracing.LookupOutcomeTracer
-	LookupPathTracer               *tracing.LookupPathTracer
-	DistTracer                     *tracing.DistTracer
-	PCStateTracer                  *tracing.PCStateTracer
 	FlushTracer                    *tracing.FlushTracer
 	NumFlitTracer                  *tracing.NumFlitTracer
-	PCTableTracer                  *tracing.PCTableTracer
 	PteCachingTracer               *tracing.PteCachingTracer
-	InterClusterTracer             *tracing.InterClusterTracer
-	IdealTracer                    *tracing.IdealTracer
 	EvictTracer                    *tracing.EvictTracer
 	LocalRemoteTracer              *tracing.LocalRemoteTracer
-
-	// custom tracing for NearFetch
-	ReportRcrHitRateFlag bool
-	RcrHitRateTracers    []*tracing.RcrHitRateTracer
-
-	// per-PC lookup outcomes (nearfetch + dynamic-clustering family).
-	// One tracer per L2 cache and per RDMA engine; merged at report time.
-	PerPCLookupTracers []*tracing.PerPCLookupTracer
 
 	GPUIDs []int
 }
@@ -915,10 +854,6 @@ func (r *Runner) ParseFlag() *Runner {
 		r.ReportMSHRFailTrace = true
 		r.TracePortQueue = true
 
-		if *platformType == "nearfetch" {
-			r.ReportRcrHitRateFlag = true
-			r.ReportL2MissTrace = false
-		}
 	}
 
 	return r
@@ -950,40 +885,6 @@ func (r *Runner) Init() *Runner {
 	l.LogDataAllocationFilename = *logDataAllocationFilename
 
 	log.SetFlags(log.Llongfile | log.Ldate | log.Ltime)
-
-	// oracle pc table
-	if *useOraclePCTable {
-		fmt.Println("Using oracle PC table for distribution decisions.")
-		l.SetUseOraclePCTable(true)
-	}
-
-	// shared pc table (zero-overhead cross-chiplet hotness sync)
-	if *useSharedPCTable {
-		fmt.Println("Using shared PC table (zero-overhead cross-chiplet hotness sync).")
-		l.SetUseSharedPCTable(true)
-	}
-
-	// forced own-cluster local-home lookup
-	l.SetForceLHLookup(*forceLHLookup)
-	if !*forceLHLookup {
-		fmt.Println("Forced own-cluster local-home lookup: DISABLED")
-	}
-
-	// runtime PCTable classifier config
-	l.SetPCClassifierMode(*pcClassifierMode)
-	l.SetPCScoreWReuse(*pcScoreWReuse)
-	l.SetPCScoreWShare(*pcScoreWShare)
-	l.SetPCScoreWHop(*pcScoreWHop)
-	l.SetPCScoreHopRef(*pcScoreHopRef)
-	l.SetPCScoreWarmupShrink(*pcScoreWarmupShrink)
-	l.SetPCWSDecayInterval(*pcWSDecayInterval)
-	if *pcClassifierMode == "score" {
-		fmt.Printf("PC classifier: score mode (w_reuse=%.2f, w_share=%.2f, w_hop=%.2f, hop_ref=%.1f, warmup_shrink=%.2f)\n",
-			*pcScoreWReuse, *pcScoreWShare, *pcScoreWHop, *pcScoreHopRef, *pcScoreWarmupShrink)
-	}
-	if *pcWSDecayInterval > 0 {
-		fmt.Printf("PCTable WS decay interval: %d ticks\n", *pcWSDecayInterval)
-	}
 
 	if *timeLimit > 0 {
 		fmt.Println("Time limit is set to ", *timeLimit, " hours.")
@@ -1066,25 +967,10 @@ func (r *Runner) Init() *Runner {
 	// r.addPteAccessTracer(*pteAccessTraceFileName)
 	r.addEvictTracer() // custom tracer
 	r.addKernelTracer()
-	r.addLookupTracer()
-	r.addLookupUniqueTracer()
-	r.addLookupOutcomeTracer()
-	r.addLookupPathTracer()
-	r.addDistTracer(*distTraceFileName)
 	r.addWorkgroupDimensionTracer()
-	r.addPCStateTracer()
 	r.addFlushTracer()
 	r.addNumFlitTracer()
-	r.addPCTableTracer()
-	r.addIdealTracer()       // custom tracer for ideal gpu platform
 	r.addLocalRemoteTracer() // custom tracer for local vs. remote access
-	// r.addInterClusterTracer()
-
-	// custom tracer for NearFetch
-	r.addRcrHitRateTracer()
-
-	// per-PC lookup outcomes for nearfetch + dynamic-clustering family
-	r.addPerPCLookupTracer()
 
 	atexit.Register(func() { runWithStack("reportStats", r.reportStats) })
 
@@ -1117,36 +1003,10 @@ func (r *Runner) buildTimingPlatform() {
 	var b platform.Builder
 
 	switch *platformType {
-	case "ideal":
-		b = platform.MakeIdealGPUPlatformBuilder()
-	case "ideal-cold":
-		b = platform.MakeIdealColdGPUPlatformBuilder()
-	case "datadirect":
-		b = platform.MakeDataDirectGPUPlatformBuilder()
-	case "ptdirect":
-		b = platform.MakePtDirectGPUPlatformBuilder()
-	case "pt-ideal":
-		b = platform.MakePtIdealGPUPlatformBuilder()
-	case "data-ideal":
-		b = platform.MakeDataIdealGPUPlatformBuilder()
-	case "direct":
-		b = platform.MakeDirectGPUPlatformBuilder()
 	case "mesh":
 		b = platform.MakeMeshGPUPlatformBuilder()
-	case "sac":
-		r.configureSAC()
-		b = platform.MakeSACGPUPlatformBuilder()
-	case "meshwt": // mesh with write-through
-		b = platform.MakeMeshWtGPUPlatformBuilder()
-	case "nearfetch":
-		b = platform.MakeNearFetchGPUPlatformBuilder()
-	case "dynamic-clustering":
-		b = platform.MakeDynamicClusteringGPUPlatformBuilder().
-			WithClusterSize(*clusterSizeFlag)
-	case "infllc":
-		b = platform.MakeInfLLCGPUPlatformBuilder()
-	case "mono":
-		b = platform.MakeMonoGPUPlatformBuilder()
+	case "ideal":
+		b = platform.MakeIdealGPUPlatformBuilder()
 	default:
 		panic("Runner.go: wrong platform selected")
 	}
@@ -1159,13 +1019,7 @@ func (r *Runner) buildTimingPlatform() {
 		b.WithoutProgressBar()
 	}
 
-	// cache PTEs at L2 cache or not
-	// b.WithPteCaching(*pteCaching)
-	b.WithPteCaching(true) // PTEs are always cached in our baseline.
-
-	if *platformType == "mesh" || *platformType == "sac" {
-		b.WithPteCaching(*pteCaching)
-	}
+	b.WithPteCaching(*pteCaching)
 
 	// mesh
 	b.WithGridSize(xDim, yDim)
@@ -1370,7 +1224,6 @@ func (r *Runner) reportStatsCheckpoint(percent int) {
 
 func (r *Runner) collectAllMetrics() {
 	r.reportAllParameters()  // custom tracer
-	r.reportSACDecisions()
 	r.reportSimulationTime() // custom tracer
 	r.reportExecutionTime()
 	r.reportKernelTime()         // custom tracer
@@ -1388,29 +1241,25 @@ func (r *Runner) collectAllMetrics() {
 	r.reportDRAMLatency()
 	r.reportRDMATransactionCount()
 	r.reportCDMATransactionCount()
-	r.reportHopPerRDMA()         // custom tracer
-	r.reportIBPA()               // NearFetch IBPA (always reported)
-	r.reportRDMAFlightLatency()  // custom tracer
-	r.reportSendOutFail()        // custom tracer
-	r.reportPortQueue()          // custom tracer
-	r.reportLinkUtilization()    // custom tracer
+	r.reportHopPerRDMA()        // custom tracer
+	r.reportIBPA()              // IBPA (always reported)
+	r.reportRDMAFlightLatency() // custom tracer
+	r.reportSendOutFail()       // custom tracer
+	r.reportPortQueue()         // custom tracer
+	r.reportLinkUtilization()   // custom tracer
 	// r.reportRemotePtw()          // custom tracer
-	r.reportL2MissTrace()        // custom tracer
-	r.reportMSHRFailTrace()      // custom tracer
+	r.reportL2MissTrace()   // custom tracer
+	r.reportMSHRFailTrace() // custom tracer
 	// r.reportTLBMSHRWait()        // custom tracer
 	r.reportFlushMetrics()       // custom tracer
 	r.reportNumFlits()           // custom tracer
-	r.reportPCTableLookup()      // custom tracer
 	r.reportMemAllocPerChiplet() // custom tracer
 	// r.reportTLBLatency()
 	// r.reportTLBHitRate()
 	// r.reportPWCHitRate()
 	// r.reportPteCaching() // custom tracer
 	// r.reportAddressTranslatorLatency()
-	r.reportIdealTrace() // custom tracer for ideal gpu platform
-	// r.reportInterClusterTrace()  // custom tracer for static clustering
 	r.reportEvictMetrics() // custom tracer
-	r.reportPCTableStats() // custom tracer
 
 	// r.reportTLBConditionalStats()
 	// r.reportMMUConditionalStats()
@@ -1425,19 +1274,7 @@ func (r *Runner) collectAllMetrics() {
 	// r.reportTLBMSHRStallTracing()
 	// r.reportTLBReqStalls()
 
-	r.reportDistMetrics()         // custom tracer for hot data distribution
-	r.reportLookupHitRate()       // custom tracer for hot data distribution
-	r.reportLookupUniqueHitRate() // per-unique-remote-request hit rate
-	r.reportLookupOutcome()       // per-chain hop-to-hit + own/other/GH outcome
-	r.reportLookupPath()          // lookup chain chiplet-visit sequences
-	r.reportDistTrace()           // custom tracer for hot data distribution
-	r.reportRcrHitRate()          // custom tracer for NearFetch
-	r.reportPerPCLookup()         // per-PC lookup outcomes (nearfetch + dyn-clustering)
-	r.reportSetAccessHistogram()  // per-L2-bank setID access histogram
-
-	if *platformType != "ideal" {
-		// r.reportTranslationReqLatency()
-	}
+	r.reportSetAccessHistogram() // per-L2-bank setID access histogram
 
 	// custom tracer
 	if r.TraceAccessCountPerAddrs {
@@ -1452,9 +1289,6 @@ func (r *Runner) collectAllMetrics() {
 	if r.TracePteAccess {
 		r.reportPteAccessTraces()
 	}
-	// if r.TracePCState {
-	// 	r.reportPCStateTraces()
-	// }
 }
 
 func (r *Runner) dumpMetrics() {

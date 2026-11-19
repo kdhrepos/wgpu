@@ -30,17 +30,6 @@ type Global struct {
 	timeLimit      int // in hours
 	colSizeForLasp int
 
-	// oracle pc table
-	useOraclePCTable bool
-
-	// shared pc table: online classifier whose per-home hotness is
-	// synchronized across chiplets at zero simulated cost.
-	useSharedPCTable bool
-
-	// forceLHLookup forces the requestor's own-cluster local home to be probed
-	// even when off the requestor->GH minimal path (dynamic-clustering).
-	forceLHLookup bool
-
 	// Experimental hardware knobs for the "expose hop-count gap" study.
 	// Each is an override: 0 means "use the built-in default", so unset
 	// flags leave behaviour unchanged. Set from runner CLI flags; read in
@@ -79,21 +68,6 @@ type Global struct {
 	// path used while diagnosing the OOO ROB corruption (see commit history).
 	// Effective only when verbose is also on — see GetOOODebug.
 	oooDebug bool
-
-	// runtime PCTable classifier config — see global_pc_classifier.go
-	// for semantics.  Defaults are applied by the runner CLI flags;
-	// the PCTable consumer treats empty / zero values as "use built-in
-	// defaults" so direct programmatic uses of NewPCTable still work.
-	pcClassifierMode    string
-	pcScoreWReuse       float64
-	pcScoreWShare       float64
-	pcScoreWHop         float64
-	pcScoreHopRef       float64
-	pcScoreWarmupShrink float64
-	pcWSDecayInterval   int
-
-	// SAC (Sharing-Aware Caching) runtime state — see global_sac.go.
-	sacState *SACState
 }
 
 var (
@@ -112,7 +86,6 @@ func GetInstance() *Global {
 			pageToDataID:          make(map[uint64]int),
 			prioritizePTEAtL2:     true,
 			robPerWfSubFifo:       true,
-			forceLHLookup:         false,
 		}
 	})
 	return instance

@@ -1,4 +1,4 @@
-// IBPA accumulators for NearFetch Inter-module Bandwidth Per Access.
+// IBPA accumulators for Inter-module Bandwidth Per Access.
 // flit-hop sum is the numerator (Σ flit×hop over inter-module messages);
 // local/remote LLC miss counts form the denominator N = total memory access.
 // Single-threaded engine (no parallel), so plain counters suffice.

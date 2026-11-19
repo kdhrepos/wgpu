@@ -180,7 +180,3 @@ func (b *MeshGPUBuilder) GetRdmaRspPorts() map[uint64]akita.Port {
 
 	return chipletPorts
 }
-
-// Per-bank L2-DRAM and L2-RDMA wiring helpers live in common.go so all
-// builders that use RDMAEngineImpl (mesh and the standard builders) can
-// share them.

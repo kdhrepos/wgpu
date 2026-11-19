@@ -6,7 +6,6 @@ import (
 
 	"gitlab.com/akita/akita"
 	"gitlab.com/akita/mem/cache"
-	"gitlab.com/akita/mem/cache/writebackrcr"
 	"gitlab.com/akita/mem/idealmemcontroller"
 	"gitlab.com/akita/mem/vm/addresstranslator"
 	"gitlab.com/akita/mem/vm/mmu"
@@ -45,26 +44,6 @@ func (r *Runner) addLocalRemoteTracer() {
 	}
 }
 
-func (r *Runner) addIdealTracer() {
-	r.IdealTracer = tracing.NewIdealTracer()
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, engine := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(engine, r.IdealTracer)
-		}
-	}
-}
-
-func (r *Runner) addInterClusterTracer() {
-	r.InterClusterTracer = tracing.NewInterClusterTracer()
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, engine := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(engine, r.InterClusterTracer)
-		}
-	}
-}
-
 func (r *Runner) addPteCachingTracer() {
 	r.PteCachingTracer = tracing.NewPteCachingTracer(*xDim, *yDim)
 
@@ -75,9 +54,6 @@ func (r *Runner) addPteCachingTracer() {
 		for _, engine := range gpu.ChipRDMAEngines {
 			tracing.CollectTrace(engine, r.PteCachingTracer)
 		}
-		// Iterate every InterChipletNetwork entry so PTW network switches
-		// (entry 1 on pt-ideal/data-ideal) also produce hop-trace steps,
-		// not only the data network (entry 0).
 		for _, net := range gpu.InterChipletNetwork {
 			for _, swArr := range net.GetChipSwitches() {
 				for _, sw := range swArr {
@@ -101,16 +77,6 @@ func (r *Runner) addPteAccessTracer(name string) {
 	for _, gpu := range r.GPUDriver.GPUs {
 		for _, mmu := range gpu.MMUs {
 			tracing.CollectTrace(mmu, r.PteAccessTracer)
-		}
-	}
-}
-
-func (r *Runner) addPCTableTracer() {
-	r.PCTableTracer = tracing.NewPCTableTracer()
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, e := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(e, r.PCTableTracer)
 		}
 	}
 }
@@ -146,24 +112,6 @@ func (r *Runner) addFlushTracer() {
 		*xDim,
 		*yDim)
 	tracing.CollectTrace(r.GPUDriver, r.FlushTracer)
-}
-
-func (r *Runner) addPCStateTracer() {
-	if !r.TracePCState {
-		return
-	}
-
-	// r.PCStateTracer = tracing.NewPCStateTracer(
-	// 	func(t tracing.Task) bool {
-	// 		return t.Kind == "pc-state-trace"
-	// 	},
-	// 	*pcStateTraceFileName)
-
-	// for _, gpu := range r.GPUDriver.GPUs {
-	// 	for _, e := range gpu.ChipRDMAEngines {
-	// 		tracing.CollectTrace(e, r.PCStateTracer)
-	// 	}
-	// }
 }
 
 func (r *Runner) addMemoryAccessTracer(name string) {
@@ -216,123 +164,6 @@ func (r *Runner) addWorkgroupDimensionTracer() {
 	}
 }
 
-func (r *Runner) addDistTracer(name string) {
-	if *platformType != "static-cluster" &&
-		*platformType != "dynamic-cluster" &&
-		*platformType != "dynamic-cluster-rep" &&
-		*platformType != "dynamic-dist" &&
-		*platformType != "dynamic-clustering" {
-		return
-	}
-
-	r.DistTracer = tracing.NewDistTracer(
-		*xDim,
-		*yDim,
-		name,
-	)
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, cache := range gpu.L2Caches {
-			tracing.CollectTrace(cache, r.DistTracer)
-		}
-		for _, engine := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(engine, r.DistTracer)
-		}
-		for _, net := range gpu.InterChipletNetwork {
-			for _, engine := range net.GetChipSwitches() {
-				for _, sw := range engine {
-					tracing.CollectTrace(sw, r.DistTracer)
-				}
-			}
-		}
-	}
-}
-
-func (r *Runner) addLookupTracer() {
-	if *platformType != "static-cluster" &&
-		*platformType != "dynamic-cluster" &&
-		*platformType != "dynamic-cluster-rep" &&
-		*platformType != "dynamic-dist" &&
-		*platformType != "dynamic-clustering" {
-		return
-	}
-
-	r.LookupTracer = tracing.NewLookupTracer(
-		*xDim,
-		*yDim,
-	)
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, cache := range gpu.L2Caches {
-			tracing.CollectTrace(cache, r.LookupTracer)
-		}
-	}
-}
-
-// addLookupUniqueTracer wires the unique-remote-request lookup tracer to
-// the same L2 caches as addLookupTracer. Counts hits/misses per unique
-// LookupReq id rather than per trial; see lookupuniquetracer.go.
-func (r *Runner) addLookupUniqueTracer() {
-	if *platformType != "static-cluster" &&
-		*platformType != "dynamic-cluster" &&
-		*platformType != "dynamic-cluster-rep" &&
-		*platformType != "dynamic-dist" &&
-		*platformType != "dynamic-clustering" {
-		return
-	}
-
-	r.LookupUniqueTracer = tracing.NewLookupUniqueTracer()
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, cache := range gpu.L2Caches {
-			tracing.CollectTrace(cache, r.LookupUniqueTracer)
-		}
-	}
-}
-
-// addLookupOutcomeTracer wires the per-chain lookup-outcome tracer to the
-// RDMA engines (not the L2 caches): the engine is the only place that knows
-// the requestor's cluster, the hitting node's cluster, and the stable
-// per-chain Hop counter. Records hop-to-hit and own/other/global-home outcome.
-func (r *Runner) addLookupOutcomeTracer() {
-	if *platformType != "static-cluster" &&
-		*platformType != "dynamic-cluster" &&
-		*platformType != "dynamic-cluster-rep" &&
-		*platformType != "dynamic-dist" &&
-		*platformType != "dynamic-clustering" {
-		return
-	}
-
-	r.LookupOutcomeTracer = tracing.NewLookupOutcomeTracer()
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, engine := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(engine, r.LookupOutcomeTracer)
-		}
-	}
-}
-
-// addLookupPathTracer wires the lookup chiplet-visit-sequence tracer to the
-// RDMA engines. Records the R->LH...->GH chain each lookup is routed through,
-// which can differ from a plain X-Y route.
-func (r *Runner) addLookupPathTracer() {
-	if *platformType != "static-cluster" &&
-		*platformType != "dynamic-cluster" &&
-		*platformType != "dynamic-cluster-rep" &&
-		*platformType != "dynamic-dist" &&
-		*platformType != "dynamic-clustering" {
-		return
-	}
-
-	r.LookupPathTracer = tracing.NewLookupPathTracer()
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, engine := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(engine, r.LookupPathTracer)
-		}
-	}
-}
-
 func (r *Runner) addKernelTracer() {
 	r.KernelTracer = tracing.NewKernelTracer(
 		func(task tracing.Task) bool {
@@ -340,66 +171,6 @@ func (r *Runner) addKernelTracer() {
 		})
 
 	tracing.CollectTrace(r.GPUDriver, r.KernelTracer)
-}
-
-// addPerPCLookupTracer attaches one PerPCLookupTracer to every L2 cache and
-// every RDMA engine on the platforms that emit lookup-* (dynamic-clustering
-// family) or data-forwarding-* (nearfetch family) tasks. The tracer buckets
-// non-PTW outcomes by originating PC. Per-instance snapshots are merged at
-// report time in reportPerPCLookup.
-func (r *Runner) addPerPCLookupTracer() {
-	switch *platformType {
-	case "static-cluster", "dynamic-cluster", "dynamic-cluster-rep",
-		"dynamic-dist", "dynamic-clustering",
-		"nearfetch", "nearfetch2":
-	default:
-		return
-	}
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, cache := range gpu.L2Caches {
-			t := tracing.NewPerPCLookupTracer()
-			r.PerPCLookupTracers = append(r.PerPCLookupTracers, t)
-			tracing.CollectTrace(cache, t)
-		}
-		for _, engine := range gpu.ChipRDMAEngines {
-			t := tracing.NewPerPCLookupTracer()
-			r.PerPCLookupTracers = append(r.PerPCLookupTracers, t)
-			tracing.CollectTrace(engine, t)
-		}
-	}
-}
-
-// Data Forwarding (RCR) for NearFetch
-func (r *Runner) addRcrHitRateTracer() {
-	if !r.ReportRcrHitRateFlag {
-		return
-	}
-
-	filter := func(task tracing.Task) bool {
-		return task.Kind == "data-forwarding-hit" ||
-			task.Kind == "data-forwarding-miss" ||
-			task.Kind == "data-forwarding-mshr-hit" ||
-			task.Kind == "data-forwarding-mshr-coalesced" ||
-			task.Kind == "data-forwarding-reached-gh"
-	}
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		// Hit/miss/mshr tasks are emitted by the writebackrcr L2 caches.
-		for _, cache := range gpu.L2Caches {
-			tracer := tracing.NewRcrHitRateTracer(filter)
-			r.RcrHitRateTracers = append(r.RcrHitRateTracers, tracer)
-			tracing.CollectTrace(cache, tracer)
-		}
-		// The reached-global-home terminal is decided in the RCR engine
-		// (a lookup that walked the whole path without an intermediate hit),
-		// so the tracer must also listen on the RDMA engines.
-		for _, engine := range gpu.ChipRDMAEngines {
-			tracer := tracing.NewRcrHitRateTracer(filter)
-			r.RcrHitRateTracers = append(r.RcrHitRateTracers, tracer)
-			tracing.CollectTrace(engine, tracer)
-		}
-	}
 }
 
 func (r *Runner) addMemoryUsageTracer() {
@@ -1511,23 +1282,7 @@ func (r *Runner) attachPortQueueToL2(caches []cache.Cache) {
 		r.attachIfPort(c.GetBottomToRdmaPort())
 		r.attachIfPort(c.GetBottomToDramPort())
 		r.attachIfPort(c.GetRDMAPort())
-		r.attachIfPort(l2LookupPort(c))
 	}
-}
-
-// l2LookupPort returns the NearFetch RCR lookup port on a writebackrcr L2,
-// or nil for other cache variants. Only the NearFetch cache package exposes
-// a LookupPort field; for any other cache type the call returns nil and
-// attachIfPort no-ops.
-func l2LookupPort(c cache.Cache) akita.Port {
-	if *platformType != "nearfetch" {
-		return nil
-	}
-	switch cc := c.(type) {
-	case *writebackrcr.Cache:
-		return cc.LookupPort
-	}
-	return nil
 }
 
 func (r *Runner) attachPortQueueToRDMA(engines []rdma.RDMAEngine) {

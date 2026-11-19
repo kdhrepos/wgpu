@@ -12,8 +12,6 @@ import (
 	"gitlab.com/akita/akita"
 	"gitlab.com/akita/mem"
 	"gitlab.com/akita/mem/cache/writeback"
-	writeback_dynamic_dist "gitlab.com/akita/mem/cache/writeback-dynamic-dist"
-	"gitlab.com/akita/mem/cache/writebackrcr"
 	"gitlab.com/akita/mem/device"
 	"gitlab.com/akita/mem/vm/addresstranslator"
 	"gitlab.com/akita/mem/vm/tlb"
@@ -36,9 +34,6 @@ type Driver struct {
 
 	memAllocator device.MemoryAllocator
 	distributor  distributor
-
-	// SAC platform only — nil by default (see sac_observer.go).
-	kernelCompletionObserver KernelCompletionObserver
 
 	GPUs             []*mgpusim.GPU
 	devices          []*device.Device
@@ -135,148 +130,6 @@ func (d *Driver) runAsync() {
 			d.engineRunningMutex.Unlock()
 		}
 	}
-}
-
-func (d *Driver) getComponents() []akita.Component {
-	components := make([]akita.Component, 0)
-
-	// for _, conn := range d.GPUs[0].L1TLBToL2TLBConnection {
-	// 	if conn != nil {
-	// 		components = append(components, conn)
-	// 	}
-	// }
-	// for _, conn := range d.GPUs[0].TLBToMMUConnection {
-	// 	if conn != nil {
-	// 		components = append(components, conn)
-	// 	}
-	// }
-	// for _, conn := range d.GPUs[0].L1ToL2Connection {
-	// 	if conn != nil {
-	// 		components = append(components, conn)
-	// 	}
-	// }
-	// for _, conn := range d.GPUs[0].L2ToDramConnection {
-	// 	if conn != nil {
-	// 		components = append(components, conn)
-	// 	}
-	// }
-	// for _, conn := range d.GPUs[0].L2ToRdmaConnection {
-	// 	if conn != nil {
-	// 		components = append(components, conn)
-	// 	}
-	// }
-	// for _, conn := range d.GPUs[0].SwitchConnection {
-	// 	if conn != nil {
-	// 		components = append(components, conn)
-	// 	}
-	// }
-
-	// for _, dram := range d.GPUs[0].MemoryControllers {
-	// 	if dram != nil {
-	// 		components = append(components, dram)
-	// 	}
-	// }
-
-	// for _, l2 := range d.GPUs[0].L2Caches {
-	// 	switch l2Cache := l2.(type) {
-	// 	case *writeback.Cache,
-	// 		*writebackrcr.Cache,
-	// 		*writebackstaticdist.Cache,
-	// 		*writebackdynamicdist.Cache,
-	// 		*writethrough.Cache:
-	// 		if l2Cache != nil {
-	// 			components = append(components, l2Cache)
-	// 		}
-	// 	}
-	// }
-	// for _, e := range d.GPUs[0].ChipRDMAEngines {
-	// 	switch engine := e.(type) {
-	// 	case *rdma.RDMAEngineImpl,
-	// 		*rdma.StaticDistRdmaEngine,
-	// 		*rdma.DynamicDistRdmaEngine,
-	// 		*rdma.RCRDMAEngine:
-	// 		if engine != nil {
-	// 			components = append(components, engine)
-	// 		}
-	// 	}
-	// }
-	// for _, swArr := range d.GPUs[0].InterChipletNetwork.GetChipSwitches() {
-	// 	for _, sw := range swArr {
-	// 		switch sw := sw.(type) {
-	// 		case *switching.MultiFlitChipletSwitchImpl,
-	// 			*switching.DistMultiFlitChipletSwitch,
-	// 			*switching.RCRMultiFlitChipletSwitch:
-	// 			if sw != nil {
-	// 				components = append(components, sw)
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// for _, dispatcher := range d.GPUs[0].Dispatchers {
-	// 	components = append(components, dispatcher)
-	// }
-	// for _, cu := range d.GPUs[0].CUs {
-	// 	components = append(components, cu)
-	// }
-
-	// for _, l1Rob := range d.GPUs[0].L1VROBs {
-	// 	components = append(components, l1Rob)
-	// }
-	// for _, l1Rob := range d.GPUs[0].L1SROBs {
-	// 	components = append(components, l1Rob)
-	// }
-	// for _, l1Rob := range d.GPUs[0].L1IROBs {
-	// 	components = append(components, l1Rob)
-	// }
-	// for _, translator := range d.GPUs[0].L1VAddrTranslator {
-	// 	components = append(components, translator)
-	// }
-	// for _, translator := range d.GPUs[0].L1SAddrTranslator {
-	// 	components = append(components, translator)
-	// }
-	// for _, translator := range d.GPUs[0].L1IAddrTranslator {
-	// 	components = append(components, translator)
-	// }
-
-	// for _, l1Cache := range d.GPUs[0].L1VCaches {
-	// 	if l1Cache != nil {
-	// 		components = append(components, l1Cache)
-	// 	}
-	// }
-	// for _, l1Cache := range d.GPUs[0].L1SCaches {
-	// 	if l1Cache != nil {
-	// 		components = append(components, l1Cache)
-	// 	}
-	// }
-	// for _, l1Cache := range d.GPUs[0].L1ICaches {
-	// 	if l1Cache != nil {
-	// 		components = append(components, l1Cache)
-	// 	}
-	// }
-
-	// for _, l1tlb := range d.GPUs[0].L1IROBs {
-	// 	if l1tlb != nil {
-	// 		components = append(components, l1tlb)
-	// 	}
-	// }
-	// for _, l1tlb := range d.GPUs[0].L1STLBs {
-	// 	if l1tlb != nil {
-	// 		components = append(components, l1tlb)
-	// 	}
-	// }
-	// for _, l1tlb := range d.GPUs[0].L1VTLBs {
-	// 	if l1tlb != nil {
-	// 		components = append(components, l1tlb)
-	// 	}
-	// }
-
-	// for _, mmu := range d.GPUs[0].MMUs {
-	// 	if mmu != nil {
-	// 		components = append(components, mmu)
-	// 	}
-	// }
-	return components
 }
 
 func (d *Driver) runEngine() {
@@ -394,15 +247,11 @@ func dumpGroup(gpuIdx int, label, prefix string, count int, get func(int) (summa
 // has pending work, so silent components don't drown out the real stall
 // location.
 func dumpExtendedState(gpuIdx int, gpu *mgpusim.GPU) {
-	// L2 caches (writeback + dynamic-dist variant)
+	// L2 caches
 	dumpGroup(gpuIdx, "L2 caches", "L2", len(gpu.L2Caches),
 		func(j int) (summarizer, bool) {
 			switch c := gpu.L2Caches[j].(type) {
 			case *writeback.Cache:
-				return c, true
-			case *writeback_dynamic_dist.Cache:
-				return c, true
-			case *writebackrcr.Cache:
 				return c, true
 			}
 			return nil, false
@@ -419,15 +268,11 @@ func dumpExtendedState(gpuIdx int, gpu *mgpusim.GPU) {
 	dumpGroup(gpuIdx, "MMUs", "MMU", len(gpu.MMUs),
 		func(j int) (summarizer, bool) { return gpu.MMUs[j], true })
 
-	// Chip RDMA engines (base + dynamic-clustering variant)
+	// Chip RDMA engines
 	dumpGroup(gpuIdx, "Chip RDMA engines", "RDMA", len(gpu.ChipRDMAEngines),
 		func(j int) (summarizer, bool) {
 			switch re := gpu.ChipRDMAEngines[j].(type) {
 			case *rdma.RDMAEngineImpl:
-				return re, true
-			case *rdma.DynamicClusteringRdmaEngine:
-				return re, true
-			case *rdma.RCRDMAEngine:
 				return re, true
 			}
 			return nil, false
@@ -1143,10 +988,6 @@ func (d *Driver) processLaunchKernelReturn(
 	now akita.VTimeInSec,
 	req *coreprotocol.LaunchKernelReq,
 ) bool {
-	if d.kernelCompletionObserver != nil {
-		d.kernelCompletionObserver.OnKernelComplete(now)
-	}
-
 	cmd, cmdQueue := d.findCommandByReq(req)
 	cmd.RemoveReq(req)
 

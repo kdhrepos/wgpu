@@ -23,7 +23,6 @@ import (
 	"gitlab.com/akita/mgpusim/timing/caches/rob"
 	"gitlab.com/akita/mgpusim/timing/cp"
 	"gitlab.com/akita/mgpusim/timing/cu"
-	"gitlab.com/akita/noc/networking/chipnetwork"
 	"gitlab.com/akita/util/global"
 	"gitlab.com/akita/util/tracing"
 )
@@ -98,8 +97,6 @@ type CommonBuilder struct {
 	l1iCaches         []caches.L1Cache
 	l2Caches          []cache.Cache
 	// l2Caches          []*writeback.Cache
-	// l2Caches                []*writethrough.Cache
-	llcPolicy    string
 	l1vAddrTrans []addresstranslator.AddressTranslator
 	l1sAddrTrans []addresstranslator.AddressTranslator
 	l1iAddrTrans []addresstranslator.AddressTranslator
@@ -117,8 +114,6 @@ type CommonBuilder struct {
 	pageMigrationController *pagemigrationcontroller.PageMigrationController
 
 	internalConn *akita.DirectConnection
-
-	interChipletNetwork *chipnetwork.Connector
 
 	alg                    string
 	schedPartition         string
@@ -151,8 +146,6 @@ func (b *CommonBuilder) SetDefaultCommonBuilderParams() {
 
 	// this ought not to be in common
 	b.remoteTLBInterleavingSize = 512
-
-	b.llcPolicy = "writeback"
 }
 
 // WithEngine sets the engine that the GPU use.
@@ -294,10 +287,6 @@ func (b *CommonBuilder) WithNumReqPerCycle(n int) {
 
 func (b *CommonBuilder) WithSwitchLatency(s int) {
 	b.switchLatency = s
-}
-
-func (b *CommonBuilder) WithLLCPolicy(p string) {
-	b.llcPolicy = p
 }
 
 func (b *CommonBuilder) WithPC(p bool) {
@@ -694,123 +683,6 @@ func (b *CommonBuilder) connectL2ToRdma(
 		4*chiplet.chipRdmaEngine.GetNumTransPerCycle()) // from rdma to dram for trans and evict req
 }
 
-// connectL2ToDramPerBank wires per-bank L2-DRAM for builders whose chiplet
-// RDMA engine is a plain *rdma.RDMAEngineImpl (mesh, direct, meshwt, infllc).
-// Builders that use a self-defined RDMA type (DynamicDist*, DynamicCluster*,
-// StaticCluster, ...) embed RDMAEngineImpl by value; they must define their
-// own connectL2ToDramPerBank that casts to the concrete type and forwards
-// to wireL2ToDramPerBank with the address of the embedded RDMAEngineImpl.
-func (b *CommonBuilder) connectL2ToDramPerBank(chiplet *Chiplet) {
-	rdmaEngine := chiplet.chipRdmaEngine.(*rdma.RDMAEngineImpl)
-	b.wireL2ToDramPerBank(chiplet, rdmaEngine)
-}
-
-// connectL2ToRdmaPerBank — see connectL2ToDramPerBank for the casting note.
-func (b *CommonBuilder) connectL2ToRdmaPerBank(chiplet *Chiplet) {
-	rdmaEngine := chiplet.chipRdmaEngine.(*rdma.RDMAEngineImpl)
-	b.wireL2ToRdmaPerBank(chiplet, rdmaEngine)
-}
-
-// wireL2ToDramPerBank performs the per-bank L2-DRAM wiring on the supplied
-// *rdma.RDMAEngineImpl. Callers (in common.go for plain RDMAEngineImpl, or
-// in per-platform builder files for self-defined RDMA types) must cast the
-// chiplet's chipRdmaEngine themselves and pass the embedded RDMAEngineImpl.
-func (b *CommonBuilder) wireL2ToDramPerBank(
-	chiplet *Chiplet,
-	rdmaEngine *rdma.RDMAEngineImpl,
-) {
-	lowModuleFinderForPMC := lmf.NewInterleavedLowModuleFinder(
-		1 << b.log2MemoryBankInterleavingSize)
-
-	chiplet.L2ToDramConnection = akita.NewDirectConnection(
-		chiplet.name+".L2-DRAM", b.engine, b.freq)
-
-	lowModuleFinderForL2 := make(
-		[]*lmf.SingleVRemoteLowModuleFinder, len(chiplet.L2Caches))
-
-	rdmaEngine.AddDramBankPorts(len(chiplet.DRAMs))
-	// Ensure ToL2Bottoms[i] is allocated before the L2 lowModuleFinders
-	// reference it as their "remote" dst.
-	rdmaEngine.AddL2BottomBankPorts(len(chiplet.L2Caches))
-
-	for i, dram := range chiplet.DRAMs {
-		chiplet.L2ToDramConnection.PlugIn(dram.ToTop, 2*dram.MaxNumTransaction)
-		lowModuleFinderForPMC.LowModules = append(
-			lowModuleFinderForPMC.LowModules, dram.ToTop)
-
-		// L2[i] sends evict/read-miss requests with dst = ToL2Bottoms[i]
-		// (per-bank), so each L2 cache backpressures only its own slot.
-		var l2BottomRemote akita.Port = rdmaEngine.ToL2Bottom
-		if i < len(rdmaEngine.ToL2Bottoms) {
-			l2BottomRemote = rdmaEngine.ToL2Bottoms[i]
-		}
-		lowModuleFinderForL2[i] = lmf.NewDualStripeSingleVRemoteLowModuleFinder(
-			dram.ToTop,
-			l2BottomRemote,
-			b.memAddrOffset,
-			b.numChiplets,
-			b.numMemoryBankPerChiplet,
-			b.chipletInterleavingSize(),
-			1<<b.log2MemoryBankInterleavingSize,
-			uint64(b.numMemoryBankPerChiplet)*chiplet.ChipletID+uint64(i))
-
-		rdmaEngine.MapDramDest(dram.ToTop, i)
-		chiplet.L2ToDramConnection.PlugIn(rdmaEngine.ToDramTops[i],
-			4*chiplet.chipRdmaEngine.GetNumTransPerCycle())
-	}
-
-	for i, l2Cache := range chiplet.L2Caches {
-		chiplet.L2ToDramConnection.PlugIn(l2Cache.GetBottomToDramPort(),
-			2*l2Cache.GetNumReqPerCycle())
-		l2Cache.SetLowModuleFinder(lowModuleFinderForL2[i])
-	}
-
-	b.pageMigrationController.MemCtrlFinder = lowModuleFinderForPMC
-	chiplet.L2ToDramConnection.PlugIn(b.pageMigrationController.LocalMemPort, 16)
-}
-
-// wireL2ToRdmaPerBank performs the per-bank L2-RDMA wiring on the supplied
-// *rdma.RDMAEngineImpl. See wireL2ToDramPerBank for the casting contract.
-func (b *CommonBuilder) wireL2ToRdmaPerBank(
-	chiplet *Chiplet,
-	rdmaEngine *rdma.RDMAEngineImpl,
-) {
-	localModuleFinderForRDMA := lmf.NewStripedLowModuleFinder(
-		b.memAddrOffset,
-		b.numMemoryBankPerChiplet,
-		1<<b.log2MemoryBankInterleavingSize)
-
-	chiplet.L2ToRdmaConnection = akita.NewDirectConnection(
-		chiplet.name+".L2-RDMA", b.engine, b.freq)
-
-	numBanks := len(chiplet.L2Caches)
-	rdmaEngine.AddL2BankPorts(numBanks)
-	rdmaEngine.AddL2BottomBankPorts(numBanks)
-
-	for i, l2Cache := range chiplet.L2Caches {
-		chiplet.L2ToRdmaConnection.PlugIn(l2Cache.GetBottomToRdmaPort(),
-			2*chiplet.chipRdmaEngine.GetNumTransPerCycle())
-		chiplet.L2ToRdmaConnection.PlugIn(l2Cache.GetRDMAPort(),
-			2*chiplet.chipRdmaEngine.GetNumTransPerCycle())
-		localModuleFinderForRDMA.LowModules = append(
-			localModuleFinderForRDMA.LowModules, l2Cache.GetRDMAPort())
-
-		rdmaEngine.MapL2Dest(l2Cache.GetRDMAPort(), i)
-		chiplet.L2ToRdmaConnection.PlugIn(rdmaEngine.ToL2RDMAs[i],
-			4*chiplet.chipRdmaEngine.GetNumTransPerCycle())
-
-		// Per-bank L2 <-> RDMA bottom slot: each L2 cache's
-		// BottomToRdmaPort is paired with its own ToL2Bottoms[i].
-		rdmaEngine.MapL2BottomDest(l2Cache.GetBottomToRdmaPort(), i)
-		chiplet.L2ToRdmaConnection.PlugIn(rdmaEngine.ToL2Bottoms[i],
-			4*chiplet.chipRdmaEngine.GetNumTransPerCycle())
-	}
-
-	chiplet.chipRdmaEngine.SetLocalModuleFinder(localModuleFinderForRDMA)
-	// Note: ToDramTops are plugged into L2ToDramConnection by
-	// wireL2ToDramPerBank — do not re-plug ToDramTop here.
-}
-
 // only used when pte caching is enabled.
 func (b *CommonBuilder) connectMMUToL2(
 	chiplet *Chiplet,
@@ -931,45 +803,6 @@ func (b *CommonBuilder) connectMMUToBottom(
 
 	// mmu's low module finder, same as L2 cache's low module finder
 	chiplet.MMU.SetLowModuleFinder(lowModuleFinderForMMU)
-}
-
-func (b *CommonBuilder) connectRDMAEngines() {
-	// This table is used for finding request/response port from each chiplet.
-	// Pure chiplet-level routing (one entry per chiplet) — stripe = chiplet
-	// stripe directly.
-	chipRdmaReqAddrTable := lmf.NewStripedLowModuleFinder(
-		b.memAddrOffset,
-		uint64(b.numChiplets),
-		b.chipletInterleavingSize())
-	chipRdmaRspAddrTable := make(map[akita.Port]akita.Port)
-
-	for i := uint64(0); i < b.numChiplets; i++ {
-		chipRdmaReqAddrTable.LowModules = append(
-			chipRdmaReqAddrTable.LowModules,
-			b.chiplets[i].chipRdmaEngine.GetRequestPort())
-		chipRdmaRspAddrTable[b.chiplets[i].chipRdmaEngine.GetRequestPort()] =
-			b.chiplets[i].chipRdmaEngine.GetResponsePort()
-	}
-
-	for i := uint64(0); i < b.numChiplets; i++ {
-		b.chiplets[i].chipRdmaEngine.SetRdmaReqAddressTable(chipRdmaReqAddrTable)
-		b.chiplets[i].chipRdmaEngine.SetRdmaRspAddressTable(chipRdmaRspAddrTable)
-
-		b.gpu.ChipRDMAEngines = append(
-			b.gpu.ChipRDMAEngines,
-			b.chiplets[i].chipRdmaEngine)
-	}
-
-	// only used for l2 miss trace
-	for _, l2Cache := range b.gpu.L2Caches {
-		l2Cache := l2Cache.(*writeback.Cache)
-		l2Cache.SetVirtualAddrTable(chipRdmaReqAddrTable)
-	}
-
-	// used for pte access trace
-	for _, mmu := range b.gpu.MMUs {
-		mmu.VirtualAddrTable = chipRdmaReqAddrTable
-	}
 }
 
 func (b *CommonBuilder) connectCP() {

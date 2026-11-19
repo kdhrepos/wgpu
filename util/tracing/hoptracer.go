@@ -147,11 +147,7 @@ func (t *HopTracer) EndTask(task Task) {
 			"chiplet_"))
 
 	// elapsedTime tracks the full round trip, so always advance it to the last
-	// reply. dstChipId is first-write-wins: a NearFetch corner-coalesced access
-	// replies twice on one task ID (first from the data source / home, then
-	// relayed by the corner). Keep the data source as the C2C endpoint so it
-	// stays consistent with hopTraced/hopRequired (= src->home distance). For
-	// every non-coalesced task there is exactly one EndTask, so this is a no-op.
+	// reply. dstChipId is first-write-wins.
 	hopInfo.elapsedTime = float64(task.EndTime) - hopInfo.startTime
 	if !hopInfo.replied {
 		hopInfo.dstChipId = dstChipId

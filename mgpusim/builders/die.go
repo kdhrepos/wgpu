@@ -22,7 +22,6 @@ type Chiplet struct {
 	L1SCaches   []caches.L1Cache
 	L2Caches    []cache.Cache
 	// L2Caches []*writeback.Cache
-	// L2Caches          []*writethrough.Cache
 	L2CacheFinder     lmf.LowModuleFinder
 	L2TLBs            []tlb.L2TLB
 	L1VTLBs           []*tlb.TLB

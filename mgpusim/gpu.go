@@ -60,12 +60,8 @@ type GPU struct {
 	ChipRDMAEngines []rdma.RDMAEngine
 	PageRDMAEngines []rdma.RDMAEngine
 
-	// InterChipletNetwork holds one or more chiplet-interconnect networks
-	// per GPU. Single-network platforms (mesh, ideal, datadirect, ptdirect,
-	// nearfetch, ...) append a single connector; dual-network platforms
-	// (pt-ideal, data-ideal) append two — the data-path connector first,
-	// the PTW-path connector second. Tracers attached to every entry pick
-	// up traffic on both networks.
+	// InterChipletNetwork holds the chiplet-interconnect network (mesh or
+	// ideal) of this GPU.
 	InterChipletNetwork      []chipnetwork.InterChipletConnector
 	InterChipletMagicNetwork *akita.DirectConnection
 

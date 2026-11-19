@@ -43,26 +43,6 @@ type ReadReq struct {
 
 	// to trace remote ptw when pte caching enabled platform
 	IsPtw bool
-
-	// flag for no distribution
-	NoDist bool
-
-	// SAC platform only: chiplet id of the requesting L2 (stamped on
-	// bottom requests by writebacksac for the CRD per-chip bits).
-	RequesterChiplet int
-
-	// HopTraceID carries the origin RDMA hop-trace task ID across a NearFetch
-	// corner-MSHR-coalesced access. Empty on a request that originates a new
-	// task (local L2 miss); inherited (non-empty) on the corner-node fetch that
-	// continues an existing task. Lets the HopTracer accumulate both the
-	// requestor->corner and corner->home legs onto one task.
-	HopTraceID uint64
-
-	// HopBase is the cumulative NearFetch lookup-hop distance from the original
-	// requestor to the corner that issues this continuation fetch. The corner's
-	// LookupReq per-leg Hop restarts at 1, so the true requestor-relative
-	// distance is Hop+HopBase. 0 on an origin-leg fetch (requestor local miss).
-	HopBase int
 }
 
 // Meta returns the message meta.
@@ -183,12 +163,6 @@ type WriteReq struct {
 	CanWaitForCoalesce bool
 	Info               interface{}
 
-	// SAC platform only: a demand write forwarded to the home L2
-	// (memory-side pass-through), as opposed to an eviction write
-	// which the RDMA engine routes straight to DRAM.
-	IsDemandWrite bool
-	// SAC platform only: chiplet id of the requesting L2.
-	RequesterChiplet int
 	// WfID identifies the issuing wavefront (see ReadReq.WfID).
 	WfID string
 }

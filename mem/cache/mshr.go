@@ -17,13 +17,6 @@ type MSHREntry struct {
 	ReadReq   *protocol.ReadReq
 	DataReady *protocol.DataReadyRsp
 	Data      []byte
-
-	// FetchedRemote is true when the data satisfying this entry was fetched
-	// from a further remote (RDMA) target rather than local DRAM/eviction
-	// data. Set by whichever cache variant dispatches the bottom-level
-	// fetch (e.g. writebackrcr's fetchFromBottom/mshrCoalesceFromBottom);
-	// unused (stays false) by variants that don't need the distinction.
-	FetchedRemote bool
 }
 
 // NewMSHREntry returns a new MSHR entry object

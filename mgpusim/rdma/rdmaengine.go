@@ -911,13 +911,7 @@ func (e *RDMAEngineImpl) processReqFromOutside(
 		case *protocol.TransReadReq:
 			madeProgress = e.processTransReqFromOutside(now, req, idx) || madeProgress
 		case *protocol.WriteReq:
-			// Eviction writes go straight to DRAM. SAC memory-side demand
-			// writes (IsDemandWrite) target the home L2 instead.
-			if req.IsDemandWrite {
-				madeProgress = e.processDataReqFromOutside(now, req, idx) || madeProgress
-			} else {
-				madeProgress = e.processEvictReqFromOutside(now, req, idx) || madeProgress
-			}
+			madeProgress = e.processEvictReqFromOutside(now, req, idx) || madeProgress
 		case protocol.AccessReq:
 			madeProgress = e.processDataReqFromOutside(now, req, idx) || madeProgress
 		default:
@@ -937,10 +931,6 @@ func (e *RDMAEngineImpl) canRouteReqFromOutside(m akita.Msg) bool {
 		dst := e.translationModuleFinder.Find(req.GetAddress())
 		return e.dstReadyVia(e.srcPortForDramDst(dst), dst)
 	case *protocol.WriteReq:
-		if req.IsDemandWrite {
-			dst := e.localModuleFinder.Find(req.GetAddress())
-			return dst.(canSender).CanSend(1)
-		}
 		dst := e.translationModuleFinder.Find(req.GetAddress())
 		return e.dstReadyVia(e.srcPortForDramDst(dst), dst)
 	case protocol.AccessReq:
@@ -1096,14 +1086,6 @@ func (e *RDMAEngineImpl) processDataReqFromOutside(
 	cloned.Meta().SendTime = now
 	cloned.Meta().Src = src
 	cloned.Meta().Dst = dst // rdma port of local L2 cache.
-
-	// Propagate HopTraceID so the corner's L2→RDMA path continues the
-	// origin hop-trace task started at the original requestor.
-	if r, ok := req.(*protocol.ReadReq); ok {
-		if cl, ok := cloned.(*protocol.ReadReq); ok {
-			cl.HopTraceID = r.HopTraceID
-		}
-	}
 
 	err := src.Send(cloned)
 	if err == nil {
@@ -1329,7 +1311,6 @@ func (e *RDMAEngineImpl) cloneReq(origin protocol.AccessReq) protocol.AccessReq 
 			WithByteSize(origin.AccessByteSize).
 			WithInfo(origin.Info).
 			Build()
-		read.RequesterChiplet = origin.RequesterChiplet
 		read.IsPtw = origin.IsPtw
 		return read
 	case *protocol.WriteReq:
@@ -1342,8 +1323,6 @@ func (e *RDMAEngineImpl) cloneReq(origin protocol.AccessReq) protocol.AccessReq 
 			WithData(origin.Data).
 			WithDirtyMask(origin.DirtyMask).
 			Build()
-		write.RequesterChiplet = origin.RequesterChiplet
-		write.IsDemandWrite = origin.IsDemandWrite
 		return write
 	default:
 		log.Panicf("cannot clone request of type %s",

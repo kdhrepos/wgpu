@@ -49,10 +49,8 @@ type multiFlitPortComplex struct {
 	// mimic (assemble→tryDeliver split). Pass-through only.
 	deliverBuf util.Buffer
 
-	// Legacy fields below are retained for backward compatibility with
-	// switch variants (dist, dynamic-clustering, rcr) that still do msg ↔ flit
-	// conversion inside the switch. The 7-stage mimic reuses msgInBuf and
-	// flitBuf as pass-through stage buffers.
+	// The 7-stage mimic reuses msgInBuf and flitBuf as pass-through stage
+	// buffers.
 	assemblingMsg   akita.Msg
 	numFlitRequired int
 	numFlitArrived  int

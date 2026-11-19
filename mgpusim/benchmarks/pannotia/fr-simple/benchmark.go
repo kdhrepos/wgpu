@@ -5,7 +5,7 @@
 // each 1-hop neighbor w of the source vertex u (a hub w is a neighbor of
 // many u's, so N(w) is read by many chiplets). fr's O(deg^3) cost is
 // dominated by the 2-hop set-intersection, which is cold private traffic
-// irrelevant to a memory-system (dynamic-clustering vs nearfetch)
+// irrelevant to a memory-system
 // comparison but starves the instruction budget so the sharing never
 // materialises within a feasible simulation window.
 //

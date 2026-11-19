@@ -52,8 +52,6 @@ type shaderArrayBuilder struct {
 
 	reqWithPC bool
 
-	clusterType string
-
 	chipletId uint64
 
 	pageTable device.PageTable
@@ -121,12 +119,6 @@ func (b *shaderArrayBuilder) withPC(
 	p bool,
 ) {
 	b.reqWithPC = p
-}
-
-func (b *shaderArrayBuilder) withClusterType(
-	clusterType string,
-) {
-	b.clusterType = clusterType
 }
 
 func (b *shaderArrayBuilder) withChipletId(

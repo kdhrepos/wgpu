@@ -272,11 +272,9 @@ func (ep *EndPoint) recv(now akita.VTimeInSec) bool {
 
 // tryDeliver drains assembled msgs to their device-side destinations.
 // Order is preserved per destination: once a destination Recv fails, later
-// msgs to that same destination are kept for retry. A DeliverHook msg (e.g.
-// DynamicClusteringEndPoint fan-out) that cannot re-inject into msgOutBuf is
-// kept and skipped rather than head-of-line-blocking terminal msgs bound for
-// the local device — draining those frees the MSHR / network-egress room the
-// blocked fan-out is itself waiting on.
+// msgs to that same destination are kept for retry. A DeliverHook msg that
+// cannot re-inject into msgOutBuf is kept and skipped rather than
+// head-of-line-blocking terminal msgs bound for the local device.
 func (ep *EndPoint) tryDeliver(now akita.VTimeInSec) bool {
 	madeProgress := false
 	writeIdx := 0

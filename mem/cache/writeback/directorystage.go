@@ -51,7 +51,7 @@ func (ds *directoryStage) Tick(now akita.VTimeInSec) bool {
 		// Nothing ready. Return false (no progress) even when buffers are
 		// non-empty-but-not-ready, so the engine can quiesce and the driver's
 		// deadlock detector fires instead of spinning with zero progress (a
-		// livelock that masks a real deadlock). Mirrors writeback-dynamic-dist.
+		// livelock that masks a real deadlock).
 		return false
 	}
 

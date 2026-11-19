@@ -61,7 +61,6 @@ replace gitlab.com/akita/mem => ../mem
 
 replace gitlab.com/akita/util => ../util
 
-replace gitlab.com/akita/mem/cache/writebackrcr => ../mem/cache/writebackrcr
 
 replace gitlab.com/akita/lmf => ../lmf
 

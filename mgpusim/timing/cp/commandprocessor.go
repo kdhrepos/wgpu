@@ -80,9 +80,6 @@ type CommandProcessor struct {
 	bottomMemCopyH2DReqIDToTopReqMap   map[uint64]*coreprotocol.MemCopyH2DReq
 	bottomMemCopyD2HReqIDToTopReqMap   map[uint64]*coreprotocol.MemCopyD2HReq
 
-	// SAC platform only — nil by default (see sac_observer.go).
-	kernelObserver KernelObserver
-
 	customHSLpmdUnits uint64
 
 	// simplified
@@ -196,11 +193,6 @@ func (p *CommandProcessor) processReqFromDriver(now akita.VTimeInSec) bool {
 	case *coreprotocol.FlushCommand:
 		return p.processFlushCommand(now, req)
 	case *coreprotocol.MemCopyD2HReq, *coreprotocol.MemCopyH2DReq:
-		if p.kernelObserver != nil && !p.kernelObserver.ReadyForKernel() {
-			// SAC: delay memcopies while an LLC writeback flush is in
-			// flight, so D2H never reads stale DRAM.
-			return false
-		}
 		return p.processMemCopyReq(now, req)
 	case *coreprotocol.RDMADrainCmdFromDriver:
 		return p.processRDMADrainCmd(now, req)
@@ -347,12 +339,6 @@ func (p *CommandProcessor) processLaunchKernelReq(
 	now akita.VTimeInSec,
 	req *coreprotocol.LaunchKernelReq,
 ) bool {
-	if p.kernelObserver != nil && !p.kernelObserver.ReadyForKernel() {
-		// SAC LLC reconfiguration in flight: leave the request queued and
-		// retry once the observer reports ready.
-		return false
-	}
-
 	d := p.findAvailableDispatcher()
 
 	if d == nil {
@@ -361,10 +347,6 @@ func (p *CommandProcessor) processLaunchKernelReq(
 
 	d.StartDispatching(req)
 	p.ToDriver.Retrieve(now)
-
-	if p.kernelObserver != nil {
-		p.kernelObserver.OnKernelStart(now)
-	}
 
 	tracing.TraceReqReceive(req, now, p)
 	// tracing.TraceReqInitiate(&reqToBottom, now, p,
@@ -540,15 +522,6 @@ func (p *CommandProcessor) processRegularCacheFlush(
 	now akita.VTimeInSec,
 	flushRsp *cache.FlushRsp,
 ) bool {
-	// Caches fully flushed = RDMA drained: safe to reset kernel-specific
-	// PC-table state. Only the dynamic-clustering engine implements
-	// Reset(); other engines have no PC table and are skipped.
-	for _, e := range p.ChipRdmaEngines {
-		if r, ok := e.(interface{ Reset() }); ok {
-			r.Reset()
-		}
-	}
-
 	p.currFlushRequest.Src, p.currFlushRequest.Dst =
 		p.currFlushRequest.Dst, p.currFlushRequest.Src
 	p.currFlushRequest.SendTime = now
@@ -806,10 +779,6 @@ func (p *CommandProcessor) processFlushCommand(
 	for _, port := range p.L2Caches {
 		p.flushCache(now, port)
 	}
-
-	// PC-table reset is done in processRegularCacheFlush, after all caches
-	// ACK (RDMA drained) — never here mid-flush, which would drop in-flight
-	// writeback transactions.
 
 	p.currFlushRequest = cmd
 	if p.numCacheACK == 0 {

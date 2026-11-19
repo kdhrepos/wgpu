@@ -91,7 +91,7 @@ const smartBufferLocalReserve = 4
 // CanPushTransReserve admits with a local reserve: a remote (toRemote=true)
 // transaction may use only capacity-reserve slots, so a local (toRemote=false)
 // transaction — the local-home serve that produces responses and drains the
-// pipeline — always keeps room. Mirrors writebackrcr's SmartBuffer.
+// pipeline — always keeps room.
 func (b *SmartBuffer) CanPushTransReserve(toRemote bool, reserve int) bool {
 	if toRemote {
 		return len(b.elements) < b.capacity-reserve
