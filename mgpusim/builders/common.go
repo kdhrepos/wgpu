@@ -70,7 +70,6 @@ type CommonBuilder struct {
 	log2PageSize                   uint64
 	log2CacheLineSize              uint64
 	log2MemoryBankInterleavingSize uint64 // bank-level stripe (typically cacheline)
-	remoteTLBInterleavingSize      uint64
 	pageTable                      *device.PageTableImpl
 
 	usePteCaching bool
@@ -144,8 +143,6 @@ func (b *CommonBuilder) SetDefaultCommonBuilderParams() {
 	// numBankPerChiplet × pageSize.
 	b.log2MemoryBankInterleavingSize = b.log2CacheLineSize
 
-	// this ought not to be in common
-	b.remoteTLBInterleavingSize = 512
 }
 
 // WithEngine sets the engine that the GPU use.
@@ -212,10 +209,6 @@ func (b *CommonBuilder) WithLog2MemoryBankInterleavingSize(n uint64) {
 // disagree with the allocator about which chiplet owns a page.
 func (b *CommonBuilder) chipletInterleavingSize() uint64 {
 	return b.numMemoryBankPerChiplet << b.log2PageSize
-}
-
-func (b *CommonBuilder) WithRemoteTLB(interleavingSize uint64) {
-	b.remoteTLBInterleavingSize = interleavingSize
 }
 
 // WithVisTracer applies a tracer to trace all the tasks of all the GPU
@@ -724,12 +717,6 @@ func (b *CommonBuilder) connectL1TLBToL2TLB(
 
 	singeLowModuleFinder := new(lmf.SingleLowModuleFinder)          // L1 TLBs have only one L2 TLB as a low module.
 	singeLowModuleFinder.LowModule = chiplet.L2TLBs[0].GetTopPort() // We have only one L2 TLB in the system.
-
-	// Only the real (caching) LatTLB walks to the MMU on a miss, so it needs the
-	// finder. IdealLatTLB always hits and has no low module — skip it.
-	if lat, ok := chiplet.L2TLBs[0].(*tlb.LatTLB); ok {
-		lat.TLBFinder = singeLowModuleFinder
-	}
 
 	lowModuleFinder = singeLowModuleFinder
 

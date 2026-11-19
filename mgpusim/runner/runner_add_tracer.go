@@ -394,8 +394,8 @@ func (r *Runner) addTLBConditionalTracer() {
 				func(task tracing.Task) bool {
 					return task.Kind == "L2TLB_stats" // || task.Kind == "local_tlb"
 				})
-			r.ConditionalRemoteTLBLatencyTracers = append(r.ConditionalRemoteTLBLatencyTracers,
-				ConditionalRemoteTLBLatencyTracer{tracer: tracer, tlb: tlb})
+			r.TLBConditionalLatencyTracers = append(r.TLBConditionalLatencyTracers,
+				TLBConditionalLatencyTracer{tracer: tracer, tlb: tlb})
 			tracing.CollectTrace(tlb, tracer)
 		}
 	}

@@ -114,10 +114,6 @@ func (b Builder) Build(name string) *CommandProcessor {
 	cp.toCachesSender = akitaext.NewBufferedSender(
 		cp.ToCaches, util.NewBuffer(unlimited))
 
-	cp.ToRTU = akita.NewLimitNumMsgPort(cp, 1, name+".ToRTU")
-	cp.toRTUSender = akitaext.NewBufferedSender(
-		cp.ToRTU, util.NewBuffer(unlimited))
-
 	cp.bottomKernelLaunchReqIDToTopReqMap =
 		make(map[uint64]*coreprotocol.LaunchKernelReq)
 	cp.bottomMemCopyH2DReqIDToTopReqMap =

@@ -990,7 +990,7 @@ func (r *Runner) reportTLBLatency() {
 }
 
 func (r *Runner) reportTLBConditionalStats() {
-	for _, tracer := range r.ConditionalRemoteTLBLatencyTracers {
+	for _, tracer := range r.TLBConditionalLatencyTracers {
 		tlbTracer := tracer.tracer
 		for _, stepName := range tlbTracer.GetStepNames() {
 			if tlbTracer.AverageTime(stepName) == 0 {

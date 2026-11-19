@@ -69,15 +69,7 @@ func getTaskType(src Task, dst Task) (taskType string) {
 	dstComponent := getComponent(dst.Where)
 	taskType = srcComponent + "-" + dstComponent
 	if srcComponent == dstComponent {
-		if srcComponent == "RTU" {
-			if src.What == "*device.TranslationReq" {
-				taskType += "-translation-request"
-			} else if src.What == "*device.TranslationRsp" {
-				taskType += "-translation-response"
-			}
-		} else {
-			panic("equal component names not RTU!")
-		}
+		panic("translation task with equal src/dst component: " + srcComponent)
 	}
 	return
 }
@@ -93,9 +85,6 @@ func (t *TranslationReqTracer) EndTask(task Task) {
 	}
 	taskType := getTaskType(originalTask, task)
 	taskTime := task.EndTime - originalTask.StartTime
-	// if taskType == "RTU-RTU" {
-	// 	fmt.Println("RTU-RTU", taskTime)
-	// }
 	t.averageTime[taskType] = akita.VTimeInSec(
 		(float64(t.averageTime[taskType])*float64(t.taskCount[taskType]) + float64(taskTime)) /
 			float64(t.taskCount[taskType]+1))

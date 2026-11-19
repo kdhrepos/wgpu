@@ -13,7 +13,6 @@ type MsgMeta struct {
 	EventTime          VTimeInSec
 	TrafficClass       int
 	TrafficBytes       int
-	PutInL2TLBBuffer   bool
 }
 
 // IsSecondary always returns true. Message-based events are all primary events.

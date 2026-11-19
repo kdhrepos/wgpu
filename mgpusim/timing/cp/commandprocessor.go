@@ -41,7 +41,6 @@ type CommandProcessor struct {
 	L1ICaches          []akita.Port
 	L2Caches           []akita.Port
 	DRAMControllers    []*idealmemcontroller.Comp
-	RTUs               []akita.Port
 
 	ToDriver                   akita.Port
 	toDriverSender             akitaext.BufferedSender
@@ -59,8 +58,6 @@ type CommandProcessor struct {
 	toCachesSender             akitaext.BufferedSender
 	ToRDMA                     akita.Port
 	toRDMASender               akitaext.BufferedSender
-	ToRTU                      akita.Port
-	toRTUSender                akitaext.BufferedSender
 	ToPMC                      akita.Port
 	toPMCSender                akitaext.BufferedSender
 
@@ -115,13 +112,12 @@ func (p *CommandProcessor) DeadlockSummary() (line string, anyPending bool) {
 	atsQ := check(p.ToAddressTranslators)
 	cachesQ := check(p.ToCaches)
 	rdmaQ := check(p.ToRDMA)
-	rtuQ := check(p.ToRTU)
 	pmcQ := check(p.ToPMC)
 	anyPending = driverQ || dmaQ || cusQ || tlbsQ || mmusQ || atsQ ||
-		cachesQ || rdmaQ || rtuQ || pmcQ
+		cachesQ || rdmaQ || pmcQ
 	line = fmt.Sprintf(
-		"driver=%v dma=%v cus=%v tlbs=%v mmus=%v ats=%v caches=%v rdma=%v rtu=%v pmc=%v",
-		driverQ, dmaQ, cusQ, tlbsQ, mmusQ, atsQ, cachesQ, rdmaQ, rtuQ, pmcQ)
+		"driver=%v dma=%v cus=%v tlbs=%v mmus=%v ats=%v caches=%v rdma=%v pmc=%v",
+		driverQ, dmaQ, cusQ, tlbsQ, mmusQ, atsQ, cachesQ, rdmaQ, pmcQ)
 	return
 }
 
@@ -147,7 +143,6 @@ func (p *CommandProcessor) sendMsgsOut(now akita.VTimeInSec) bool {
 	madeProgress = p.sendMsgsOutFromPort(now, p.toAddressTranslatorsSender) || madeProgress
 	madeProgress = p.sendMsgsOutFromPort(now, p.toCachesSender) || madeProgress
 	madeProgress = p.sendMsgsOutFromPort(now, p.toRDMASender) || madeProgress
-	madeProgress = p.sendMsgsOutFromPort(now, p.toRTUSender) || madeProgress
 	madeProgress = p.sendMsgsOutFromPort(now, p.toPMCSender) || madeProgress
 
 	return madeProgress

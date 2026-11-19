@@ -47,11 +47,9 @@ type LatTLB struct {
 	TopPort     akita.Port
 	BottomPort  akita.Port
 	ControlPort akita.Port
-	ToRTU       akita.Port
 
 	LowModule       akita.Port
 	LowModuleFinder lmf.LowModuleFinder
-	TLBFinder       lmf.LowModuleFinder
 
 	log2PageSize   uint64
 	log2NumSets    uint64
@@ -89,18 +87,14 @@ func (tlb *LatTLB) DeadlockSummary() (line string, anyPending bool) {
 	topQ := tlb.TopPort.Peek() != nil
 	bottomQ := tlb.BottomPort.Peek() != nil
 	ctrlQ := tlb.ControlPort.Peek() != nil
-	rtuQ := false
-	if tlb.ToRTU != nil {
-		rtuQ = tlb.ToRTU.Peek() != nil
-	}
 	lookupN := 0
 	if tlb.lookupBuffer != nil {
 		lookupN = tlb.lookupBuffer.Size()
 	}
 	respondingMSHR := tlb.respondingMSHREntry != nil
-	anyPending = topQ || bottomQ || ctrlQ || rtuQ || lookupN > 0 || respondingMSHR
-	line = fmt.Sprintf("top=%v bottom=%v ctrl=%v rtu=%v lookup=%d respondingMSHR=%v",
-		topQ, bottomQ, ctrlQ, rtuQ, lookupN, respondingMSHR)
+	anyPending = topQ || bottomQ || ctrlQ || lookupN > 0 || respondingMSHR
+	line = fmt.Sprintf("top=%v bottom=%v ctrl=%v lookup=%d respondingMSHR=%v",
+		topQ, bottomQ, ctrlQ, lookupN, respondingMSHR)
 	return
 }
 
@@ -326,45 +320,23 @@ func (tlb *LatTLB) handleTranslationMiss(
 	req *device.TranslationReq,
 	setID int,
 ) bool {
-	if tlb.doPageWalk(req.VAddr) {
-
-		if tlb.mshr.IsFull() {
-			return false
-		}
-
-		fetched := tlb.fetchBottom(now, req)
-		if fetched {
-			tlb.lookupBuffer.Pop()
-
-			tracing.AddTaskStep(
-				tracing.MsgIDAtReceiver(req, tlb),
-				now, tlb,
-				"tlb-miss",
-			)
-
-			return true
-		}
-
+	if tlb.mshr.IsFull() {
 		return false
-	} else {
-		req.Dst = tlb.ToRTU
-		req.PutInL2TLBBuffer = true
-		err := tlb.TopPort.Send(req)
-		if err != nil {
-			return false
-		}
-		tracing.AddTaskStep(
-			tracing.MsgIDAtReceiver(req, tlb),
-			now, tlb,
-			"tlb-redirect",
-		)
-		tlb.lookupBuffer.Pop()
-		return true
 	}
-}
 
-func (tlb *LatTLB) doPageWalk(vAddr uint64) (doWalk bool) {
-	return tlb.Name() == tlb.TLBFinder.Find(vAddr).Name()[0:21]
+	fetched := tlb.fetchBottom(now, req)
+	if !fetched {
+		return false
+	}
+
+	tlb.lookupBuffer.Pop()
+	tracing.AddTaskStep(
+		tracing.MsgIDAtReceiver(req, tlb),
+		now, tlb,
+		"tlb-miss",
+	)
+
+	return true
 }
 
 // we are assuimg 4K pages here. TODO: FIX THIS!

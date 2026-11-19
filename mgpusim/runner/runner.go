@@ -182,8 +182,6 @@ var rdmaTransactionCountReportFlag = flag.Bool("report-rdma-transaction-count",
 	false, "Report the number of transactions going through the RDMA engines.")
 var cdmaTransactionCountReportFlag = flag.Bool("report-cdma-transaction-count",
 	false, "Report the number of transactions through the chip RDMA engines.")
-var rtuTransactionCountReportFlag = flag.Bool("report-rtu-transaction-count",
-	false, "Report the number of transactions through the remote trans. engines.")
 var dramTransactionCountReportFlag = flag.Bool("report-dram-transaction-count",
 	false, "Report the number of transactions accessing the DRAMs.")
 var translationReqLatencyFlag = flag.Bool("report-translation-request-latency",
@@ -361,7 +359,7 @@ type L2PipelineLatencyTracer struct {
 	pipeline tracing.NamedHookable
 }
 
-type ConditionalRemoteTLBLatencyTracer struct {
+type TLBConditionalLatencyTracer struct {
 	tracer *tracing.ConditionalAverageTimeTracer
 	tlb    akita.Component
 }
@@ -399,11 +397,6 @@ type PageWalkLatencyTracer struct {
 type ActivePageWalkerTracer struct {
 	tracer *tracing.AverageCountTracer
 	mmu    akita.Component
-}
-
-type RemoteTLBLatencyTracer struct {
-	tracer *tracing.AverageTimeTracer
-	rtu    akita.Component
 }
 
 type DRAMLatencyTracer struct {
@@ -472,76 +465,74 @@ type Runner struct {
 	// L2PipelineLatencyTracers           []L2PipelineLatencyTracer
 	// L2PipelineLocalLatencyTracers      []L2PipelineLatencyTracer
 	// L2PipelineRemoteLatencyTracers     []L2PipelineLatencyTracer
-	TLBPipelineLatencyTracers          []TLBPipelineLatencyTracer
-	MMUMemoryLatencyTracers            []MMUMemoryLatencyTracer
-	PageWalkLatencyTracers             []PageWalkLatencyTracer
-	DRAMLatencyTracers                 []DRAMLatencyTracer
-	AddressTranslatorLatencyTracers    []AddressTranslatorLatencyTracer
-	CacheHitRateTracers                []cacheHitRateTracer
-	TLBHitRateTracers                  []TLBHitRateTracer
-	PWCHitRateTracers                  []PWCHitRateTracer
-	TranslationReqTracer               *tracing.TranslationReqTracer
-	ConditionalRemoteTLBLatencyTracers []ConditionalRemoteTLBLatencyTracer
-	RDMATransactionCounters            []rdmaTransactionCountTracer
-	CDMATransactionCounters            []rdmaTransactionCountTracer
-	PageTransactionCounters            []rdmaTransactionCountTracer
-	CDMAAccessTracers                  []CDMAAccessTracer
-	PageAccessTracers                  []CDMAAccessTracer
-	DRAMTransactionCounters            []dramTransactionCountTracer
-	RemoteTLBLatencyTracers            []RemoteTLBLatencyTracer
-	L2TLBBufLenTracers                 []*tracing.AverageCountTracer
-	L2TLBBufLenG0Tracers               []*tracing.AverageCountTracer
-	L2TLBCoalesceAddrTracers           []*tracing.AverageCountTracer
-	L2TLBCoalesceTracers               []*tracing.AverageCountTracer
-	L2TLBMSHRLenTracers                []*tracing.AverageCountTracer
-	L2TLBMSHRUniqLenTracers            []*tracing.AverageCountTracer
-	L2TLBMSHRLenG0Tracers              []*tracing.AverageCountTracer
-	L2TLBMSHRUniqLenG0Tracers          []*tracing.AverageCountTracer
-	ActivePageWalkerTracers            []ActivePageWalkerTracer
-	L2TLBMySQLTracer                   tracing.MySQLTracer
-	L2TLBQueueingImbalanceTracers      []TLBQueueImbalanceTracer
-	EntropyTracers                     []EntropyTracer
-	TLBSetMissTracers                  []TLBSetMissTracer
-	TLBMSHRStallTracers                []TLBMSHRStallTracer
-	TLBReqStallTracers                 []TLBReqStallTracer
-	L1TLBMSHRWaitTracers               []L1TLBMSHRWaitTracerEntry
-	L2TLBMSHRWaitTracers               []L2TLBMSHRWaitTracerEntry
-	Benchmarks                         []benchmarks.Benchmark
-	Timing                             bool
-	Verify                             bool
-	Parallel                           bool
-	ReportInstCount                    bool
-	ReportCacheLatency                 bool
-	ReportTLBLatency                   bool
-	ReportTLBConditionalStats          bool
-	ReportMMUConditionalStats          bool
-	ReportPageWalkLatency              bool
-	ReportDRAMLatency                  bool
-	ReportTranslationReqLatency        bool
-	ReportAddressTranslatorLatency     bool
-	ReportCacheHitRate                 bool
-	ReportTLBCoalesce                  bool
-	ReportTLBHitRate                   bool
-	ReportPWCHitRate                   bool
-	ReportL2TLBMSHRLen                 bool
-	ReportDRAMTransactionCount         bool
-	ReportRDMATransactionCount         bool
-	ReportCDMATransactionCount         bool
-	ReportRTUTransactionCount          bool
-	ReportActiveWalkerCount            bool
-	L2TLBSQLTracing                    bool
-	ReportL2TLBQueueImbalance          bool
-	ReportPageWalkerImbalance          bool
-	ReportEntropy                      bool
-	ReportReferenceTracing             bool
-	ReportTLBSetMissTracing            bool
-	ReportTLBMSHRStallTracing          bool
-	ReportTLBReqStalls                 bool
-	ReportTLBMSHRWait                  bool
-	ReportWarpStall                    bool
-	UseUnifiedMemory                   bool
-	UseLASPMemoryAlloc                 bool
-	metricsCollector                   *collector
+	TLBPipelineLatencyTracers       []TLBPipelineLatencyTracer
+	MMUMemoryLatencyTracers         []MMUMemoryLatencyTracer
+	PageWalkLatencyTracers          []PageWalkLatencyTracer
+	DRAMLatencyTracers              []DRAMLatencyTracer
+	AddressTranslatorLatencyTracers []AddressTranslatorLatencyTracer
+	CacheHitRateTracers             []cacheHitRateTracer
+	TLBHitRateTracers               []TLBHitRateTracer
+	PWCHitRateTracers               []PWCHitRateTracer
+	TranslationReqTracer            *tracing.TranslationReqTracer
+	TLBConditionalLatencyTracers    []TLBConditionalLatencyTracer
+	RDMATransactionCounters         []rdmaTransactionCountTracer
+	CDMATransactionCounters         []rdmaTransactionCountTracer
+	PageTransactionCounters         []rdmaTransactionCountTracer
+	CDMAAccessTracers               []CDMAAccessTracer
+	PageAccessTracers               []CDMAAccessTracer
+	DRAMTransactionCounters         []dramTransactionCountTracer
+	L2TLBBufLenTracers              []*tracing.AverageCountTracer
+	L2TLBBufLenG0Tracers            []*tracing.AverageCountTracer
+	L2TLBCoalesceAddrTracers        []*tracing.AverageCountTracer
+	L2TLBCoalesceTracers            []*tracing.AverageCountTracer
+	L2TLBMSHRLenTracers             []*tracing.AverageCountTracer
+	L2TLBMSHRUniqLenTracers         []*tracing.AverageCountTracer
+	L2TLBMSHRLenG0Tracers           []*tracing.AverageCountTracer
+	L2TLBMSHRUniqLenG0Tracers       []*tracing.AverageCountTracer
+	ActivePageWalkerTracers         []ActivePageWalkerTracer
+	L2TLBMySQLTracer                tracing.MySQLTracer
+	L2TLBQueueingImbalanceTracers   []TLBQueueImbalanceTracer
+	EntropyTracers                  []EntropyTracer
+	TLBSetMissTracers               []TLBSetMissTracer
+	TLBMSHRStallTracers             []TLBMSHRStallTracer
+	TLBReqStallTracers              []TLBReqStallTracer
+	L1TLBMSHRWaitTracers            []L1TLBMSHRWaitTracerEntry
+	L2TLBMSHRWaitTracers            []L2TLBMSHRWaitTracerEntry
+	Benchmarks                      []benchmarks.Benchmark
+	Timing                          bool
+	Verify                          bool
+	Parallel                        bool
+	ReportInstCount                 bool
+	ReportCacheLatency              bool
+	ReportTLBLatency                bool
+	ReportTLBConditionalStats       bool
+	ReportMMUConditionalStats       bool
+	ReportPageWalkLatency           bool
+	ReportDRAMLatency               bool
+	ReportTranslationReqLatency     bool
+	ReportAddressTranslatorLatency  bool
+	ReportCacheHitRate              bool
+	ReportTLBCoalesce               bool
+	ReportTLBHitRate                bool
+	ReportPWCHitRate                bool
+	ReportL2TLBMSHRLen              bool
+	ReportDRAMTransactionCount      bool
+	ReportRDMATransactionCount      bool
+	ReportCDMATransactionCount      bool
+	ReportActiveWalkerCount         bool
+	L2TLBSQLTracing                 bool
+	ReportL2TLBQueueImbalance       bool
+	ReportPageWalkerImbalance       bool
+	ReportEntropy                   bool
+	ReportReferenceTracing          bool
+	ReportTLBSetMissTracing         bool
+	ReportTLBMSHRStallTracing       bool
+	ReportTLBReqStalls              bool
+	ReportTLBMSHRWait               bool
+	ReportWarpStall                 bool
+	UseUnifiedMemory                bool
+	UseLASPMemoryAlloc              bool
+	metricsCollector                *collector
 
 	// custom tracing
 	SimulationStartTime            time.Time
@@ -720,10 +711,6 @@ func (r *Runner) ParseFlag() *Runner {
 		r.ReportCDMATransactionCount = true
 	}
 
-	if *rtuTransactionCountReportFlag {
-		r.ReportRTUTransactionCount = true
-	}
-
 	if *tlbCoalesceReportFlag {
 		r.ReportTLBCoalesce = true
 	}
@@ -810,7 +797,6 @@ func (r *Runner) ParseFlag() *Runner {
 		// r.ReportMMUConditionalStats = true
 		// r.ReportTLBCoalesce = true
 		// r.ReportActiveWalkerCount = true
-		// r.ReportRTUTransactionCount = true
 		// r.ReportL2TLBMSHRLen = true
 		// r.ReportL2TLBQueueImbalance = true
 		// r.ReportPageWalkerImbalance = true
@@ -907,7 +893,6 @@ func (r *Runner) Init() *Runner {
 	// r.addTLBCoalesceTracer()
 	// r.addL2TLBMSHRLenTracer()
 	// r.addMMUConditionalTracer()
-	// r.addRTUTracer()
 	// r.addActiveWalkerTracer()
 	// r.addL2TLBQueueingImbalanceTracer()
 	// r.addL2TLBEntropyTracer()
@@ -1229,7 +1214,6 @@ func (r *Runner) collectAllMetrics() {
 	// r.reportTLBConditionalStats()
 	// r.reportMMUConditionalStats()
 	// r.reportActiveWalkerCount()
-	// r.reportRTUTransactionCount()
 	// r.reportL2TLBQueueImbalance()
 	// r.reportPageWalkerImbalance()
 	// r.reportL2TLBEntropy()
