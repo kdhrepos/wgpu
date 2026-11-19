@@ -16,14 +16,6 @@ import (
 // miss train, etc.). Anything past this is a structural cyclic dependency.
 const deadlockWatchdogThreshold = uint64(100000)
 
-// BDPFraction throttles each switch↔switch wire's in-flight cap to
-// BDPFraction × (W×D), where W×D = bandwidth×delay = BDP. 1.0 = full BDP
-// (no cap; original behavior); 0.5 = half-BDP under-buffered link (earlier
-// backpressure). W (bandwidth) and D (latency) stay unchanged — only the
-// admission cap shrinks. Event-based wire: same timing model as the
-// shift-register variant, only the implementation differs.
-var BDPFraction = 0.5
-
 type MultiFlitSwitchConnectionEnd struct {
 	port akita.Port
 	buf  util.Buffer
@@ -255,11 +247,8 @@ func (c *MultiFlitSwitchConnection) DeadlockSummary() (line string, anyPending b
 	return
 }
 
-// bufferCapacity is the per-end in-flight cap (= per-end buf size). It is
-// BDPFraction × (W×D). Device↔switch links have pipelineStages == 0, so they
-// fall back to a single bandwidth-width of buffering.
 func (c *MultiFlitSwitchConnection) bufferCapacity() int {
-	cap := int(float64(c.pipelineWidth*c.pipelineStages) * BDPFraction)
+	cap := int(float64(c.pipelineWidth * c.pipelineStages))
 	if cap < 1 { // device↔switch links (pipelineStages == 0)
 		cap = c.pipelineWidth
 	}
