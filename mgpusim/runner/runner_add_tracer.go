@@ -5,16 +5,7 @@ import (
 	"strings"
 
 	"gitlab.com/akita/akita"
-	"gitlab.com/akita/mem/cache"
-	"gitlab.com/akita/mem/idealmemcontroller"
-	"gitlab.com/akita/mem/vm/addresstranslator"
-	"gitlab.com/akita/mem/vm/mmu"
 	"gitlab.com/akita/mem/vm/tlb"
-	"gitlab.com/akita/mgpusim/rdma"
-	"gitlab.com/akita/mgpusim/timing/caches"
-	"gitlab.com/akita/mgpusim/timing/caches/rob"
-	cupkg "gitlab.com/akita/mgpusim/timing/cu"
-	"gitlab.com/akita/noc/networking/chipnetwork"
 	"gitlab.com/akita/util/tracing"
 )
 
@@ -1228,106 +1219,6 @@ func (r *Runner) addSendOutFailTracer() {
 	}
 }
 
-func (r *Runner) addPortQueueTracer() {
-	if !r.TracePortQueue {
-		return
-	}
-
-	r.PortQueueTracer = tracing.NewPortQueueTracer()
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		r.attachPortQueueToRDMA(gpu.ChipRDMAEngines)
-		r.attachPortQueueToEndpoints(gpu.InterChipletNetwork)
-		r.attachPortQueueToChipletSwitches(gpu.InterChipletNetwork)
-		r.attachPortQueueToL2(gpu.L2Caches)
-		r.attachPortQueueToCUs(gpu.CUs)
-		r.attachPortQueueToROBs(gpu.L1VROBs)
-		r.attachPortQueueToROBs(gpu.L1SROBs)
-		r.attachPortQueueToROBs(gpu.L1IROBs)
-		// Address-translation port-queue tracing disabled.
-		// r.attachPortQueueToAddrTranslators(gpu.L1VAddrTranslator)
-		// r.attachPortQueueToAddrTranslators(gpu.L1SAddrTranslator)
-		// r.attachPortQueueToAddrTranslators(gpu.L1IAddrTranslator)
-		// r.attachPortQueueToL1TLBs(gpu.L1VTLBs)
-		// r.attachPortQueueToL1TLBs(gpu.L1STLBs)
-		// r.attachPortQueueToL1TLBs(gpu.L1ITLBs)
-		// r.attachPortQueueToL2TLBs(gpu.L2TLBs)
-		// r.attachPortQueueToMMUs(gpu.MMUs)
-		r.attachPortQueueToL1Caches(gpu.L1VCaches)
-		r.attachPortQueueToL1Caches(gpu.L1SCaches)
-		r.attachPortQueueToL1Caches(gpu.L1ICaches)
-		r.attachPortQueueToL2TopPorts(gpu.L2Caches)
-		r.attachPortQueueToDRAM(gpu.MemoryControllers)
-	}
-}
-
-func (r *Runner) attachPortQueueToL2(caches []cache.Cache) {
-	for _, c := range caches {
-		r.attachIfPort(c.GetBottomToRdmaPort())
-		r.attachIfPort(c.GetBottomToDramPort())
-		r.attachIfPort(c.GetRDMAPort())
-	}
-}
-
-func (r *Runner) attachPortQueueToRDMA(engines []rdma.RDMAEngine) {
-	for _, e := range engines {
-		r.attachIfPort(e.GetRequestPort())
-		r.attachIfPort(e.GetResponsePort())
-		r.attachIfPort(e.GetToL2RDMA())
-		r.attachIfPort(e.GetToL2Bottom())
-		r.attachIfPort(e.GetToDramTop())
-		r.attachIfPort(e.GetPwPort())
-		r.attachIfPort(e.GetCtrlPort())
-	}
-}
-
-func (r *Runner) attachPortQueueToEndpoints(
-	nets []chipnetwork.InterChipletConnector,
-) {
-	for _, net := range nets {
-		conn := net.GetSwitchConnector()
-		if conn == nil {
-			continue
-		}
-		for _, ep := range conn.GetEndPoints() {
-			r.attachIfPort(ep.NetworkPort)
-		}
-	}
-}
-
-// attachPortQueueToChipletSwitches walks every multi-flit chiplet switch
-// in the mesh (one per chiplet) and attaches the PortQueueTracer to each
-// local port (north/south/east/west/local plus any RDMA-facing ports).
-// Surfaces back-pressure inside the switching fabric itself, separate
-// from the endpoint NetworkPorts attached above.
-func (r *Runner) attachPortQueueToChipletSwitches(
-	nets []chipnetwork.InterChipletConnector,
-) {
-	for _, net := range nets {
-		for _, row := range net.GetChipSwitches() {
-			for _, sw := range row {
-				if sw == nil {
-					continue
-				}
-				for _, p := range sw.GetPorts() {
-					r.attachIfPort(p)
-				}
-			}
-		}
-	}
-}
-
-func (r *Runner) attachIfPort(port akita.Port) {
-	if port == nil {
-		return
-	}
-	hookable, ok := port.(tracing.NamedHookable)
-	if !ok {
-		return
-	}
-	r.PortQueueTracer.AttachTo(hookable)
-}
-
 func (r *Runner) addL2MissTracer() {
 	if !r.ReportL2MissTrace {
 		return
@@ -1391,78 +1282,5 @@ func (r *Runner) addTLBMSHRWaitTracer() {
 			r.L2TLBMSHRWaitTracers = append(r.L2TLBMSHRWaitTracers,
 				L2TLBMSHRWaitTracerEntry{tracer: tracer, tlb: t})
 		}
-	}
-}
-
-func (r *Runner) attachPortQueueToCUs(cus []akita.Component) {
-	for _, comp := range cus {
-		cu, ok := comp.(*cupkg.ComputeUnit)
-		if !ok {
-			continue
-		}
-		r.attachIfPort(cu.ToInstMem)
-		r.attachIfPort(cu.ToScalarMem)
-		r.attachIfPort(cu.ToVectorMem)
-	}
-}
-
-func (r *Runner) attachPortQueueToROBs(robs []*rob.ReorderBuffer) {
-	for _, rb := range robs {
-		r.attachIfPort(rb.TopPort)
-		r.attachIfPort(rb.BottomPort)
-	}
-}
-
-func (r *Runner) attachPortQueueToAddrTranslators(
-	translators []addresstranslator.AddressTranslator,
-) {
-	for _, at := range translators {
-		r.attachIfPort(at.GetTopPort())
-		// IDEAL-AT has no translation port (resolves inline) — GetTranslationPort panics.
-		if _, ok := at.(*addresstranslator.IdealAddressTranslator); !ok {
-			r.attachIfPort(at.GetTranslationPort())
-		}
-		r.attachIfPort(at.GetBottomPort())
-	}
-}
-
-func (r *Runner) attachPortQueueToL1TLBs(tlbs []*tlb.TLB) {
-	for _, t := range tlbs {
-		r.attachIfPort(t.TopPort)
-		r.attachIfPort(t.BottomPort)
-	}
-}
-
-func (r *Runner) attachPortQueueToL2TLBs(l2tlbs []tlb.L2TLB) {
-	for _, t := range l2tlbs {
-		r.attachIfPort(t.GetTopPort())
-		r.attachIfPort(t.GetBottomPort())
-	}
-}
-
-func (r *Runner) attachPortQueueToMMUs(mmus []*mmu.MMUImpl) {
-	for _, m := range mmus {
-		r.attachIfPort(m.ToTop)
-		r.attachIfPort(m.LocalTransPort)
-		r.attachIfPort(m.RemoteTransPort)
-	}
-}
-
-func (r *Runner) attachPortQueueToL1Caches(l1caches []caches.L1Cache) {
-	for _, c := range l1caches {
-		r.attachIfPort(c.GetTopPort())
-		r.attachIfPort(c.GetBottomPort())
-	}
-}
-
-func (r *Runner) attachPortQueueToL2TopPorts(l2caches []cache.Cache) {
-	for _, c := range l2caches {
-		r.attachIfPort(c.GetTopPort())
-	}
-}
-
-func (r *Runner) attachPortQueueToDRAM(drms []*idealmemcontroller.Comp) {
-	for _, d := range drms {
-		r.attachIfPort(d.ToTop)
 	}
 }

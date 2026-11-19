@@ -294,9 +294,6 @@ var reportWorkgroupCountFlag = flag.Bool("report-workgroup-count",
 	false, "Report the number of workgroups")
 var reportHopPerRDMAFlag = flag.Bool("report-hop-count-per-rdma",
 	false, "Report average & total hop count per rdma")
-var tracePortQueueFlag = flag.Bool("trace-port-queue",
-	false, "Report per-port queueing delay (Recv→Retrieve wait time) "+
-		"at endpoint NetworkPorts and RDMA engine ports")
 
 // verbose setting for console
 var verbose = flag.Bool("verbose",
@@ -548,8 +545,6 @@ type Runner struct {
 	NetworkFlightTracer            *tracing.NetworkFlightTracer
 	RDMAFlightTracer               *tracing.RDMAFlightTracer
 	SendOutFailTracer              *tracing.SendOutFailTracer
-	PortQueueTracer                *tracing.PortQueueTracer
-	TracePortQueue                 bool
 	RemotePtwTracer                *tracing.RemotePtwTracer
 	MemoryUsageTracer              *tracing.MemoryUsageTracer
 	L2MissTracer                   *tracing.L2MissTracer
@@ -765,10 +760,6 @@ func (r *Runner) ParseFlag() *Runner {
 		r.ReportHopPerRDMA = true
 	}
 
-	if *tracePortQueueFlag {
-		r.TracePortQueue = true
-	}
-
 	if *reportAll {
 		r.ReportInstCount = true
 		r.ReportCacheLatency = true
@@ -803,7 +794,6 @@ func (r *Runner) ParseFlag() *Runner {
 		r.ReportHopPerRDMA = true
 		r.ReportL2MissTrace = true
 		r.ReportMSHRFailTrace = true
-		r.TracePortQueue = true
 
 	}
 
@@ -903,7 +893,6 @@ func (r *Runner) Init() *Runner {
 	r.addHopTracer()
 	r.addRDMAFlightTracer()
 	r.addSendOutFailTracer()
-	r.addPortQueueTracer()
 	// r.addRemoteRtwTracer()
 	r.addL2MissTracer()
 	r.addMSHRFailTracer()
@@ -1185,7 +1174,6 @@ func (r *Runner) collectAllMetrics() {
 	r.reportIBPA()              // IBPA (always reported)
 	r.reportRDMAFlightLatency() // custom tracer
 	r.reportSendOutFail()       // custom tracer
-	r.reportPortQueue()         // custom tracer
 	r.reportLinkUtilization()   // custom tracer
 	// r.reportRemotePtw()          // custom tracer
 	r.reportL2MissTrace()   // custom tracer
