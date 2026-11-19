@@ -1536,19 +1536,6 @@ func (r *Runner) reportMemoryAccessTraces() {
 	// r.RdmaTracer.Dump()
 }
 
-func (r *Runner) reportCacheLineHopStats() {
-	where := "GPU1.chiplet_all.CacheLineHop"
-	for _, row := range r.CacheLineHopTracer.PercentileStats() {
-		prefix := "top-" + strconv.Itoa(row.TopPct)
-		r.metricsCollector.Collect(where, prefix+"-n-lines-in-cut", float64(row.NLinesInCut))
-		r.metricsCollector.Collect(where, prefix+"-n-lines-with-hop-data", float64(row.NLinesWithHopData))
-		r.metricsCollector.Collect(where, prefix+"-max-hop", row.Max)
-		r.metricsCollector.Collect(where, prefix+"-min-hop", row.Min)
-		r.metricsCollector.Collect(where, prefix+"-avg-hop", row.Avg)
-		r.metricsCollector.Collect(where, prefix+"-median-hop", row.Median)
-	}
-}
-
 func (r *Runner) reportAccessCountPerAddrs(name string) {
 	r.AccessCountPerAddrTracer.Dump(name)
 }

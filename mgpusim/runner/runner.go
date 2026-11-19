@@ -280,10 +280,6 @@ var memoryAccessTraceFlag = flag.Bool("trace-memory-access",
 	false, "Trace access counts per addresses generated from L1 caches")
 var memoryAccessTraceFileName = flag.String("trace-memory-access-filename",
 	"memory_access", "Filename for tracing memory accesses")
-var cachelineHopStatsFlag = flag.Bool("trace-cacheline-hop-stats",
-	true, "Accumulate per-cache-line demand-access-count and real-hop-distance "+
-		"stats for the whole run, and add a top-K% hop-distance percentile report "+
-		"to the main metric-file-name CSV at exit")
 var pteAccessTraceFlag = flag.Bool("trace-pte-access",
 	false, "Trace the accesses to the page table entries")
 var pteAccessTraceFileName = flag.String("trace-pte-access-filename",
@@ -532,7 +528,6 @@ type Runner struct {
 	SimulationStartTime            time.Time
 	TraceAccessCountPerAddrs       bool
 	TraceMemoryAccess              bool
-	TraceCacheLineHopStats         bool
 	TracePteAccess                 bool
 	ReportWorkgroupCount           bool
 	ReportHopPerRDMA               bool
@@ -552,7 +547,6 @@ type Runner struct {
 	L2MSHRFailTracer               *tracing.MSHRFailTracer
 	AccessCountPerAddrTracer       *tracing.AccessCountTracer
 	MemoryAccessTracer             *tracing.MemoryAccessTracer
-	CacheLineHopTracer             *tracing.CacheLineHopTracer
 	PteAccessTracer                *tracing.PteAccessTracer
 	KernelTracer                   *tracing.KernelTracer
 	FlushTracer                    *tracing.FlushTracer
@@ -740,10 +734,6 @@ func (r *Runner) ParseFlag() *Runner {
 		r.TraceMemoryAccess = true
 	}
 
-	if *cachelineHopStatsFlag {
-		r.TraceCacheLineHopStats = true
-	}
-
 	if *pteAccessTraceFlag {
 		r.TracePteAccess = true
 	}
@@ -899,7 +889,6 @@ func (r *Runner) Init() *Runner {
 	// r.addTLBMSHRWaitTracer()
 	r.addAccessCountPerAddrTracer()
 	r.addMemoryAccessTracer(*memoryAccessTraceFileName)
-	r.addCacheLineHopTracer()
 	// r.addPteCachingTracer()
 	// r.addPteAccessTracer(*pteAccessTraceFileName)
 	r.addEvictTracer() // custom tracer
@@ -1208,9 +1197,6 @@ func (r *Runner) collectAllMetrics() {
 	}
 	if r.TraceMemoryAccess {
 		r.reportMemoryAccessTraces()
-	}
-	if r.TraceCacheLineHopStats {
-		r.reportCacheLineHopStats()
 	}
 	if r.TracePteAccess {
 		r.reportPteAccessTraces()

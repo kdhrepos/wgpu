@@ -728,20 +728,6 @@ func (e *RDMAEngineImpl) processReqFromL2Aux(
 			strconv.FormatUint(pc, 10),
 			srcChip+"."+dstChip)
 
-		isPtw := false
-		if rr, ok := req.(*protocol.ReadReq); ok {
-			isPtw = rr.IsPtw
-		}
-		if !isPtw {
-			srcChipId, _ := strconv.Atoi(strings.TrimPrefix(srcChip, "chiplet_"))
-			dstChipId, _ := strconv.Atoi(strings.TrimPrefix(dstChip, "chiplet_"))
-			tracing.StartTask(0, 0, now, e, tracing.CachelineHopKind, "",
-				&tracing.CachelineHopDetail{
-					Addr: req.GetAddress(),
-					Hop:  uint64(GetDistanceById(srcChipId, dstChipId, e.xDim)),
-				})
-		}
-
 		return true
 	}
 

@@ -108,24 +108,6 @@ func (r *Runner) addMemoryAccessTracer(name string) {
 	}
 }
 
-func (r *Runner) addCacheLineHopTracer() {
-	if !r.TraceCacheLineHopStats {
-		return
-	}
-	tracer := tracing.NewCacheLineHopTracer()
-
-	r.CacheLineHopTracer = tracer
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, e := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(e, tracer)
-		}
-		for _, cache := range gpu.L2Caches {
-			tracing.CollectTrace(cache, tracer)
-		}
-	}
-}
-
 func (r *Runner) addWorkgroupDimensionTracer() {
 	r.WorkgroupDimensionTracer = tracing.NewWorkgroupDimensionTracer(
 		func(task tracing.Task) bool {
