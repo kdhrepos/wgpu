@@ -18,9 +18,5 @@ MAX_INST=15000000
     -no-progress-bar \
     -max-inst=$MAX_INST \
     -platform-type=mesh \
-    -mem-allocator-type=lasp \
-    -use-lasp-mem-alloc \
-    -scheduling=lasp \
-    -sched-partition=Ydiv \
     -xDim=6 \
     -yDim=6

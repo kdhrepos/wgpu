@@ -1,5 +1,5 @@
 #!/bin/bash
-# platform-type=mesh, benchmark params mirror score (scripts/params.py['matrixmultiplication']).
+# platform-type=mesh
 go build
 
 NAME=matrixmultiplication
@@ -8,13 +8,10 @@ NAME=matrixmultiplication
 XDIM=6
 YDIM=6
 
-# matrixmultiplication params (params.py)
+# matrixmultiplication params
 X=12288
 Y=12288
 Z=12288
-SCHED_PARTITION="Ydiv"
-DATA_PARTITIONING="row-based,col-based,stride-aware"
-DATA_STRIDES="0,49152,0"
 MAX_INST=1000000000
 
 ./$NAME \
@@ -27,13 +24,6 @@ MAX_INST=1000000000
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \
-    -mem-allocator-type=lasp \
-    -use-lasp-mem-alloc \
-    -scheduling=lasp \
-    -sched-partition=$SCHED_PARTITION \
-    -data-partitioning=$DATA_PARTITIONING \
-    -data-strides=$DATA_STRIDES \
-    -col-size-for-lasp=0 \
     -max-inst=$MAX_INST \
     -xDim=$XDIM \
     -yDim=$YDIM

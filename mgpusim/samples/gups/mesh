@@ -18,10 +18,6 @@ MAX_INST=10000000
     -verbose \
     -no-progress-bar \
     -platform-type=mesh \
-    -mem-allocator-type=lasp \
-    -use-lasp-mem-alloc \
-    -scheduling=lasp \
-    -sched-partition=Xdiv \
     -xDim=6 \
     -yDim=6 \
     "$@"

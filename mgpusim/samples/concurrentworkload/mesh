@@ -3,16 +3,10 @@ go build
 
 NAME=concurrentworkload
 
-MAX_INST=10000000
-
 ./$NAME \
     -timing \
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \
-    -mem-allocator-type=lasp \
-    -use-lasp-mem-alloc \
-    -scheduling=lasp \
-    -sched-partition=Xdiv \
     -xDim=4 \
     -yDim=4

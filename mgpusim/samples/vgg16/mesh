@@ -11,12 +11,8 @@ MAX_INST=100000000
     -max-inst=$MAX_INST \
     -no-progress-bar \
     -platform-type=mesh \
-    -mem-allocator-type=lasp \
-    -use-lasp-mem-alloc \
-    -scheduling=lasp \
-    -sched-partition=Xdiv \
     -xDim=6 \
     -yDim=6 \
     -metric-file-name="${NAME}_mesh_6x6" \
     -trace-memory-access=true \
-    -trace-memory-access-filename="${NAME}_mesh_6x6_memory_trace" \
+    -trace-memory-access-filename="${NAME}_mesh_6x6_memory_trace"

@@ -11,8 +11,6 @@ PLATFORM="mesh"
 NI=8192
 NJ=8192
 
-MAX_INST=30000000
-
 ./$NAME \
     -ni=$NI \
     -nj=$NJ \
@@ -21,10 +19,6 @@ MAX_INST=30000000
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \
-    -mem-allocator-type=lasp \
-    -use-lasp-mem-alloc \
-    -scheduling=lasp \
-    -sched-partition=Xdiv \
     -xDim=$X_DIM \
     -yDim=$Y_DIM \
     -metric-file-name="${NAME}_${X_DIM}x${Y_DIM}_${PLATFORM}"
