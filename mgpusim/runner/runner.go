@@ -168,8 +168,6 @@ var tlbHitRateReportFlag = flag.Bool("report-tlb-hit-rate", false,
 	"Report the tlb hit rate of each tlb.")
 var tlbCoalesceReportFlag = flag.Bool("report-tlb-coalesce", false,
 	"Report the average tlb coalesce.")
-var rtuCoalesceReportFlag = flag.Bool("report-rtu-coalesce", false,
-	"Report the average amount of coalescing possible at the RTU.")
 var pagewalkLatencyReportFlag = flag.Bool("report-pagewalk-latency", false,
 	"Report the average page walk latency.")
 var mmuConditionalStatsReportFlag = flag.Bool("report-mmu-conditional", false,
@@ -217,8 +215,6 @@ var platformType = flag.String("platform-type", "mesh",
 	"Name of the platform to build (mesh, ideal)")
 var schedulingAlg = flag.String("scheduling", "chiplet-aware",
 	"Name of the scheduling algorithm to use (chiplet-aware, greedy, round-robin, lasp)")
-var useCoalescingRTU = flag.Bool("use-coalescing-rtu", false,
-	"Specify if the RTU should be coalescing.")
 var memAllocatorType = flag.String("mem-allocator-type", "interleaved",
 	"Specify the type of memory allocator.")
 var fastH2D = flag.Bool("fast-h2d", false,
@@ -482,7 +478,6 @@ type Runner struct {
 	DRAMLatencyTracers                 []DRAMLatencyTracer
 	AddressTranslatorLatencyTracers    []AddressTranslatorLatencyTracer
 	CacheHitRateTracers                []cacheHitRateTracer
-	RTUCoalescingTracers               [][][][]*tracing.AverageCountTracer
 	TLBHitRateTracers                  []TLBHitRateTracer
 	PWCHitRateTracers                  []PWCHitRateTracer
 	TranslationReqTracer               *tracing.TranslationReqTracer
@@ -526,7 +521,6 @@ type Runner struct {
 	ReportAddressTranslatorLatency     bool
 	ReportCacheHitRate                 bool
 	ReportTLBCoalesce                  bool
-	ReportRTUCoalesce                  bool
 	ReportTLBHitRate                   bool
 	ReportPWCHitRate                   bool
 	ReportL2TLBMSHRLen                 bool
@@ -710,10 +704,6 @@ func (r *Runner) ParseFlag() *Runner {
 		r.ReportTLBHitRate = true
 	}
 
-	if *rtuCoalesceReportFlag {
-		r.ReportRTUCoalesce = true
-	}
-
 	if *pwcHitRateReportFlag {
 		r.ReportPWCHitRate = true
 	}
@@ -819,7 +809,6 @@ func (r *Runner) ParseFlag() *Runner {
 		// r.ReportTLBConditionalStats = true
 		// r.ReportMMUConditionalStats = true
 		// r.ReportTLBCoalesce = true
-		// r.ReportRTUCoalesce = true
 		// r.ReportActiveWalkerCount = true
 		// r.ReportRTUTransactionCount = true
 		// r.ReportL2TLBMSHRLen = true
@@ -917,7 +906,6 @@ func (r *Runner) Init() *Runner {
 	// r.addTLBConditionalTracer()
 	// r.addTLBCoalesceTracer()
 	// r.addL2TLBMSHRLenTracer()
-	// r.addRTUCoalesceTracer()
 	// r.addMMUConditionalTracer()
 	// r.addRTUTracer()
 	// r.addActiveWalkerTracer()
@@ -1242,7 +1230,6 @@ func (r *Runner) collectAllMetrics() {
 	// r.reportMMUConditionalStats()
 	// r.reportActiveWalkerCount()
 	// r.reportRTUTransactionCount()
-	// r.ReportRTUCoalescing()
 	// r.reportL2TLBQueueImbalance()
 	// r.reportPageWalkerImbalance()
 	// r.reportL2TLBEntropy()

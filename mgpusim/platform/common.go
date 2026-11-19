@@ -72,7 +72,6 @@ type CommonPlatformBuilder struct {
 	dataPlacementPartition   string
 	dataPlacementStride      int
 	useCoalescingTLBPort     bool
-	useCoalescingRTU         bool
 	pteCaching               bool
 	memAllocatorType         string
 
@@ -167,10 +166,6 @@ func (b *CommonPlatformBuilder) WithSchedulingPartition(partition string) {
 
 func (b *CommonPlatformBuilder) UseCoalescingTLBPort(u bool) {
 	b.useCoalescingTLBPort = u
-}
-
-func (b *CommonPlatformBuilder) UseCoalescingRTU(u bool) {
-	b.useCoalescingRTU = u
 }
 
 func (b *CommonPlatformBuilder) WithMemAllocatorType(allocatorType string) {
