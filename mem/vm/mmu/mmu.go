@@ -92,8 +92,6 @@ type MMUImpl struct {
 	sendStateInfo       bool
 	// numWalksArrived          uint64
 	interleaving uint64
-
-	VirtualAddrTable lmf.LowModuleFinder
 }
 
 // DeadlockSummary reports the MMU's in-flight page-walk count and the
@@ -540,20 +538,6 @@ func (mmu *MMUImpl) sendToMem(now akita.VTimeInSec, i int) bool {
 			"MMU_mem_latency",
 			"",
 			nil,
-		)
-		tracing.StartTask(
-			0,
-			0,
-			now,
-			mmu,
-			"pte-trace",
-			mmu.VirtualAddrTable.Find(PPNWithOffset).Name(),
-			&tracing.PTAccessInfo{
-				PPN:      trans.PPN,
-				PteIndex: trans.vAddr & 511,
-				PC:       trans.req.Info,
-				Level:    trans.level,
-			},
 		)
 
 		trans.state = sentToMem

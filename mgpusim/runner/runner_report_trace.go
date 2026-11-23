@@ -1209,49 +1209,11 @@ func (r *Runner) reportAddressTranslatorLatency() {
 	)
 }
 
-func (r *Runner) reportL2TLBQueueImbalance() {
-	for _, t := range r.L2TLBQueueingImbalanceTracers {
-		r.metricsCollector.Collect(
-			t.tlb.Name(),
-			"imbalance",
-			float64(t.tracer.ReportImbalance()),
-		)
-		r.metricsCollector.Collect(
-			t.tlb.Name(),
-			"imbalance-count",
-			float64(t.tracer.ReportCount()),
-		)
-		for i, bucket := range t.tracer.ReportImbalanceBuckets() {
-			r.metricsCollector.Collect(
-				t.tlb.Name(),
-				"imbalance-"+strconv.Itoa(i*10),
-				float64(bucket),
-			)
-		}
-	}
-}
-
-func (r *Runner) reportL2TLBEntropy() {
-	for _, t := range r.EntropyTracers {
-		for i := 12; i < 28; i++ {
-			r.metricsCollector.Collect(
-				t.tlb.Name(),
-				"entropy_"+strconv.Itoa(i),
-				float64(t.tracer.ReportEntropy()[i]),
-			)
-		}
-	}
-}
-
 /*
  *
  * Custom Tracer
  *
  */
-
-func (r *Runner) reportPteAccessTraces() {
-	r.PteAccessTracer.Dump(nil)
-}
 
 func (r *Runner) reportMemoryAccessTraces() {
 	r.MemoryAccessTracer.Dump(nil)

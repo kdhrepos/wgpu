@@ -34,7 +34,6 @@ type L2TLB interface {
 	GetControlPort() akita.Port
 	SetLowModuleFinder(lmf.LowModuleFinder)
 	GetPipeline() pipelining.Pipeline
-	GetFrontQueueLength() int
 	GetNumReqPerCycle() int
 
 	SetCommandProcessor(akita.Port)
@@ -151,10 +150,6 @@ func (tlb *LatTLB) Tick(now akita.VTimeInSec) bool {
 
 	madeProgress = tlb.performCtrlReq(now) || madeProgress
 
-	if tlb.GetFrontQueueLength() > 0 {
-		tracing.StartTask(0, 0, now, tlb, "imbalance", "", nil)
-	}
-
 	if !tlb.isPaused {
 		for i := 0; i < tlb.numReqPerCycle; i++ {
 			madeProgress = tlb.respondMSHREntry(now) || madeProgress
@@ -232,7 +227,6 @@ func (tlb *LatTLB) parseFromTop(now akita.VTimeInSec) bool {
 	tlb.TopPort.Retrieve(now)
 	tracing.TraceReqReceive(req, now, tlb)
 	tracing.StopTracingNetworkReq(req, now, tlb)
-	tracing.StartTask(0, 0, now, tlb, "entropy", "", req)
 	return true
 }
 
@@ -550,12 +544,6 @@ func (tlb *LatTLB) handleTLBRestart(now akita.VTimeInSec, req *TLBRestartReq) bo
 	}
 
 	return true
-}
-
-func (tlb *LatTLB) GetFrontQueueLength() int {
-	bufContainer := tlb.GetTopPort().(akita.MsgBufferContainer) //.(*akita.LimitNumMsgPort)
-	buf := bufContainer.GetBuffer()
-	return len(buf)
 }
 
 func div(x, y float64) float64 {

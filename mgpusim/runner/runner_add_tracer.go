@@ -19,23 +19,6 @@ func (r *Runner) addLocalRemoteTracer() {
 	}
 }
 
-func (r *Runner) addPteAccessTracer(name string) {
-	if !r.TracePteAccess {
-		return
-	}
-
-	r.PteAccessTracer = tracing.NewPteAccessTracer(
-		name,
-		*xDim,
-		*yDim)
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, mmu := range gpu.MMUs {
-			tracing.CollectTrace(mmu, r.PteAccessTracer)
-		}
-	}
-}
-
 func (r *Runner) addNumFlitTracer() {
 	r.NumFlitTracer = tracing.NewNumFlitTracer(
 		func(t tracing.Task) bool {
@@ -781,50 +764,6 @@ func (r *Runner) addTranslationReqTracer() {
 	for _, gpu := range r.GPUDriver.GPUs {
 		for _, l1iAddrTrans := range gpu.L1IAddrTranslator {
 			tracing.CollectTrace(l1iAddrTrans, tracer)
-		}
-	}
-}
-
-func (r *Runner) addL2TLBQueueingImbalanceTracer() {
-	if !r.ReportL2TLBQueueImbalance {
-		return
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, this := range gpu.L2TLBs {
-			tracer := tlb.NewGlobalTLBQueueingTracer(
-				func(task tracing.Task) bool {
-					if task.Kind == "imbalance" {
-						return true
-					}
-					return false
-				})
-			tracer.AddThis(this)
-			for _, tlb := range gpu.L2TLBs {
-				tracer.AddTLB(tlb)
-			}
-			tracing.CollectTrace(this, tracer)
-			r.L2TLBQueueingImbalanceTracers = append(r.L2TLBQueueingImbalanceTracers,
-				TLBQueueImbalanceTracer{tracer: tracer, tlb: this})
-		}
-	}
-}
-
-func (r *Runner) addL2TLBEntropyTracer() {
-	if !r.ReportEntropy {
-		return
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, this := range gpu.L2TLBs {
-			tracer := tlb.NewEntropyTracer(
-				func(task tracing.Task) bool {
-					if task.Kind == "entropy" {
-						return true
-					}
-					return false
-				})
-			tracing.CollectTrace(this, tracer)
-			r.EntropyTracers = append(r.EntropyTracers,
-				EntropyTracer{tracer: tracer, tlb: this})
 		}
 	}
 }

@@ -30,7 +30,6 @@ import (
 	// ram "gitlab.com/akita/mem/dram"
 
 	"gitlab.com/akita/mem/idealmemcontroller"
-	"gitlab.com/akita/mem/vm/tlb"
 	"gitlab.com/akita/mgpusim/benchmarks"
 	"gitlab.com/akita/mgpusim/driver"
 	"gitlab.com/akita/mgpusim/platform"
@@ -175,10 +174,6 @@ var translationReqLatencyFlag = flag.Bool("report-translation-request-latency",
 	false, "Report the latency of  requests thrugh the remote trans. engines.")
 var addressTranslatorLatencyFlag = flag.Bool("report-address-translator-latency",
 	false, "Report the latency of  requests thrugh the addr. trans.")
-var l2tlbQueueingImbalanceFlag = flag.Bool("report-l2tlb-queueing-imbalance",
-	false, "Report the imbalnce of  requests thrugh the L2 TLB .")
-var entropyFlag = flag.Bool("report-entropy",
-	false, "Report the entropy of requests are various L2 TLBs")
 var gpuFlag = flag.String("gpus", "",
 	"The GPUs to use, use a format like 1,2,3,4. By default, GPU 1 is used.")
 var unifiedGPUFlag = flag.String("unified-gpus", "",
@@ -260,10 +255,6 @@ var memoryAccessTraceFlag = flag.Bool("trace-memory-access",
 	false, "Trace access counts per addresses generated from L1 caches")
 var memoryAccessTraceFileName = flag.String("trace-memory-access-filename",
 	"memory_access", "Filename for tracing memory accesses")
-var pteAccessTraceFlag = flag.Bool("trace-pte-access",
-	false, "Trace the accesses to the page table entries")
-var pteAccessTraceFileName = flag.String("trace-pte-access-filename",
-	"pte_access", "Filename for tracing the accesses to the page table entries")
 var setAccessTraceFlag = flag.Bool("trace-set-access",
 	false, "Emit per-L2-bank per-setID access counts into the metrics CSV")
 var reportWorkgroupCountFlag = flag.Bool("report-workgroup-count",
@@ -372,16 +363,6 @@ type rdmaTransactionCountTracer struct {
 	rdmaEngine     rdma.RDMAEngine
 }
 
-type TLBQueueImbalanceTracer struct {
-	tracer *tlb.GlobalTLBQueueingTracer
-	tlb    tlb.L2TLB
-}
-
-type EntropyTracer struct {
-	tracer *tlb.EntropyTracer
-	tlb    tlb.L2TLB
-}
-
 // Runner is a class that helps running the benchmarks in the official samples.
 type Runner struct {
 	Engine                          akita.Engine
@@ -409,8 +390,6 @@ type Runner struct {
 	PageAccessTracers               []CDMAAccessTracer
 	DRAMTransactionCounters         []dramTransactionCountTracer
 	ActivePageWalkerTracers         []ActivePageWalkerTracer
-	L2TLBQueueingImbalanceTracers   []TLBQueueImbalanceTracer
-	EntropyTracers                  []EntropyTracer
 	Benchmarks                      []benchmarks.Benchmark
 	Verify                          bool
 	ReportInstCount                 bool
@@ -429,8 +408,6 @@ type Runner struct {
 	ReportRDMATransactionCount      bool
 	ReportCDMATransactionCount      bool
 	ReportActiveWalkerCount         bool
-	ReportL2TLBQueueImbalance       bool
-	ReportEntropy                   bool
 	UseUnifiedMemory                bool
 	UseLASPMemoryAlloc              bool
 	metricsCollector                *collector
@@ -439,7 +416,6 @@ type Runner struct {
 	SimulationStartTime            time.Time
 	TraceAccessCountPerAddrs       bool
 	TraceMemoryAccess              bool
-	TracePteAccess                 bool
 	ReportWorkgroupCount           bool
 	ReportHopPerRDMA               bool
 	ReportL2MissTrace              bool
@@ -458,7 +434,6 @@ type Runner struct {
 	L2MSHRFailTracer               *tracing.MSHRFailTracer
 	AccessCountPerAddrTracer       *tracing.AccessCountTracer
 	MemoryAccessTracer             *tracing.MemoryAccessTracer
-	PteAccessTracer                *tracing.PteAccessTracer
 	KernelTracer                   *tracing.KernelTracer
 	FlushTracer                    *tracing.FlushTracer
 	NumFlitTracer                  *tracing.NumFlitTracer
@@ -602,14 +577,6 @@ func (r *Runner) ParseFlag() *Runner {
 		r.ReportActiveWalkerCount = true
 	}
 
-	if *l2tlbQueueingImbalanceFlag {
-		r.ReportL2TLBQueueImbalance = true
-	}
-
-	if *entropyFlag {
-		r.ReportEntropy = true
-	}
-
 	// custom tracer
 	if *accessCountPerAddrsTraceFlag {
 		r.TraceAccessCountPerAddrs = true
@@ -617,10 +584,6 @@ func (r *Runner) ParseFlag() *Runner {
 
 	if *memoryAccessTraceFlag {
 		r.TraceMemoryAccess = true
-	}
-
-	if *pteAccessTraceFlag {
-		r.TracePteAccess = true
 	}
 
 	if *reportWorkgroupCountFlag {
@@ -649,8 +612,6 @@ func (r *Runner) ParseFlag() *Runner {
 		// r.ReportTLBConditionalStats = true
 		// r.ReportMMUConditionalStats = true
 		// r.ReportActiveWalkerCount = true
-		// r.ReportL2TLBQueueImbalance = true
-		// r.ReportEntropy = true
 
 		// custom tracer
 		r.ReportWorkgroupCount = true
@@ -728,13 +689,10 @@ func (r *Runner) Init() *Runner {
 	r.addTLBConditionalTracer()
 	r.addAddressTranslatorLatencyTracer()
 	r.addTranslationReqTracer()
-	r.addL2TLBQueueingImbalanceTracer()
-	r.addL2TLBEntropyTracer()
 	r.addPageWalkLatencyTracer()
 	r.addMMUConditionalTracer()
 	r.addActiveWalkerTracer()
 	r.addPWCHitRateTracer()
-	r.addPteAccessTracer(*pteAccessTraceFileName)
 
 	// custom tracer
 	r.addMemoryUsageTracer()
@@ -1038,8 +996,6 @@ func (r *Runner) collectAllMetrics() {
 	r.reportTLBConditionalStats()
 	r.reportAddressTranslatorLatency()
 	r.reportTranslationReqLatency()
-	r.reportL2TLBQueueImbalance()
-	r.reportL2TLBEntropy()
 	r.reportMMUConditionalStats()
 	r.reportActiveWalkerCount()
 	r.reportPWCHitRate()
@@ -1052,9 +1008,6 @@ func (r *Runner) collectAllMetrics() {
 	}
 	if r.TraceMemoryAccess {
 		r.reportMemoryAccessTraces()
-	}
-	if r.TracePteAccess {
-		r.reportPteAccessTraces()
 	}
 }
 

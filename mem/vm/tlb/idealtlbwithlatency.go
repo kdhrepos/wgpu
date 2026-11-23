@@ -69,10 +69,6 @@ func (tlb *IdealLatTLB) Tick(now akita.VTimeInSec) bool {
 
 	madeProgress = tlb.performCtrlReq(now) || madeProgress
 
-	if tlb.GetFrontQueueLength() > 0 {
-		tracing.StartTask(0, 0, now, tlb, "imbalance", "", nil)
-	}
-
 	if !tlb.isPaused {
 		for i := 0; i < tlb.numReqPerCycle; i++ {
 			madeProgress = tlb.lookup(now) || madeProgress
@@ -103,7 +99,6 @@ func (tlb *IdealLatTLB) parseFromTop(now akita.VTimeInSec) bool {
 		tlb.TopPort.Retrieve(now)
 		tracing.TraceReqReceive(req, now, tlb)
 		tracing.StopTracingNetworkReq(req, now, tlb)
-		tracing.StartTask(0, 0, now, tlb, "entropy", "", req)
 		return true
 	}
 	return false
@@ -247,12 +242,6 @@ func (tlb *IdealLatTLB) handleTLBRestart(now akita.VTimeInSec, req *TLBRestartRe
 	// }
 
 	return true
-}
-
-func (tlb *IdealLatTLB) GetFrontQueueLength() int {
-	bufContainer := tlb.GetTopPort().(akita.MsgBufferContainer) //.(*akita.LimitNumMsgPort)
-	buf := bufContainer.GetBuffer()
-	return len(buf)
 }
 
 func (tlb *IdealLatTLB) SetCommandProcessor(cp akita.Port) {

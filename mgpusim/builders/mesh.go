@@ -66,11 +66,6 @@ func (b *MeshGPUBuilder) connectRDMAEngines() {
 		l2Cache.SetVirtualAddrTable(chipRdmaReqAddrTable)
 		l2Cache.SetHomeNodeFinder(homeNodeFinder)
 	}
-
-	// used for pte access trace
-	for _, mmu := range b.gpu.MMUs {
-		mmu.VirtualAddrTable = chipRdmaReqAddrTable
-	}
 }
 
 func (b MeshGPUBuilder) setupSwPortsForRdmaEngine() {
