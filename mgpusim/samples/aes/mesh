@@ -1,18 +1,14 @@
 #!/bin/bash
 go build
 
-NAME=gramschmidt
+NAME=aes
 
-NI=1024
-NJ=1024
-K=1
+LENGTH=65536
 
 MAX_INST=30000000
 
 ./$NAME \
-    -ni=$NI \
-    -nj=$NJ \
-    -k=$K \
+    -length=$LENGTH \
     -report-all \
     -max-inst=$MAX_INST \
     -no-progress-bar \
