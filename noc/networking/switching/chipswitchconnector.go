@@ -50,7 +50,6 @@ func (c *ChipSwitchConnector) SetBufferSize(numFlit int) {
 // SetSwitchLatency sets the number of cycles required between when the message
 // arrives at a switch and when the message is forwarded.
 func (c *ChipSwitchConnector) SetSwitchLatency(numCycles int) {
-	fmt.Println("setting switch connector latency:", numCycles)
 	c.switchLatency = numCycles
 }
 

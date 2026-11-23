@@ -160,7 +160,9 @@ func (a *memoryAllocatorImpl) AllocateUnified(
 func (a *memoryAllocatorImpl) allocatePages(
 	numPages int, pid ca.PID, deviceID int, unified bool,
 ) (firstPageVAddr uint64) {
-	fmt.Println("num pages", numPages)
+	if global.GetInstance().GetVerbose() {
+		fmt.Println("num pages", numPages)
+	}
 	pState, found := a.processMemoryStates[pid]
 	if !found {
 		a.processMemoryStates[pid] = &processMemoryState{
@@ -189,9 +191,11 @@ func (a *memoryAllocatorImpl) allocatePages(
 		if page.DeviceID != uint64(deviceID) {
 			panic("gpuid != deviceid")
 		}
-		fmt.Println("data page:",
-			fmt.Sprintf("%x", vAddr),
-			fmt.Sprintf("%x", pAddr))
+		if global.GetInstance().GetVerbose() {
+			fmt.Println("data page:",
+				fmt.Sprintf("%x", vAddr),
+				fmt.Sprintf("%x", pAddr))
+		}
 
 		a.pageTable.Insert(page)
 	}
@@ -338,7 +342,9 @@ func (a *memoryAllocatorImpl) allocatePagesLASP(
 	deviceID int,
 	unified bool,
 ) (firstPageVAddr uint64) {
-	fmt.Println("num pages", numPages)
+	if global.GetInstance().GetVerbose() {
+		fmt.Println("num pages", numPages)
+	}
 	pState, found := a.processMemoryStates[pid]
 	if !found {
 		a.processMemoryStates[pid] = &processMemoryState{
@@ -353,10 +359,12 @@ func (a *memoryAllocatorImpl) allocatePagesLASP(
 	pageSize := uint64(1 << a.log2PageSize)
 	nextVAddr := pState.nextVAddr
 
-	fmt.Println("Data Allocation: ",
-		a.dataAllocated,
-		global.GetInstance().GetDataPartitioning(a.dataAllocated),
-		global.GetInstance().GetDataStride(a.dataAllocated))
+	if global.GetInstance().GetVerbose() {
+		fmt.Println("Data Allocation: ",
+			a.dataAllocated,
+			global.GetInstance().GetDataPartitioning(a.dataAllocated),
+			global.GetInstance().GetDataStride(a.dataAllocated))
+	}
 
 	for i := range numPages {
 		vAddr := nextVAddr + uint64(i)*pageSize
@@ -396,7 +404,9 @@ func (a *memoryAllocatorImpl) allocatePagesLASP(
 	pState.nextVAddr += pageSize * uint64(numPages)
 
 	for c := range a.numChiplets {
-		fmt.Printf("Chiplet %d: %d pages allocated\n", c, a.PageAllocatedPerChiplet[c])
+		if global.GetInstance().GetVerbose() {
+			fmt.Printf("Chiplet %d: %d pages allocated\n", c, a.PageAllocatedPerChiplet[c])
+		}
 	}
 
 	// to specify lasp stride for each of data structures.

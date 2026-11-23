@@ -70,14 +70,16 @@ func (a *chipletLASPAlgorithm) StartNewKernel(info kernels.KernelLaunchInfo) {
 
 	a.TraceWorkGroupDimension()
 
-	fmt.Println("Total workgroups",
-		a.currWG.Packet.GridSizeX,
-		a.currWG.Packet.GridSizeY,
-		a.currWG.Packet.WorkgroupSizeX,
-		a.currWG.Packet.WorkgroupSizeY,
-		a.gridBuilder.NumWGX(),
-		a.gridBuilder.NumWGY(),
-		a.numChiplets)
+	if global.GetInstance().GetVerbose() {
+		fmt.Println("Total workgroups",
+			a.currWG.Packet.GridSizeX,
+			a.currWG.Packet.GridSizeY,
+			a.currWG.Packet.WorkgroupSizeX,
+			a.currWG.Packet.WorkgroupSizeY,
+			a.gridBuilder.NumWGX(),
+			a.gridBuilder.NumWGY(),
+			a.numChiplets)
+	}
 
 	for a.currWG != nil {
 		id := 0
@@ -100,7 +102,9 @@ func (a *chipletLASPAlgorithm) StartNewKernel(info kernels.KernelLaunchInfo) {
 
 		workgroupsPerChiplet[chiplet]++
 		a.perChipletListOfWG[chiplet] = append(a.perChipletListOfWG[chiplet], a.currWG)
-		fmt.Println("Workgroup distribution", a.currWG.IDX, a.currWG.IDY, chiplet)
+		if global.GetInstance().GetVerbose() {
+			fmt.Println("Workgroup distribution", a.currWG.IDX, a.currWG.IDY, chiplet)
+		}
 		a.currWG = a.gridBuilder.NextWG()
 	}
 
@@ -114,7 +118,9 @@ func (a *chipletLASPAlgorithm) StartNewKernel(info kernels.KernelLaunchInfo) {
 			strconv.Itoa(id),
 			n)
 
-		fmt.Printf("Chiplet %d: %d\n", id, n)
+		if global.GetInstance().GetVerbose() {
+			fmt.Printf("Chiplet %d: %d\n", id, n)
+		}
 	}
 
 	tracing.StartTask(

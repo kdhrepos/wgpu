@@ -230,7 +230,6 @@ func (b *CommonPlatformBuilder) createGPU(
 	pcieSwitchID int,
 ) *mgpusim.GPU {
 	name := fmt.Sprintf("GPU%d", index)
-	fmt.Println("platform, common.go, ", index, b.log2PageSize)
 	memAddrOffset := uint64(index)*2*mem.GB + uint64(1<<b.log2PageSize)
 	gpuBuilder.WithMemAddrOffset(memAddrOffset)
 	gpu := gpuBuilder.Build(name, uint64(index))

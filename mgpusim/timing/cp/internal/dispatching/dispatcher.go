@@ -9,6 +9,7 @@ import (
 	"gitlab.com/akita/mgpusim/coreprotocol"
 	"gitlab.com/akita/mgpusim/kernels"
 	"gitlab.com/akita/mgpusim/timing/cp/internal/resource"
+	"gitlab.com/akita/util/global"
 	"gitlab.com/akita/util/tracing"
 )
 
@@ -173,9 +174,11 @@ func (d *DispatcherImpl) Tick(now akita.VTimeInSec) (madeProgress bool) {
 
 	if d.dispatching != nil {
 		if d.KernelCompleted() {
-			fmt.Println("Completing kernel, ",
-				d.name,
-				d.numCompletedWGs, "/", d.numDispatchedWGs)
+			if global.GetInstance().GetVerbose() {
+				fmt.Println("Completing kernel, ",
+					d.name,
+					d.numCompletedWGs, "/", d.numDispatchedWGs)
+			}
 			madeProgress = d.completeKernel(now) || madeProgress
 		} else {
 			madeProgress = d.dispatchNextWG(now) || madeProgress

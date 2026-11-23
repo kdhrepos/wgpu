@@ -14,6 +14,7 @@ import (
 	"gitlab.com/akita/mgpusim/timing/cp/internal/resource"
 	"gitlab.com/akita/protocol"
 	"gitlab.com/akita/util/akitaext"
+	"gitlab.com/akita/util/global"
 	"gitlab.com/akita/util/tracing"
 
 	// "stats"
@@ -271,7 +272,9 @@ func (p *CommandProcessor) processRspFromCaches(now akita.VTimeInSec) bool {
 	switch req := msg.(type) {
 	case *cache.FlushRsp:
 		if p.numCacheACK == 1 {
-			fmt.Println("Processing cache flush rsp with numCacheACK =", p.numCacheACK)
+			if global.GetInstance().GetVerbose() {
+				fmt.Println("Processing cache flush rsp with numCacheACK =", p.numCacheACK)
+			}
 		}
 		return p.processCacheFlushRsp(now, req)
 	case *cache.RestartRsp:

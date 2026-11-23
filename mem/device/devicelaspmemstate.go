@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitlab.com/akita/mem"
+	"gitlab.com/akita/util/global"
 )
 
 type deviceLASPMemState struct {
@@ -81,7 +82,9 @@ func (dims *deviceLASPMemState) allocateMultiplePages(
 	numPages int,
 ) (pAddrs []uint64) {
 	pagesPerChiplet := numPages / int(dims.numChiplets)
-	fmt.Println("***********numPages:", numPages, pagesPerChiplet, numPages%4)
+	if global.GetInstance().GetVerbose() {
+		fmt.Println("***********numPages:", numPages, pagesPerChiplet, numPages%4)
+	}
 	for i := 0; i < int(dims.numChiplets); i++ {
 		for j := 0; j < pagesPerChiplet; j++ {
 			pAddr := dims.availablePAddrs[i][0]
@@ -116,11 +119,13 @@ func (dims *deviceLASPMemState) allocatePageTablePage(
 	pAddrToReturn = dims.availablePAddrs[chiplet][0]
 	dims.availablePAddrs[chiplet] = dims.availablePAddrs[chiplet][1:]
 
-	fmt.Println("page table page:",
-		fmt.Sprintf("%x", vAddr),
-		fmt.Sprintf("%x", pAddrToReturn),
-		chiplet,
-	)
+	if global.GetInstance().GetVerbose() {
+		fmt.Println("page table page:",
+			fmt.Sprintf("%x", vAddr),
+			fmt.Sprintf("%x", pAddrToReturn),
+			chiplet,
+		)
+	}
 
 	return pAddrToReturn
 }

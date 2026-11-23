@@ -9,6 +9,7 @@ import (
 	"gitlab.com/akita/akita"
 	"gitlab.com/akita/mgpusim/insts"
 	"gitlab.com/akita/mgpusim/kernels"
+	"gitlab.com/akita/util/global"
 )
 
 // EnqueueLaunchKernel schedules kernel to be launched later
@@ -74,7 +75,9 @@ func (d *Driver) LaunchKernel(
 	wgSize [3]uint16,
 	kernelArgs interface{},
 ) {
-	fmt.Println("Launching kernel")
+	if global.GetInstance().GetVerbose() {
+		fmt.Println("Launching kernel")
+	}
 	queue := d.CreateCommandQueue(ctx)
 	d.EnqueueLaunchKernel(queue, co, gridSize, wgSize, kernelArgs)
 	d.DrainCommandQueue(queue)

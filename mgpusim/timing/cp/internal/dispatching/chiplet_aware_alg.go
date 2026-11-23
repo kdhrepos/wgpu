@@ -6,6 +6,7 @@ import (
 	"gitlab.com/akita/mgpusim/coreprotocol"
 	"gitlab.com/akita/mgpusim/kernels"
 	"gitlab.com/akita/mgpusim/timing/cp/internal/resource"
+	"gitlab.com/akita/util/global"
 )
 
 // chipletAwareAlgorithm can dispatch workgroups to CUs in a round robin
@@ -58,7 +59,9 @@ func (a *chipletAwareAlgorithm) StartNewKernel(info kernels.KernelLaunchInfo) {
 		wgCoordinate = "X"
 	}
 	for a.currWG != nil {
-		fmt.Println(a.currWG.Packet.GridSizeX, a.currWG.Packet.WorkgroupSizeX, a.numChiplets)
+		if global.GetInstance().GetVerbose() {
+			fmt.Println(a.currWG.Packet.GridSizeX, a.currWG.Packet.WorkgroupSizeX, a.numChiplets)
+		}
 		wgID := 0
 		switch wgCoordinate {
 		case "X":
@@ -149,7 +152,9 @@ func (a *chipletAwareAlgorithm) Next() (location dispatchLocation) {
 					dispatch.locations[i] = coreprotocol.WfDispatchLocation(localtion)
 				}
 
-				fmt.Println(a.currWG.IDX, a.currWG.IDY, a.currWG.IDZ, chiplet)
+				if global.GetInstance().GetVerbose() {
+					fmt.Println(a.currWG.IDX, a.currWG.IDY, a.currWG.IDZ, chiplet)
+				}
 
 				a.currWG = nil
 				a.perChipletListOfWG[chiplet] = a.perChipletListOfWG[chiplet][1:]

@@ -209,7 +209,6 @@ func (b IdealGPUBuilder) Build(name string, id uint64) *mgpusim.GPU {
 }
 
 func (b *IdealGPUBuilder) setupIdealInterchipNetwork() {
-	fmt.Println("Ideal Builder (crossbar)")
 
 	// interconnect bandwidth: 1GHz * 64B * 16 = 1TBps
 	chipIdealConnector := chipnetwork.NewInterChipletIdealConnector().

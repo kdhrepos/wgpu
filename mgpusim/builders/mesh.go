@@ -139,7 +139,6 @@ func (b MeshGPUBuilder) Build(name string, id uint64) *mgpusim.GPU {
 }
 
 func (b *MeshGPUBuilder) setupMeshInterchipNetwork() {
-	fmt.Println("Mesh Builder")
 
 	// interconnect bandwidth: 1GHz * 64B * 12 = 768 GBps (example)
 	chipMeshConnector := chipnetwork.NewInterChipletMeshConnector().

@@ -279,7 +279,7 @@ var logDir = flag.String("log-dir",
 
 // time-limit for fast simulation
 var timeLimit = flag.Int("time-limit",
-	0, "Time limit for fast simulation in seconds (default: 0, no time limit)")
+	0, "Wall-clock time limit in hours (0 = no limit)")
 
 // LASP parameters
 var schedulingPartitions = flag.String("sched-partition", "Xdiv", "Specify the scheduling partitions")
@@ -669,7 +669,7 @@ func (r *Runner) startProfilingServer() {
 		panic(err)
 	}
 
-	fmt.Println("Profiling server running on:",
+	fmt.Println("[wgpu] pprof server on port",
 		listener.Addr().(*net.TCPAddr).Port)
 
 	panic(http.Serve(listener, nil))
@@ -677,21 +677,22 @@ func (r *Runner) startProfilingServer() {
 
 // Init initializes the platform simulate
 func (r *Runner) Init() *Runner {
-	go r.startProfilingServer()
-
 	parseLists()
 	parseCheckpointFlags()
 	r.ParseFlag()
 
 	l := global.GetInstance()
 	l.SetVerbose(*verbose)
+	if *verbose {
+		go r.startProfilingServer()
+	}
 	l.LogDataAllocation = *logDataAllocation
 	l.LogDataAllocationFilename = *logDataAllocationFilename
 
 	log.SetFlags(log.Llongfile | log.Ldate | log.Ltime)
 
 	if *timeLimit > 0 {
-		fmt.Println("Time limit is set to ", *timeLimit, " hours.")
+		fmt.Printf("[wgpu] time limit: %d h\n", *timeLimit)
 		l.SetTimeLimit(*timeLimit)
 	}
 
@@ -700,12 +701,12 @@ func (r *Runner) Init() *Runner {
 		for i, p := range checkpointPercents {
 			labels[i] = fmt.Sprintf("%d%%", p)
 		}
-		fmt.Printf("Checkpoint enabled: dumping snapshots at %s of -max-inst.\n",
+		fmt.Printf("[wgpu] checkpoints at %s of -max-inst\n",
 			strings.Join(labels, ", "))
 	}
 
 	if *fastH2D {
-		fmt.Println("Fast H2D enabled: bypassing timing simulation for H2D copies.")
+		fmt.Println("[wgpu] fast H2D: host-to-device copies bypass timing")
 	}
 
 	r.buildTimingPlatform()
@@ -774,8 +775,9 @@ func runWithStack(name string, fn func()) {
 }
 
 func (r *Runner) buildTimingPlatform() {
-	fmt.Println(*platformType, *schedulingAlg)
-	fmt.Println("GPU Size: ", *xDim, *yDim)
+	fmt.Printf("[wgpu] %s | %s %dx%d | sched=%s | alloc=%s\n",
+		*benchmarkName, *platformType, *xDim, *yDim,
+		*schedulingAlg, *memAllocatorType)
 
 	xDim := *xDim // pointer -> value
 	yDim := *yDim // pointer -> value
@@ -931,7 +933,9 @@ func (r *Runner) Run() {
 		segments := strings.Split(fullPkgPath, "/")
 		pkgName := segments[len(segments)-1]
 
-		fmt.Printf("Benchmark Name: %s\n", pkgName)
+		if global.GetInstance().GetVerbose() {
+			fmt.Printf("Benchmark Name: %s\n", pkgName)
+		}
 
 		wg.Add(1)
 		go func(b benchmarks.Benchmark, wg *sync.WaitGroup) {
@@ -976,6 +980,10 @@ func (r *Runner) reportStats() {
 	}
 
 	r.dumpMetrics()
+	fmt.Printf("[wgpu] done | kernel time %.3f us | wall %.1f s | %s.csv\n",
+		float64(r.KernelTimeCounter.BusyTime())*1e6,
+		time.Since(r.SimulationStartTime).Seconds(),
+		*filenameFlag)
 }
 
 // reportStatsCheckpoint collects the same metrics as reportStats and dumps

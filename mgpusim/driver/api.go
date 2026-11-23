@@ -14,6 +14,7 @@ import (
 	"gitlab.com/akita/mem/device"
 	"gitlab.com/akita/mgpusim/kernels"
 	"gitlab.com/akita/util/ca"
+	"gitlab.com/akita/util/global"
 	"gitlab.com/akita/util/tracing"
 )
 
@@ -159,7 +160,9 @@ func (d *Driver) AllocateMemoryLASP(
 		float64(byteSize),
 	)
 
-	fmt.Printf("Memory allocated: %f\n", float64(byteSize)/(1<<20))
+	if global.GetInstance().GetVerbose() {
+		fmt.Printf("Memory allocated: %f\n", float64(byteSize)/(1<<20))
+	}
 
 	ptr := d.memAllocator.AllocateVirtualChunkLASP(ctx.pid, byteSize, ctx.currentGPUID, partition)
 	return GPUPtr(ptr)
