@@ -236,7 +236,7 @@ func (b *Benchmark) Verify() {
 	for i := 0; i < b.NX; i++ {
 		for j := 0; j < b.NY; j++ {
 			if math.Abs(float64(b.ey_outputFromGPU[i*b.NY+j]-b.ey[i*b.NY+j])/float64(b.ey[i*b.NY+j])) > 0.01 {
-				fmt.Println("Mismatch at %d, expected %f, but get %f",
+				fmt.Printf("Mismatch at %d, expected %f, but get %f\n",
 					i*b.NY+j,
 					b.ey[i*b.NY+j],
 					b.ey_outputFromGPU[i*b.NY+j])

@@ -144,9 +144,7 @@ func (b *Benchmark) Verify() {
 		for j := 0; j < b.NJ; j++ {
 			if math.Abs(float64(b.b_outputFromGPU[i*b.NJ+j]-b.b[i*b.NJ+j])) > 0.001 {
 				log.Panicf("Mismatch at %d, %d, expected %f, but get %f",
-					i, /*i*b.NJ+j*/
-					j, /*b.b[i*b.NJ+j]*/
-					b.b_outputFromGPU[i*b.NJ+j])
+					i, j, b.b[i*b.NJ+j], b.b_outputFromGPU[i*b.NJ+j])
 			}
 		}
 	}
