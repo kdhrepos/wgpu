@@ -8,7 +8,6 @@ The framework is composed of 4 main parts: the Event system, the Component Syste
 
 1. Use and Contribution
 
-    1. [Go Modules](./gomod.md)
     1. [Testing](./testing.md)
     1. [Coding Guideline](./coding_guideline.md)
 
