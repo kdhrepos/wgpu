@@ -51,7 +51,8 @@ Or call the binary directly:
   -platform-type=mesh -xDim=6 -yDim=6
 ```
 
-Metrics go to `metrics.csv` (`-metric-file-name`). All flags:
+Metrics go to `<benchmark>_<platform>_<X>x<Y>.csv` (override with
+`-metric-file-name`); `-verbose` prints debug output. All flags:
 `mgpusim/runner/runner.go`.
 
 ## License
