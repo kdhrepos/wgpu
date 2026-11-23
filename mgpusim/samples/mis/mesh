@@ -9,7 +9,6 @@ NUM_ITEMS=7000000
     -numItems=$NUM_ITEMS \
     -fast-h2d \
     -verbose \
-    -timing \
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \

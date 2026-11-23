@@ -240,20 +240,11 @@ func (mmu *MMUImpl) handleMemResponse(rsp *protocol.DataReadyRsp, now akita.VTim
 
 		if trans.msgID == rsp.RespondTo {
 
-			// rspInfo := rsp.Info.(*mem.DataReadyRspInfo)
-			// accessResult := rspInfo.AccessResult
-			// src := rspInfo.Src
-
-			// taskStep := fmt.Sprintf("chiplet-%s-level-%d-%s",
-			// 	getChipletNum(src),
-			// 	trans.level,
-			// 	getAccessResultString(accessResult))
-
-			// tracing.AddTaskStep(
-			// 	tracing.MMUMemLatencyTaskID(trans.msgID),
-			// 	now, mmu,
-			// 	taskStep,
-			// )
+			tracing.AddTaskStep(
+				tracing.MMUMemLatencyTaskID(trans.msgID),
+				now, mmu,
+				"pte-level-"+strconv.Itoa(trans.level),
+			)
 			tracing.EndTask(
 				tracing.MMUMemLatencyTaskID(trans.msgID),
 				now,
@@ -541,6 +532,15 @@ func (mmu *MMUImpl) sendToMem(now akita.VTimeInSec, i int) bool {
 	}
 
 	if err == nil {
+		tracing.StartTask(
+			tracing.MMUMemLatencyTaskID(trans.msgID),
+			tracing.MsgIDAtReceiver(trans.req, mmu),
+			now,
+			mmu,
+			"MMU_mem_latency",
+			"",
+			nil,
+		)
 		tracing.StartTask(
 			0,
 			0,

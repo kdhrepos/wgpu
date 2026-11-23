@@ -7,7 +7,6 @@ STEPS=1
 ./jacobi2d \
     -n=$N \
     -steps=$STEPS \
-    -timing \
     -report-all \
     -verify \
     -no-progress-bar \

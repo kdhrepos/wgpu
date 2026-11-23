@@ -40,7 +40,6 @@ import (
 )
 
 var benchmarkName = flag.String("benchmark", "unknown", "The name of the benchmark to run, used for naming the output files")
-var timingFlag = flag.Bool("timing", false, "Run detailed timing simulation.")
 var maxInstCount = flag.Uint64("max-inst", 0,
 	"Terminate the simulation after the given number of instructions is retired.")
 var cpuProfileFile = flag.String("cpuprofile", "",
@@ -140,18 +139,8 @@ func parseCheckpointPathSpec(spec, flagName string) map[int]string {
 	return m
 }
 
-var parallelFlag = flag.Bool("parallel", false,
-	"Run the simulation in parallel.")
 var isaDebug = flag.Bool("debug-isa", false, "Generate the ISA debugging file.")
-var visTracing = flag.Bool("trace-vis", false,
-	"Generate trace for visualization purposes.")
-var l2tlbsqlTracingFlag = flag.Bool("trace-l2sql", false,
-	"Generate trace from L2 TLB into a new MySql database.")
 var verifyFlag = flag.Bool("verify", false, "Verify the emulation result.")
-var memTracing = flag.Bool("trace-mem", false, "Generate memory trace")
-var memTraceFilename = flag.String("mem-trace-filename", "mem.trace", "Give the name of the memory trace file")
-var tlbTracing = flag.Bool("trace-tlb", false, "Generate memory trace")
-var tlbTraceFilename = flag.String("tlb-trace-filename", "tlb.trace", "Give the name of the tlb trace file")
 var disableProgressBar = flag.Bool("no-progress-bar", false,
 	"Disables the progress bar")
 var instCountReportFlag = flag.Bool("report-inst-count", false,
@@ -166,8 +155,6 @@ var tlbConditionalStatsReportFlag = flag.Bool("report-tlb-conditional", false,
 	"Report the tlb stats about how much is remote and how much is local.")
 var tlbHitRateReportFlag = flag.Bool("report-tlb-hit-rate", false,
 	"Report the tlb hit rate of each tlb.")
-var tlbCoalesceReportFlag = flag.Bool("report-tlb-coalesce", false,
-	"Report the average tlb coalesce.")
 var pagewalkLatencyReportFlag = flag.Bool("report-pagewalk-latency", false,
 	"Report the average page walk latency.")
 var mmuConditionalStatsReportFlag = flag.Bool("report-mmu-conditional", false,
@@ -190,12 +177,8 @@ var addressTranslatorLatencyFlag = flag.Bool("report-address-translator-latency"
 	false, "Report the latency of  requests thrugh the addr. trans.")
 var l2tlbQueueingImbalanceFlag = flag.Bool("report-l2tlb-queueing-imbalance",
 	false, "Report the imbalnce of  requests thrugh the L2 TLB .")
-var pageWalkerImbalanceFlag = flag.Bool("report-pagewalker-imbalance",
-	false, "Report the imbalnce of  use of the Page walker.")
 var entropyFlag = flag.Bool("report-entropy",
 	false, "Report the entropy of requests are various L2 TLBs")
-var referenceTracingFlag = flag.Bool("report-reference-tracing",
-	false, "Report the number of references to differnet addresses")
 var gpuFlag = flag.String("gpus", "",
 	"The GPUs to use, use a format like 1,2,3,4. By default, GPU 1 is used.")
 var unifiedGPUFlag = flag.String("unified-gpus", "",
@@ -204,7 +187,6 @@ Use a format like 1,2,3,4. Cannot coexist with -gpus.`)
 var useUnifiedMemoryFlag = flag.Bool("use-unified-memory", false,
 	"Run benchmark with Unified Memory or not")
 var reportAll = flag.Bool("report-all", false, "Report all metrics to .csv file.")
-var reportEssential = flag.Bool("report-essential", false, "Report essential metrics to .csv file.")
 var filenameFlag = flag.String("metric-file-name", "metrics",
 	"Modify the name of the output csv file.")
 var platformType = flag.String("platform-type", "mesh",
@@ -266,8 +248,6 @@ var robBufferSize = flag.Int("rob-buffer-size", 16384,
 	"L1V ROB MLP window: max in-flight vector memory transactions per CU. Default 128 (hw); 16384 for hop-gap study.")
 var oooDebug = flag.Bool("ooo-debug", false,
 	"Enable [ooo-dbg]/[ooo-bug] verbose prints in CU vmem path for OOO ROB diagnosis.")
-var prioritizePTE = flag.Bool("prioritize-pte", false,
-	"L2: prioritize PTW (page-table walk) requests over data within each destination tier. Default true (current behaviour); set false to ablate.")
 var robPerWfSubFifo = flag.Bool("rob-per-wf-sub-fifo", true,
 	"L1V/L1S/L1I ROBs: use per-wavefront sub-FIFOs so cross-WF head-of-line blocking is eliminated while per-WF program order is preserved. Default true (HoL-free); set false for single-FIFO in-order fallback.")
 
@@ -297,10 +277,6 @@ var verbose = flag.Bool("verbose",
 var logDir = flag.String("log-dir",
 	"", "")
 
-// refresh per n instructions
-var refresh = flag.Int("refresh",
-	0, "Refresh all the components per certain number of instructions (default: 0)")
-
 // time-limit for fast simulation
 var timeLimit = flag.Int("time-limit",
 	0, "Time limit for fast simulation in seconds (default: 0, no time limit)")
@@ -309,7 +285,6 @@ var timeLimit = flag.Int("time-limit",
 var schedulingPartitions = flag.String("sched-partition", "Xdiv", "Specify the scheduling partitions")
 var dataPartitionings = flag.String("data-partitioning", "kernel-wide", "Specify the data partitioning")
 var dataStrides = flag.String("data-strides", "0", "Specify the data strides for stride-aware partitioning, separated by comma")
-var colSizeForLasp = flag.Int("col-size-for-lasp", 0, "Specify the column size for LASP scheduling")
 
 var terminated bool
 var lastKernelLaunchTime akita.VTimeInSec
@@ -338,16 +313,6 @@ type cacheHitRateTracer struct {
 type TLBLatencyTracer struct {
 	tracer *tracing.AverageTimeTracer
 	tlb    tracing.NamedHookable
-}
-
-type TLBPipelineLatencyTracer struct {
-	tracer   *tracing.AverageTimeTracer
-	pipeline tracing.NamedHookable
-}
-
-type L2PipelineLatencyTracer struct {
-	tracer   *tracing.AverageTimeTracer
-	pipeline tracing.NamedHookable
 }
 
 type TLBConditionalLatencyTracer struct {
@@ -417,46 +382,17 @@ type EntropyTracer struct {
 	tlb    tlb.L2TLB
 }
 
-type TLBSetMissTracer struct {
-	tracer *tracing.ReferenceTracer
-	tlb    tlb.L2TLB
-}
-
-type TLBMSHRStallTracer struct {
-	tracer *tracing.TotalTimeTracer
-	tlb    tlb.L2TLB
-}
-
-type TLBReqStallTracer struct {
-	tracer *tracing.StepCountTracer
-	tlb    tlb.L2TLB
-}
-
-type L1TLBMSHRWaitTracerEntry struct {
-	tracer *tracing.TLBMSHRWaitTracer
-	tlb    *tlb.TLB
-}
-
-type L2TLBMSHRWaitTracerEntry struct {
-	tracer *tracing.TLBMSHRWaitTracer
-	tlb    tlb.L2TLB
-}
-
 // Runner is a class that helps running the benchmarks in the official samples.
 type Runner struct {
-	Engine                  akita.Engine
-	GPUDriver               *driver.Driver
-	maxInstStopper          *instTracer
-	KernelTimeCounter       *tracing.BusyTimeTracer
-	PerGPUKernelTimeCounter []*tracing.BusyTimeTracer
-	InstCountTracers        []instCountTracer
-	CacheLatencyTracers     []cacheLatencyTracer
-	TLBLatencyTracers       []TLBLatencyTracer
-	DownTLBLatencyTracers   []TLBLatencyTracer
-	// L2PipelineLatencyTracers           []L2PipelineLatencyTracer
-	// L2PipelineLocalLatencyTracers      []L2PipelineLatencyTracer
-	// L2PipelineRemoteLatencyTracers     []L2PipelineLatencyTracer
-	TLBPipelineLatencyTracers       []TLBPipelineLatencyTracer
+	Engine                          akita.Engine
+	GPUDriver                       *driver.Driver
+	maxInstStopper                  *instTracer
+	KernelTimeCounter               *tracing.BusyTimeTracer
+	PerGPUKernelTimeCounter         []*tracing.BusyTimeTracer
+	InstCountTracers                []instCountTracer
+	CacheLatencyTracers             []cacheLatencyTracer
+	TLBLatencyTracers               []TLBLatencyTracer
+	DownTLBLatencyTracers           []TLBLatencyTracer
 	MMUMemoryLatencyTracers         []MMUMemoryLatencyTracer
 	PageWalkLatencyTracers          []PageWalkLatencyTracer
 	DRAMLatencyTracers              []DRAMLatencyTracer
@@ -472,27 +408,11 @@ type Runner struct {
 	CDMAAccessTracers               []CDMAAccessTracer
 	PageAccessTracers               []CDMAAccessTracer
 	DRAMTransactionCounters         []dramTransactionCountTracer
-	L2TLBBufLenTracers              []*tracing.AverageCountTracer
-	L2TLBBufLenG0Tracers            []*tracing.AverageCountTracer
-	L2TLBCoalesceAddrTracers        []*tracing.AverageCountTracer
-	L2TLBCoalesceTracers            []*tracing.AverageCountTracer
-	L2TLBMSHRLenTracers             []*tracing.AverageCountTracer
-	L2TLBMSHRUniqLenTracers         []*tracing.AverageCountTracer
-	L2TLBMSHRLenG0Tracers           []*tracing.AverageCountTracer
-	L2TLBMSHRUniqLenG0Tracers       []*tracing.AverageCountTracer
 	ActivePageWalkerTracers         []ActivePageWalkerTracer
-	L2TLBMySQLTracer                tracing.MySQLTracer
 	L2TLBQueueingImbalanceTracers   []TLBQueueImbalanceTracer
 	EntropyTracers                  []EntropyTracer
-	TLBSetMissTracers               []TLBSetMissTracer
-	TLBMSHRStallTracers             []TLBMSHRStallTracer
-	TLBReqStallTracers              []TLBReqStallTracer
-	L1TLBMSHRWaitTracers            []L1TLBMSHRWaitTracerEntry
-	L2TLBMSHRWaitTracers            []L2TLBMSHRWaitTracerEntry
 	Benchmarks                      []benchmarks.Benchmark
-	Timing                          bool
 	Verify                          bool
-	Parallel                        bool
 	ReportInstCount                 bool
 	ReportCacheLatency              bool
 	ReportTLBLatency                bool
@@ -503,23 +423,14 @@ type Runner struct {
 	ReportTranslationReqLatency     bool
 	ReportAddressTranslatorLatency  bool
 	ReportCacheHitRate              bool
-	ReportTLBCoalesce               bool
 	ReportTLBHitRate                bool
 	ReportPWCHitRate                bool
-	ReportL2TLBMSHRLen              bool
 	ReportDRAMTransactionCount      bool
 	ReportRDMATransactionCount      bool
 	ReportCDMATransactionCount      bool
 	ReportActiveWalkerCount         bool
-	L2TLBSQLTracing                 bool
 	ReportL2TLBQueueImbalance       bool
-	ReportPageWalkerImbalance       bool
 	ReportEntropy                   bool
-	ReportReferenceTracing          bool
-	ReportTLBSetMissTracing         bool
-	ReportTLBMSHRStallTracing       bool
-	ReportTLBReqStalls              bool
-	ReportTLBMSHRWait               bool
 	UseUnifiedMemory                bool
 	UseLASPMemoryAlloc              bool
 	metricsCollector                *collector
@@ -582,7 +493,6 @@ func parseLists() {
 	}
 
 	// FIXME: only one column size is supported for now.
-	instance.SetColSizeForLasp(*colSizeForLasp)
 
 	instance.SetDataStrides(strides)
 
@@ -599,7 +509,6 @@ func parseLists() {
 	instance.SetROBBufferSize(*robBufferSize)
 	instance.SetVerbose(*verbose)
 	instance.SetOOODebug(*oooDebug)
-	instance.SetPrioritizePTEAtL2(*prioritizePTE)
 	instance.SetROBPerWfSubFifo(*robPerWfSubFifo)
 }
 
@@ -617,16 +526,8 @@ func (r *Runner) ParseFlag() *Runner {
 			*benchmarkName, *platformType, *xDim, *yDim)
 	}
 
-	if *parallelFlag {
-		r.Parallel = true
-	}
-
 	if *verifyFlag {
 		r.Verify = true
-	}
-
-	if *timingFlag {
-		r.Timing = true
 	}
 
 	if *useUnifiedMemoryFlag {
@@ -697,32 +598,16 @@ func (r *Runner) ParseFlag() *Runner {
 		r.ReportCDMATransactionCount = true
 	}
 
-	if *tlbCoalesceReportFlag {
-		r.ReportTLBCoalesce = true
-	}
-
 	if *activeWalkerReportFlag {
 		r.ReportActiveWalkerCount = true
-	}
-
-	if *l2tlbsqlTracingFlag {
-		r.L2TLBSQLTracing = true
 	}
 
 	if *l2tlbQueueingImbalanceFlag {
 		r.ReportL2TLBQueueImbalance = true
 	}
 
-	if *pageWalkerImbalanceFlag {
-		r.ReportPageWalkerImbalance = true
-	}
-
 	if *entropyFlag {
 		r.ReportEntropy = true
-	}
-
-	if *referenceTracingFlag {
-		r.ReportReferenceTracing = true
 	}
 
 	// custom tracer
@@ -737,10 +622,6 @@ func (r *Runner) ParseFlag() *Runner {
 	if *pteAccessTraceFlag {
 		r.TracePteAccess = true
 	}
-
-	// if *pcStateTraceFlag {
-	// 	r.TracePCState = true
-	// }
 
 	if *reportWorkgroupCountFlag {
 		r.ReportWorkgroupCount = true
@@ -763,21 +644,13 @@ func (r *Runner) ParseFlag() *Runner {
 		r.ReportRDMATransactionCount = true
 		r.ReportCDMATransactionCount = true
 		// r.ReportAddressTranslatorLatency = true
-		r.ReportReferenceTracing = true
 
 		// r.ReportTranslationReqLatency = true
 		// r.ReportTLBConditionalStats = true
 		// r.ReportMMUConditionalStats = true
-		// r.ReportTLBCoalesce = true
 		// r.ReportActiveWalkerCount = true
-		// r.ReportL2TLBMSHRLen = true
 		// r.ReportL2TLBQueueImbalance = true
-		// r.ReportPageWalkerImbalance = true
 		// r.ReportEntropy = true
-		// r.ReportTLBSetMissTracing = true
-		// r.ReportTLBMSHRStallTracing = true
-		// r.ReportTLBReqStalls = true
-		// r.ReportTLBMSHRWait = true
 
 		// custom tracer
 		r.ReportWorkgroupCount = true
@@ -835,12 +708,7 @@ func (r *Runner) Init() *Runner {
 		fmt.Println("Fast H2D enabled: bypassing timing simulation for H2D copies.")
 	}
 
-	if r.Timing {
-		r.buildTimingPlatform()
-	} else {
-		// r.buildEmuPlatform()
-		r.buildTimingPlatform()
-	}
+	r.buildTimingPlatform()
 
 	r.parseGPUFlag()
 
@@ -854,28 +722,18 @@ func (r *Runner) Init() *Runner {
 	r.addCacheHitRateTracer()
 	r.addRDMAEngineTracer()
 	r.addCDMAEngineTracer()
-	// r.addPageWalkLatencyTracer()
-	// r.addTLBLatencyTracer()
-	// r.addTLBHitRateTracer()
-	// r.addPWCHitRateTracer()
-	// r.addAddressTranslatorLatencyTracer()
-
-	// r.addTLBConditionalTracer()
-	// r.addTLBCoalesceTracer()
-	// r.addL2TLBMSHRLenTracer()
-	// r.addMMUConditionalTracer()
-	// r.addActiveWalkerTracer()
-	// r.addL2TLBQueueingImbalanceTracer()
-	// r.addL2TLBEntropyTracer()
-	// r.addRemoteReferenceTracer()
-	// r.addTLBSetMissTracer()
-	// r.addTLBMSHRStallTracer()
-	// r.addTLBReqStallTracer()
-	// r.addPageWalkerImbalanceTracker()
-	// r.addL2TLBSQLTracer()
-	// if *platformType != "ideal" {
-	// r.addTranslationReqTracer()
-	// }
+	r.addTLBLatencyTracer()
+	r.addTLBHitRateTracer()
+	r.addTLBConditionalTracer()
+	r.addAddressTranslatorLatencyTracer()
+	r.addTranslationReqTracer()
+	r.addL2TLBQueueingImbalanceTracer()
+	r.addL2TLBEntropyTracer()
+	r.addPageWalkLatencyTracer()
+	r.addMMUConditionalTracer()
+	r.addActiveWalkerTracer()
+	r.addPWCHitRateTracer()
+	r.addPteAccessTracer(*pteAccessTraceFileName)
 
 	// custom tracer
 	r.addMemoryUsageTracer()
@@ -883,14 +741,10 @@ func (r *Runner) Init() *Runner {
 	r.addHopTracer()
 	r.addRDMAFlightTracer()
 	r.addSendOutFailTracer()
-	// r.addRemoteRtwTracer()
 	r.addL2MissTracer()
 	r.addMSHRFailTracer()
-	// r.addTLBMSHRWaitTracer()
 	r.addAccessCountPerAddrTracer()
 	r.addMemoryAccessTracer(*memoryAccessTraceFileName)
-	// r.addPteCachingTracer()
-	// r.addPteAccessTracer(*pteAccessTraceFileName)
 	r.addEvictTracer() // custom tracer
 	r.addKernelTracer()
 	r.addWorkgroupDimensionTracer()
@@ -1159,35 +1013,28 @@ func (r *Runner) collectAllMetrics() {
 	r.reportDRAMLatency()
 	r.reportRDMATransactionCount()
 	r.reportCDMATransactionCount()
-	r.reportHopPerRDMA()        // custom tracer
-	r.reportIBPA()              // IBPA (always reported)
-	r.reportRDMAFlightLatency() // custom tracer
-	r.reportSendOutFail()       // custom tracer
-	r.reportLinkUtilization()   // custom tracer
-	// r.reportRemotePtw()          // custom tracer
-	r.reportL2MissTrace()   // custom tracer
-	r.reportMSHRFailTrace() // custom tracer
-	// r.reportTLBMSHRWait()        // custom tracer
+	r.reportHopPerRDMA()         // custom tracer
+	r.reportIBPA()               // IBPA (always reported)
+	r.reportRDMAFlightLatency()  // custom tracer
+	r.reportSendOutFail()        // custom tracer
+	r.reportLinkUtilization()    // custom tracer
+	r.reportL2MissTrace()        // custom tracer
+	r.reportMSHRFailTrace()      // custom tracer
 	r.reportFlushMetrics()       // custom tracer
 	r.reportNumFlits()           // custom tracer
 	r.reportMemAllocPerChiplet() // custom tracer
-	// r.reportTLBLatency()
-	// r.reportTLBHitRate()
-	// r.reportPWCHitRate()
-	// r.reportPteCaching() // custom tracer
-	// r.reportAddressTranslatorLatency()
-	r.reportEvictMetrics() // custom tracer
+	r.reportEvictMetrics()       // custom tracer
 
-	// r.reportTLBConditionalStats()
-	// r.reportMMUConditionalStats()
-	// r.reportActiveWalkerCount()
-	// r.reportL2TLBQueueImbalance()
-	// r.reportPageWalkerImbalance()
-	// r.reportL2TLBEntropy()
-	// r.reportReferenceTracing()
-	// r.reportTLBSetMissTracing()
-	// r.reportTLBMSHRStallTracing()
-	// r.reportTLBReqStalls()
+	r.reportTLBLatency()
+	r.reportTLBHitRate()
+	r.reportTLBConditionalStats()
+	r.reportAddressTranslatorLatency()
+	r.reportTranslationReqLatency()
+	r.reportL2TLBQueueImbalance()
+	r.reportL2TLBEntropy()
+	r.reportMMUConditionalStats()
+	r.reportActiveWalkerCount()
+	r.reportPWCHitRate()
 
 	r.reportSetAccessHistogram() // per-L2-bank setID access histogram
 

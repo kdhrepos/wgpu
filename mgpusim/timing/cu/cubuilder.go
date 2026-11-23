@@ -9,7 +9,6 @@ import (
 	"gitlab.com/akita/util"
 	"gitlab.com/akita/util/global"
 	"gitlab.com/akita/util/pipelining"
-	"gitlab.com/akita/util/tracing"
 )
 
 // A Builder can construct a fully functional Compute Unit.
@@ -25,9 +24,6 @@ type Builder struct {
 	decoder            emu.Decoder
 	scratchpadPreparer ScratchpadPreparer
 	alu                emu.ALU
-
-	visTracer        tracing.Tracer
-	enableVisTracing bool
 
 	reqWithPC bool
 }
@@ -81,13 +77,6 @@ func (b Builder) WithSGPRCount(count int) Builder {
 // WithLog2CachelineSize sets the cacheline size as a power of 2.
 func (b Builder) WithLog2CachelineSize(n uint64) Builder {
 	b.log2CachelineSize = n
-	return b
-}
-
-// WithVisTracer adds a tracer to the builder.
-func (b Builder) WithVisTracer(t tracing.Tracer) Builder {
-	b.enableVisTracing = true
-	b.visTracer = t
 	return b
 }
 
@@ -150,9 +139,6 @@ func (b *Builder) equipSIMDUnits(cu *ComputeUnit) {
 	for i := 0; i < b.simdCount; i++ {
 		name := fmt.Sprintf(b.name+".SIMD%d", i)
 		simdUnit := NewSIMDUnit(cu, name, b.scratchpadPreparer, b.alu)
-		if b.enableVisTracing {
-			tracing.CollectTrace(simdUnit, b.visTracer)
-		}
 		vectorDecoder.AddExecutionUnit(simdUnit)
 		cu.SIMDUnit = append(cu.SIMDUnit, simdUnit)
 	}

@@ -14,7 +14,6 @@ MAX_INST=100000000
 ./$NAME \
     -nx=$NX \
     -ny=$NY \
-    -timing \
     -report-all \
     -max-inst=$MAX_INST \
     -no-progress-bar \

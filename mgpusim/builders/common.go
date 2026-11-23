@@ -24,16 +24,12 @@ import (
 	"gitlab.com/akita/mgpusim/timing/cp"
 	"gitlab.com/akita/mgpusim/timing/cu"
 	"gitlab.com/akita/util/global"
-	"gitlab.com/akita/util/tracing"
 )
 
 type Builder interface {
 	Build(string, uint64) *mgpusim.GPU
 	WithMemAddrOffset(uint64)
 	WithISADebugging()
-	WithTLBTracer(tracing.Tracer)
-	WithMemTracer(tracing.Tracer)
-	WithVisTracer(tracing.Tracer)
 
 	WithEngine(akita.Engine)
 	WithNumCUPerShaderArray(uint64)
@@ -75,13 +71,7 @@ type CommonBuilder struct {
 	usePteCaching bool
 
 	enableISADebugging bool
-	enableMemTracing   bool
-	enableTLBTracing   bool
-	enableVisTracing   bool
 	disableProgressBar bool
-	visTracer          tracing.Tracer
-	tlbTracer          tracing.Tracer
-	memTracer          tracing.Tracer
 
 	gpuName           string
 	gpu               *mgpusim.GPU
@@ -209,25 +199,6 @@ func (b *CommonBuilder) WithLog2MemoryBankInterleavingSize(n uint64) {
 // disagree with the allocator about which chiplet owns a page.
 func (b *CommonBuilder) chipletInterleavingSize() uint64 {
 	return b.numMemoryBankPerChiplet << b.log2PageSize
-}
-
-// WithVisTracer applies a tracer to trace all the tasks of all the GPU
-// components
-func (b *CommonBuilder) WithVisTracer(t tracing.Tracer) {
-	b.enableVisTracing = true
-	b.visTracer = t
-}
-
-// WithTLBTracer applies a tracer to trace the TLBory transactions.
-func (b *CommonBuilder) WithTLBTracer(t tracing.Tracer) {
-	b.enableTLBTracing = true
-	b.tlbTracer = t
-}
-
-// WithMemTracer applies a tracer to trace the memory transactions.
-func (b *CommonBuilder) WithMemTracer(t tracing.Tracer) {
-	b.enableMemTracing = true
-	b.memTracer = t
 }
 
 // WithISADebugging enables the GPU to dump instruction execution information.

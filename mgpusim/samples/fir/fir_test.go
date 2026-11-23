@@ -9,9 +9,7 @@ import (
 
 func BenchmarkFIR(t *testing.B) {
 	runner := runner.Runner{}
-	runner.Timing = true
 	runner.Verify = true
-	runner.Parallel = true
 	runner.GPUIDs = []int{1}
 	runner.Init()
 

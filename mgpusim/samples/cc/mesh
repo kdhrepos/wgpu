@@ -9,7 +9,6 @@ MAX_INST=300000000
     -num-nodes=$NUM_NODES \
     -num-edges=$NUM_EDGES \
     -max-inst=$MAX_INST \
-    -timing \
     -fast-h2d \
     -verbose \
     -report-all \

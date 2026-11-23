@@ -13,7 +13,6 @@ MAX_INST=100000000
     -ni=$NI \
     -nj=$NJ \
     -nk=$NK \
-    -timing \
     -report-all \
     -max-inst=$MAX_INST \
     -no-progress-bar \

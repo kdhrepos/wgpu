@@ -47,7 +47,7 @@ Or call the binary directly:
 
 ```bash
 ./pagerank -node=2048 -sparsity=0.5 -iterations=1 \
-  -timing -report-all -verify -no-progress-bar \
+  -report-all -verify -no-progress-bar \
   -platform-type=mesh -xDim=6 -yDim=6
 ```
 

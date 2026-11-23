@@ -14,7 +14,6 @@ MAX_INST=100000000
     -isz-y=$ISZ_Y \
     -nfr=$NFR \
     -max-inst=$MAX_INST \
-    -timing \
     -report-all \
     -fast-h2d \
     -verbose \

@@ -9,7 +9,6 @@ ITER=1
     -node=$NODE \
     -sparsity=$SPARSITY \
     -iterations=$ITER \
-    -timing \
     -report-all \
     -fast-h2d \
     -verbose \

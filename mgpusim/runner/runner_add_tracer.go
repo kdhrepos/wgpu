@@ -19,26 +19,6 @@ func (r *Runner) addLocalRemoteTracer() {
 	}
 }
 
-func (r *Runner) addPteCachingTracer() {
-	r.PteCachingTracer = tracing.NewPteCachingTracer(*xDim, *yDim)
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, cache := range gpu.L2Caches {
-			tracing.CollectTrace(cache, r.PteCachingTracer)
-		}
-		for _, engine := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(engine, r.PteCachingTracer)
-		}
-		for _, net := range gpu.InterChipletNetwork {
-			for _, swArr := range net.GetChipSwitches() {
-				for _, sw := range swArr {
-					tracing.CollectTrace(sw, r.PteCachingTracer)
-				}
-			}
-		}
-	}
-}
-
 func (r *Runner) addPteAccessTracer(name string) {
 	if !r.TracePteAccess {
 		return
@@ -356,94 +336,6 @@ func (r *Runner) addTLBConditionalTracer() {
 			tracing.CollectTrace(tlb, tracer)
 		}
 	}
-}
-
-func (r *Runner) addTLBCoalesceTracer() {
-	if !r.ReportTLBCoalesce {
-		return
-	}
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewAverageCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "buflen"
-				})
-			r.L2TLBBufLenTracers = append(r.L2TLBBufLenTracers, tracer)
-			tracing.CollectTrace(tlb, tracer)
-		}
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewAverageCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "bufleng0"
-				})
-			r.L2TLBBufLenG0Tracers = append(r.L2TLBBufLenG0Tracers, tracer)
-			tracing.CollectTrace(tlb, tracer)
-		}
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewAverageCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "coalesceaddr"
-				})
-			r.L2TLBCoalesceAddrTracers = append(r.L2TLBCoalesceAddrTracers, tracer)
-			tracing.CollectTrace(tlb, tracer)
-		}
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewAverageCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "coalesce"
-				})
-			r.L2TLBCoalesceTracers = append(r.L2TLBCoalesceTracers, tracer)
-			tracing.CollectTrace(tlb, tracer)
-		}
-	}
-}
-
-func (r *Runner) addL2TLBMSHRLenTracer() {
-	if !r.ReportL2TLBMSHRLen {
-		return
-	}
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewAverageCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "MSHRlen"
-				})
-			r.L2TLBMSHRLenTracers = append(r.L2TLBMSHRLenTracers, tracer)
-			tracing.CollectTrace(tlb, tracer)
-		}
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewAverageCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "MSHRlen_g0"
-				})
-			r.L2TLBMSHRLenG0Tracers = append(r.L2TLBMSHRLenG0Tracers, tracer)
-			tracing.CollectTrace(tlb, tracer)
-		}
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewAverageCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "MSHRuniq"
-				})
-			r.L2TLBMSHRUniqLenTracers = append(r.L2TLBMSHRUniqLenTracers, tracer)
-			tracing.CollectTrace(tlb, tracer)
-		}
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewAverageCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "MSHRuniq_g0"
-				})
-			r.L2TLBMSHRUniqLenG0Tracers = append(r.L2TLBMSHRUniqLenG0Tracers, tracer)
-			tracing.CollectTrace(tlb, tracer)
-		}
-	}
-}
-
-func getCoalescingTracer(prefix string, statName string) *tracing.AverageCountTracer {
-	return tracing.NewAverageCountTracer(func(task tracing.Task) bool {
-		return strings.Contains(task.Kind, prefix+"-"+statName)
-	})
 }
 
 func (r *Runner) addAddressTranslatorLatencyTracer() {
@@ -843,34 +735,6 @@ func (r *Runner) addDRAMTracer() {
 	}
 }
 
-func (r *Runner) addL2TLBSQLTracer() {
-	if !r.L2TLBSQLTracing {
-		return
-	}
-	tracer := tracing.NewMySQLTracer()
-	tracer.Init()
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, l2tlb := range gpu.L2TLBs {
-			tracing.CollectTrace(l2tlb, tracer)
-		}
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, l1tlb := range gpu.L1VTLBs {
-			tracing.CollectTrace(l1tlb, tracer)
-		}
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, l1tlb := range gpu.L1ITLBs {
-			tracing.CollectTrace(l1tlb, tracer)
-		}
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, l1tlb := range gpu.L1STLBs {
-			tracing.CollectTrace(l1tlb, tracer)
-		}
-	}
-}
-
 func (r *Runner) addTranslationReqTracer() {
 	if !r.ReportTranslationReqLatency {
 		return
@@ -965,63 +829,6 @@ func (r *Runner) addL2TLBEntropyTracer() {
 	}
 }
 
-func (r *Runner) addTLBSetMissTracer() {
-	if !r.ReportTLBSetMissTracing {
-		return
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewReferenceTracer(
-				func(task tracing.Task) bool {
-					if task.Kind == "set_miss_tracing" {
-						return true
-					}
-					return false
-				})
-			tracing.CollectTrace(tlb, tracer)
-			r.TLBSetMissTracers = append(r.TLBSetMissTracers,
-				TLBSetMissTracer{tracer: tracer, tlb: tlb})
-		}
-	}
-}
-
-func (r *Runner) addTLBMSHRStallTracer() {
-	if !r.ReportTLBMSHRStallTracing {
-		return
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewTotalTimeTracer(
-				func(task tracing.Task) bool {
-					if task.Kind == "mshr_stall" {
-						return true
-					}
-					return false
-				})
-			tracing.CollectTrace(tlb, tracer)
-			r.TLBMSHRStallTracers = append(r.TLBMSHRStallTracers,
-				TLBMSHRStallTracer{tracer: tracer, tlb: tlb})
-		}
-	}
-}
-
-func (r *Runner) addTLBReqStallTracer() {
-	if !r.ReportTLBReqStalls {
-		return
-	}
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, tlb := range gpu.L2TLBs {
-			tracer := tracing.NewStepCountTracer(
-				func(task tracing.Task) bool {
-					return task.Kind == "stalled-l2-tlb-req-count" || task.Kind == "l2-tlb-req-count"
-				})
-			tracing.CollectTrace(tlb, tracer)
-			r.TLBReqStallTracers = append(r.TLBReqStallTracers,
-				TLBReqStallTracer{tracer: tracer, tlb: tlb})
-		}
-	}
-}
-
 func (r *Runner) addAccessCountPerAddrTracer() {
 	if !r.TraceAccessCountPerAddrs {
 		return
@@ -1080,32 +887,6 @@ func (r *Runner) addWorkgroupCountTracer() {
 	for _, gpu := range r.GPUDriver.GPUs {
 		for _, dispatcher := range gpu.CommandProcessor.Dispatchers {
 			tracing.CollectTrace(dispatcher, perChipletTracer)
-		}
-	}
-}
-
-func (r *Runner) addRemoteRtwTracer() {
-	if !r.ReportHopPerRDMA {
-		return
-	}
-
-	r.RemotePtwTracer = tracing.NewRemotePtwTracer(
-		func(task tracing.Task) bool {
-			return task.Kind == "remote-ptw-trace"
-		},
-		*xDim,
-		*yDim)
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		for _, engine := range gpu.ChipRDMAEngines {
-			tracing.CollectTrace(engine, r.RemotePtwTracer)
-		}
-		for _, net := range gpu.InterChipletNetwork {
-			for _, swArr := range net.GetChipSwitches() {
-				for _, sw := range swArr {
-					tracing.CollectTrace(sw, r.RemotePtwTracer)
-				}
-			}
 		}
 	}
 }
@@ -1238,31 +1019,6 @@ func (r *Runner) addMSHRFailTracer() {
 		}
 		for _, l1vCache := range gpu.L1VCaches {
 			tracing.CollectTrace(l1vCache, r.L1MSHRFailTracer)
-		}
-	}
-}
-
-func (r *Runner) addTLBMSHRWaitTracer() {
-	if !r.ReportTLBMSHRWait {
-		return
-	}
-
-	for _, gpu := range r.GPUDriver.GPUs {
-		allL1TLBs := make([]*tlb.TLB, 0, len(gpu.L1VTLBs)+len(gpu.L1STLBs)+len(gpu.L1ITLBs))
-		allL1TLBs = append(allL1TLBs, gpu.L1VTLBs...)
-		allL1TLBs = append(allL1TLBs, gpu.L1STLBs...)
-		allL1TLBs = append(allL1TLBs, gpu.L1ITLBs...)
-		for _, t := range allL1TLBs {
-			tracer := tracing.NewTLBMSHRWaitTracer()
-			tracing.CollectTrace(t, tracer)
-			r.L1TLBMSHRWaitTracers = append(r.L1TLBMSHRWaitTracers,
-				L1TLBMSHRWaitTracerEntry{tracer: tracer, tlb: t})
-		}
-		for _, t := range gpu.L2TLBs {
-			tracer := tracing.NewTLBMSHRWaitTracer()
-			tracing.CollectTrace(t, tracer)
-			r.L2TLBMSHRWaitTracers = append(r.L2TLBMSHRWaitTracers,
-				L2TLBMSHRWaitTracerEntry{tracer: tracer, tlb: t})
 		}
 	}
 }

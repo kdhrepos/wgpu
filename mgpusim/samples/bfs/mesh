@@ -13,7 +13,6 @@ MAX_INST=15000000
     -node=$NUM_NODE \
     -degree=$DEGREE \
     -depth=$DEPTH \
-    -timing \
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \

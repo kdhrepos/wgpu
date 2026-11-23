@@ -2,11 +2,8 @@ package platform
 
 import (
 	"fmt"
-	"log"
-	"os"
 
 	"gitlab.com/akita/lmf"
-	memtraces "gitlab.com/akita/mem/trace"
 	"gitlab.com/akita/mgpusim"
 
 	"gitlab.com/akita/akita"
@@ -14,7 +11,6 @@ import (
 	"gitlab.com/akita/mgpusim/builders"
 	"gitlab.com/akita/mgpusim/driver"
 	"gitlab.com/akita/noc/networking/pcie"
-	"gitlab.com/akita/util/tracing"
 )
 
 type Builder interface {
@@ -49,13 +45,7 @@ type Builder interface {
 
 // CommonPlatformBuilder can build a platform that equips DisTLBGPU GPU.
 type CommonPlatformBuilder struct {
-	useParallelEngine        bool
 	debugISA                 bool
-	traceVis                 bool
-	traceTLB                 bool
-	tlbTraceFilename         string
-	traceMem                 bool
-	memTraceFilename         string
 	numGPU                   int
 	log2PageSize             uint64
 	disableProgressBar       bool
@@ -82,55 +72,9 @@ type CommonPlatformBuilder struct {
 	gridSize [2]int
 }
 
-// Makebuilder creates a EmuBuilder with default parameters.
-func MakeCommonPlatformBuilder() CommonPlatformBuilder {
-	b := CommonPlatformBuilder{
-		numGPU:                   1,
-		log2PageSize:             uint64(12),
-		numCUPerShaderArray:      uint64(4),
-		numShaderArrayPerChiplet: uint64(8),
-		numMemoryBankPerChiplet:  uint64(32),
-		numChiplets:              uint64(4), // just a default value, will be changed at WithNumChiplets
-		totalMem:                 16 * mem.GB,
-		bankSize:                 256 * mem.MB,
-		lowAddr:                  4 * mem.GB,
-	}
-	return b
-}
-
-// WithParallelEngine lets the EmuBuilder to use parallel engine.
-func (b *CommonPlatformBuilder) WithParallelEngine() {
-	b.useParallelEngine = true
-}
-
 // WithISADebugging enables ISA debugging in the simulation.
 func (b *CommonPlatformBuilder) WithISADebugging() {
 	b.debugISA = true
-}
-
-// WithVisTracing lets the platform to record traces for visualization purposes.
-func (b *CommonPlatformBuilder) WithVisTracing() {
-	b.traceVis = true
-}
-
-// WithTLBTracing lets the platform to trace memory operations.
-func (b *CommonPlatformBuilder) WithTLBTracing() {
-	b.traceTLB = true
-}
-
-// WithTLBTraceFilename lets the platform to set memory trace file name.
-func (b *CommonPlatformBuilder) WithTLBTraceFilename(tlbTraceFilename string) {
-	b.tlbTraceFilename = tlbTraceFilename
-}
-
-// WithMemTracing lets the platform to trace memory operations.
-func (b *CommonPlatformBuilder) WithMemTracing() {
-	b.traceMem = true
-}
-
-// WithMemTraceFilename lets the platform to set memory trace file name.
-func (b *CommonPlatformBuilder) WithMemTraceFilename(memTraceFilename string) {
-	b.memTraceFilename = memTraceFilename
 }
 
 // WithNumGPU sets the number of GPUs to build.
@@ -262,16 +206,7 @@ func (b CommonPlatformBuilder) createConnection(
 }
 
 func (b CommonPlatformBuilder) createEngine() akita.Engine {
-	var engine akita.Engine
-
-	if b.useParallelEngine {
-		engine = akita.NewParallelEngine()
-	} else {
-		engine = akita.NewSerialEngine()
-	}
-	// engine.AcceptHook(akita.NewEventLogger(log.New(os.Stdout, "", 0)))
-
-	return engine
+	return akita.NewSerialEngine()
 }
 
 func (b *CommonPlatformBuilder) setISADebugger(
@@ -282,56 +217,6 @@ func (b *CommonPlatformBuilder) setISADebugger(
 	}
 
 	gpuBuilder.WithISADebugging()
-	return gpuBuilder
-}
-
-func (b *CommonPlatformBuilder) setTLBTracer(
-	gpuBuilder builders.Builder,
-) builders.Builder {
-	if !b.traceTLB {
-		return gpuBuilder
-	}
-
-	file, err := os.Create(b.tlbTraceFilename)
-	if err != nil {
-		panic(err)
-	}
-	logger := log.New(file, "", 0)
-	tlbTracer := memtraces.NewTracer(logger)
-	gpuBuilder.WithTLBTracer(tlbTracer)
-	return gpuBuilder
-}
-
-func (b *CommonPlatformBuilder) setMemTracer(
-	gpuBuilder builders.Builder,
-) builders.Builder {
-	if !b.traceMem {
-		return gpuBuilder
-	}
-
-	file, err := os.Create(b.memTraceFilename)
-	if err != nil {
-		panic(err)
-	}
-	logger := log.New(file, "", 0)
-	memTracer := memtraces.NewTracer(logger)
-	gpuBuilder.WithMemTracer(memTracer)
-	return gpuBuilder
-}
-
-func (b *CommonPlatformBuilder) setVisTracer(
-	gpuDriver *driver.Driver,
-	gpuBuilder builders.Builder,
-) builders.Builder {
-	if !b.traceVis {
-		return gpuBuilder
-	}
-
-	tracer := tracing.NewMySQLTracer()
-	tracer.Init()
-	tracing.CollectTrace(gpuDriver, tracer)
-
-	gpuBuilder.WithVisTracer(tracer)
 	return gpuBuilder
 }
 

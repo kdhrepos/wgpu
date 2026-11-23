@@ -9,7 +9,6 @@ MAX_INST=500000000
 
 ./$NAME \
     -matrix-dim=$MatrixDim \
-    -timing \
     -report-all \
     -max-inst=$MAX_INST \
     -no-progress-bar \

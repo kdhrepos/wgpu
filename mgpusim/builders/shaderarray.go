@@ -14,7 +14,6 @@ import (
 	"gitlab.com/akita/mgpusim/timing/caches/rob"
 	"gitlab.com/akita/mgpusim/timing/cu"
 	"gitlab.com/akita/util/global"
-	"gitlab.com/akita/util/tracing"
 )
 
 type shaderArray struct {
@@ -46,9 +45,6 @@ type shaderArrayBuilder struct {
 	freq              akita.Freq
 	log2CacheLineSize uint64
 	log2PageSize      uint64
-	visTracer         tracing.Tracer
-	memTracer         tracing.Tracer
-	tlbTracer         tracing.Tracer
 
 	reqWithPC bool
 
@@ -95,24 +91,6 @@ func (b *shaderArrayBuilder) withLog2PageSize(
 	log2Size uint64,
 ) {
 	b.log2PageSize = log2Size
-}
-
-func (b *shaderArrayBuilder) withVisTracer(
-	visTracer tracing.Tracer,
-) {
-	b.visTracer = visTracer
-}
-
-func (b *shaderArrayBuilder) withMemTracer(
-	memTracer tracing.Tracer,
-) {
-	b.memTracer = memTracer
-}
-
-func (b *shaderArrayBuilder) withTLBTracer(
-	tlbTracer tracing.Tracer,
-) {
-	b.tlbTracer = tlbTracer
 }
 
 func (b *shaderArrayBuilder) withPC(
@@ -285,9 +263,6 @@ func (b *shaderArrayBuilder) buildCUs(sa *shaderArray) {
 		cu := cuBuilder.Build(cuName)
 		sa.cus = append(sa.cus, cu)
 
-		if b.visTracer != nil {
-			tracing.CollectTrace(cu, b.visTracer)
-		}
 	}
 }
 
@@ -305,9 +280,6 @@ func (b *shaderArrayBuilder) buildL1VReorderBuffers(sa *shaderArray) {
 		rob := builder.Build(name)
 		sa.l1vROBs = append(sa.l1vROBs, rob)
 
-		if b.visTracer != nil {
-			tracing.CollectTrace(rob, b.visTracer)
-		}
 	}
 }
 
@@ -333,9 +305,6 @@ func (b *shaderArrayBuilder) buildL1VAddressTranslators(sa *shaderArray) {
 		at := builder.Build(name)
 		sa.l1vATs = append(sa.l1vATs, at)
 
-		// if b.visTracer != nil {
-		// 	tracing.CollectTrace(at, b.visTracer)
-		// }
 	}
 }
 
@@ -358,13 +327,6 @@ func (b *shaderArrayBuilder) buildL1VTLBs(sa *shaderArray) {
 		tlb := builder.Build(name)
 		sa.l1vTLBs = append(sa.l1vTLBs, tlb)
 
-		if b.visTracer != nil {
-			tracing.CollectTrace(tlb, b.visTracer)
-		}
-
-		if b.tlbTracer != nil {
-			tracing.CollectTrace(tlb, b.tlbTracer)
-		}
 	}
 }
 
@@ -386,9 +348,6 @@ func (b *shaderArrayBuilder) buildL1VCaches(sa *shaderArray) {
 		cache := builder.Build(name)
 		sa.l1vCaches = append(sa.l1vCaches, cache)
 
-		if b.memTracer != nil {
-			tracing.CollectTrace(cache, b.memTracer)
-		}
 	}
 }
 
@@ -407,9 +366,6 @@ func (b *shaderArrayBuilder) buildL1SReorderBuffer(sa *shaderArray) {
 	rob := builder.Build(name)
 	sa.l1sROB = rob
 
-	if b.visTracer != nil {
-		tracing.CollectTrace(rob, b.visTracer)
-	}
 }
 
 func (b *shaderArrayBuilder) buildL1SAddressTranslator(sa *shaderArray) {
@@ -434,13 +390,6 @@ func (b *shaderArrayBuilder) buildL1STLB(sa *shaderArray) {
 	tlb := builder.Build(name)
 	sa.l1sTLB = tlb
 
-	if b.visTracer != nil {
-		tracing.CollectTrace(tlb, b.visTracer)
-	}
-
-	if b.tlbTracer != nil {
-		tracing.CollectTrace(tlb, b.tlbTracer)
-	}
 }
 
 func (b *shaderArrayBuilder) buildL1SCache(sa *shaderArray) {
@@ -460,12 +409,6 @@ func (b *shaderArrayBuilder) buildL1SCache(sa *shaderArray) {
 	cache := builder.Build(name)
 	sa.l1sCache = cache
 
-	if b.visTracer != nil {
-		tracing.CollectTrace(cache, b.visTracer)
-	}
-	if b.memTracer != nil {
-		tracing.CollectTrace(cache, b.memTracer)
-	}
 }
 
 func (b *shaderArrayBuilder) buildL1IReorderBuffer(sa *shaderArray) {
@@ -480,9 +423,6 @@ func (b *shaderArrayBuilder) buildL1IReorderBuffer(sa *shaderArray) {
 	rob := builder.Build(name)
 	sa.l1iROB = rob
 
-	if b.visTracer != nil {
-		tracing.CollectTrace(rob, b.visTracer)
-	}
 }
 
 func (b *shaderArrayBuilder) buildL1IAddressTranslator(sa *shaderArray) {
@@ -507,13 +447,6 @@ func (b *shaderArrayBuilder) buildL1ITLB(sa *shaderArray) {
 	tlb := builder.Build(name)
 	sa.l1iTLB = tlb
 
-	if b.visTracer != nil {
-		tracing.CollectTrace(tlb, b.visTracer)
-	}
-
-	if b.tlbTracer != nil {
-		tracing.CollectTrace(tlb, b.tlbTracer)
-	}
 }
 
 func (b *shaderArrayBuilder) buildL1ICache(sa *shaderArray) {
@@ -533,7 +466,4 @@ func (b *shaderArrayBuilder) buildL1ICache(sa *shaderArray) {
 	cache := builder.Build(name)
 	sa.l1iCache = cache
 
-	if b.visTracer != nil {
-		tracing.CollectTrace(cache, b.visTracer)
-	}
 }

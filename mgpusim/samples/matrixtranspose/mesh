@@ -7,7 +7,6 @@ WIDTH=2048
 
 ./$NAME \
     -width=$WIDTH \
-    -timing \
     -report-all \
     -no-progress-bar \
     -verbose \

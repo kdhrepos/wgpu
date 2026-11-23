@@ -9,7 +9,6 @@ MAX_INST=100000000
 
 ./$NAME \
     -boxes1d=$BOXES1D \
-    -timing \
     -report-all \
     -max-inst=$MAX_INST \
     -verbose \

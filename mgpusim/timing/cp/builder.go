@@ -10,14 +10,12 @@ import (
 	"gitlab.com/akita/mgpusim/timing/cp/internal/resource"
 	"gitlab.com/akita/util"
 	"gitlab.com/akita/util/akitaext"
-	"gitlab.com/akita/util/tracing"
 )
 
 // Builder can build Command Processors
 type Builder struct {
 	freq            akita.Freq
 	engine          akita.Engine
-	visTracer       tracing.Tracer
 	showProgressBar bool
 	numDispatchers  int
 	schedulingAlg   string
@@ -33,13 +31,6 @@ func MakeBuilder() Builder {
 		freq:           1 * akita.GHz,
 		numDispatchers: 8,
 	}
-	return b
-}
-
-// WithVisTracer enables tracing for visualzation on the command processor and
-// the dispatchers.
-func (b Builder) WithVisTracer(tracer tracing.Tracer) Builder {
-	b.visTracer = tracer
 	return b
 }
 
@@ -123,10 +114,6 @@ func (b Builder) Build(name string) *CommandProcessor {
 
 	b.buildDispatchers(cp)
 
-	if b.visTracer != nil {
-		tracing.CollectTrace(cp, b.visTracer)
-	}
-
 	return cp
 }
 
@@ -147,10 +134,6 @@ func (b *Builder) buildDispatchers(cp *CommandProcessor) {
 
 	for i := 0; i < b.numDispatchers; i++ {
 		disp := builder.Build(fmt.Sprintf("%s.Dispatcher%d", cp.Name(), i))
-
-		if b.visTracer != nil {
-			tracing.CollectTrace(disp, b.visTracer)
-		}
 
 		cp.Dispatchers = append(cp.Dispatchers, disp)
 	}

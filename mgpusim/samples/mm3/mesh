@@ -15,7 +15,6 @@ MAX_INST=15000000
     -nk=$NK \
     -nl=$NL \
     -nm=$NM \
-    -timing \
     -report-all \
     -max-inst=$MAX_INST \
     -no-progress-bar \

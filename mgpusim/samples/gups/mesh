@@ -12,7 +12,6 @@ MAX_INST=10000000
     -nthread-blocks=$NTHREAD_BLOCKS \
     -table-param=$TABLE_PARAM \
     -max-inst=$MAX_INST \
-    -timing \
     -report-all \
     -fast-h2d \
     -verbose \

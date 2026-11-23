@@ -7,7 +7,6 @@ go build
 ./simpleconvolution \
     -width=$WIDTH \
     -height=$HEIGHT \
-    -timing \
     -report-all \
     -no-progress-bar \
     -verbose \

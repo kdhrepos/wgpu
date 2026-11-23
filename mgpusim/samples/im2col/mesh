@@ -6,7 +6,6 @@ NAME=im2col
 MAX_INST=10000000
 
 ./$NAME \
-    -timing \
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \

@@ -7,7 +7,6 @@ HEIGHT=1024
 ./raytracing \
     -width=$WIDTH \
     -height=$HEIGHT \
-    -timing \
     -report-all \
     -fast-h2d \
     -verbose \

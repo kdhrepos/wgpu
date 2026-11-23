@@ -9,7 +9,6 @@ MAX_INST=10000000
 
 ./$NAME \
     -n=$N \
-    -timing \
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \

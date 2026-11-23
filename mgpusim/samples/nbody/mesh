@@ -11,7 +11,6 @@ MAX_INST=10000000
 ./$NAME \
     -particles=$PARTICLES \
     -iter=$ITER \
-    -timing \
     -report-all \
     -max-inst=$MAX_INST \
     -no-progress-bar \

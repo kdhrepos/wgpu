@@ -151,7 +151,6 @@ func (tlb *LatTLB) Tick(now akita.VTimeInSec) bool {
 
 	madeProgress = tlb.performCtrlReq(now) || madeProgress
 
-	// improper use of StartTask
 	if tlb.GetFrontQueueLength() > 0 {
 		tracing.StartTask(0, 0, now, tlb, "imbalance", "", nil)
 	}
@@ -233,6 +232,7 @@ func (tlb *LatTLB) parseFromTop(now akita.VTimeInSec) bool {
 	tlb.TopPort.Retrieve(now)
 	tracing.TraceReqReceive(req, now, tlb)
 	tracing.StopTracingNetworkReq(req, now, tlb)
+	tracing.StartTask(0, 0, now, tlb, "entropy", "", req)
 	return true
 }
 

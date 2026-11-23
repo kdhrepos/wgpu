@@ -30,86 +30,6 @@ func (r *Runner) reportLocalRemoteCount() {
 		float64(remoteAccessCount))
 }
 
-func (r *Runner) reportPteCaching() {
-	readHitCount := r.PteCachingTracer.GetReadHitCount()
-	readMissCount := r.PteCachingTracer.GetReadMissCount()
-	readMshrHitCount := r.PteCachingTracer.GetReadMshrHitCount()
-
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.Caches",
-		"pte-caching-read-hit-count",
-		float64(readHitCount))
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.Caches",
-		"pte-caching-read-miss-count",
-		float64(readMissCount))
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.Caches",
-		"pte-caching-read-mshr-hit-count",
-		float64(readMshrHitCount))
-
-	remotePtwCount := r.PteCachingTracer.GetRemotePtwCount()
-	localPtwCount := r.PteCachingTracer.GetLocalPtwCount()
-
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.Caches",
-		"pte-caching-remote-ptw-count",
-		float64(remotePtwCount))
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.Caches",
-		"pte-caching-local-ptw-count",
-		float64(localPtwCount))
-
-	totalNumPerHopTraced := r.PteCachingTracer.GetNumPerHopTraced()
-	totalNumPerHopRequired := r.PteCachingTracer.GetNumPerHopRequired()
-	totalAvgLatencyPerHop := r.PteCachingTracer.GetAvgLatencyPerHopTraced()
-	totalRemotePtwNum := r.PteCachingTracer.GetTotalRdmaReqs()
-	totalC2CTraced := r.PteCachingTracer.GetC2CTraced()
-
-	numChiplet := *xDim * *yDim
-
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.ChipRDMA",
-		"total-remote-ptw-num-pte-caching",
-		float64(totalRemotePtwNum))
-
-	for h, n := range totalNumPerHopRequired {
-		r.metricsCollector.Collect(
-			"GPU1.chiplet_all.ChipRDMA",
-			"number-ptw-hop-required-"+strconv.Itoa(h),
-			float64(n))
-	}
-
-	for h, n := range totalNumPerHopTraced {
-		if n == 0 {
-			continue
-		}
-
-		r.metricsCollector.Collect(
-			"GPU1.chiplet_all.ChipRDMA",
-			"number-ptw-hop-traced-"+strconv.Itoa(h),
-			float64(n))
-	}
-	for h, l := range totalAvgLatencyPerHop {
-		r.metricsCollector.Collect(
-			"GPU1.chiplet_all.ChipRDMA",
-			"average-latency-ptw-hop-traced-"+strconv.Itoa(h),
-			l)
-	}
-
-	for srcChip := range numChiplet {
-		for dstChip := range numChiplet {
-			if totalC2CTraced[srcChip][dstChip] == 0 {
-				continue
-			}
-			r.metricsCollector.Collect(
-				"Chip-to-chip-ptw-traced",
-				strconv.Itoa(srcChip)+"-"+strconv.Itoa(dstChip),
-				float64(totalC2CTraced[srcChip][dstChip]))
-		}
-	}
-}
-
 func (r *Runner) reportMemAllocPerChiplet() {
 	memAllocator := r.GPUDriver.GetMemAllocator()
 	allocatedPagesPerChiplet := memAllocator.GetPageAllocatedPerChiplet()
@@ -151,7 +71,7 @@ func (r *Runner) reportFlushMetrics() {
 
 		r.metricsCollector.Collect(
 			"GPU1.chiplet_all.ChipRDMA",
-			"flush-" + strconv.FormatUint(id, 10) + "-elapsed-time",
+			"flush-"+strconv.FormatUint(id, 10)+"-elapsed-time",
 			float64(task.EndTime-task.StartTime))
 	}
 
@@ -207,57 +127,55 @@ func (r *Runner) reportWorkgroupDimension() {
 }
 
 func (r *Runner) reportKernelTime() {
-	if r.Timing {
-		numKernels := r.KernelTracer.GetNumKernels()
+	numKernels := r.KernelTracer.GetNumKernels()
 
-		kernelLaunchTime := r.KernelTracer.GetKernelLaunchTimes()
-		kernelTerminateTime := r.KernelTracer.GetKernelTerminateTimes()
-		kernelBasePCList := r.KernelTracer.GetBasePCList()
+	kernelLaunchTime := r.KernelTracer.GetKernelLaunchTimes()
+	kernelTerminateTime := r.KernelTracer.GetKernelTerminateTimes()
+	kernelBasePCList := r.KernelTracer.GetBasePCList()
 
-		totalKernelTime := float64(0)
+	totalKernelTime := float64(0)
 
-		for i := range numKernels {
-			if i == numKernels-1 && terminated {
-				kernelTerminateTime[i] = r.Engine.CurrentTime()
-			}
-
-			r.metricsCollector.Collect(
-				r.GPUDriver.Name(),
-				"kernel-launch-time-"+strconv.Itoa(i),
-				float64(kernelLaunchTime[i]))
-			r.metricsCollector.Collect(
-				r.GPUDriver.Name(),
-				"kernel-terminate-time-"+strconv.Itoa(i),
-				float64(kernelTerminateTime[i]))
-			r.metricsCollector.Collect(
-				r.GPUDriver.Name(),
-				"kernel-execution-time-"+strconv.Itoa(i),
-				float64(kernelTerminateTime[i]-kernelLaunchTime[i]))
-			totalKernelTime += float64(kernelTerminateTime[i] - kernelLaunchTime[i])
+	for i := range numKernels {
+		if i == numKernels-1 && terminated {
+			kernelTerminateTime[i] = r.Engine.CurrentTime()
 		}
 
-		for i := range numKernels {
-			r.metricsCollector.Collect(
-				r.GPUDriver.Name(),
-				"kernel-"+strconv.Itoa(i)+"-PC",
-				float64(kernelBasePCList[i]))
-		}
-
-		lastKernelLaunchTime = kernelLaunchTime[numKernels-1]
-
 		r.metricsCollector.Collect(
 			r.GPUDriver.Name(),
-			"last-kernel-launch-time",
-			float64(kernelLaunchTime[numKernels-1]))
+			"kernel-launch-time-"+strconv.Itoa(i),
+			float64(kernelLaunchTime[i]))
 		r.metricsCollector.Collect(
 			r.GPUDriver.Name(),
-			"last-traced-time",
-			float64(r.Engine.CurrentTime()))
+			"kernel-terminate-time-"+strconv.Itoa(i),
+			float64(kernelTerminateTime[i]))
 		r.metricsCollector.Collect(
 			r.GPUDriver.Name(),
-			"total-kernel-time",
-			totalKernelTime)
+			"kernel-execution-time-"+strconv.Itoa(i),
+			float64(kernelTerminateTime[i]-kernelLaunchTime[i]))
+		totalKernelTime += float64(kernelTerminateTime[i] - kernelLaunchTime[i])
 	}
+
+	for i := range numKernels {
+		r.metricsCollector.Collect(
+			r.GPUDriver.Name(),
+			"kernel-"+strconv.Itoa(i)+"-PC",
+			float64(kernelBasePCList[i]))
+	}
+
+	lastKernelLaunchTime = kernelLaunchTime[numKernels-1]
+
+	r.metricsCollector.Collect(
+		r.GPUDriver.Name(),
+		"last-kernel-launch-time",
+		float64(kernelLaunchTime[numKernels-1]))
+	r.metricsCollector.Collect(
+		r.GPUDriver.Name(),
+		"last-traced-time",
+		float64(r.Engine.CurrentTime()))
+	r.metricsCollector.Collect(
+		r.GPUDriver.Name(),
+		"total-kernel-time",
+		totalKernelTime)
 }
 
 func (r *Runner) reportMemoryUsage() {
@@ -355,53 +273,55 @@ func (r *Runner) reportSimulationTime() {
 }
 
 func (r *Runner) reportExecutionTime() {
-	if r.Timing {
+	r.metricsCollector.Collect(
+		r.GPUDriver.Name(),
+		"kernel_time",
+		float64(r.KernelTimeCounter.BusyTime()))
+
+	r.metricsCollector.Collect(
+		r.GPUDriver.Name(),
+		"total_time",
+		float64(r.Engine.CurrentTime()))
+
+	kernelTimes := r.KernelTimeCounter.KernelTimes()
+	for i, k := range kernelTimes {
 		r.metricsCollector.Collect(
 			r.GPUDriver.Name(),
+			"kernel_time "+strconv.Itoa(i),
+			float64(k))
+	}
+
+	for i, c := range r.PerGPUKernelTimeCounter {
+		r.metricsCollector.Collect(
+			r.GPUDriver.GPUs[i].CommandProcessor.Name(),
 			"kernel_time",
-			float64(r.KernelTimeCounter.BusyTime()))
-
-		r.metricsCollector.Collect(
-			r.GPUDriver.Name(),
-			"total_time",
-			float64(r.Engine.CurrentTime()))
-
+			float64(c.BusyTime()))
 		kernelTimes := r.KernelTimeCounter.KernelTimes()
-		for i, k := range kernelTimes {
+		for j, k := range kernelTimes {
 			r.metricsCollector.Collect(
-				r.GPUDriver.Name(),
-				"kernel_time "+strconv.Itoa(i),
+				r.GPUDriver.GPUs[i].CommandProcessor.Name(),
+				"kernel_time "+strconv.Itoa(j),
 				float64(k))
 		}
 
-		for i, c := range r.PerGPUKernelTimeCounter {
+		// Only should be called at Exit()
+		r.KernelTimeCounter.TerminateAllTasks(r.Engine.CurrentTime())
+
+		kernelTimesForceStop := r.KernelTimeCounter.KernelTimesForceStop(r.Engine.CurrentTime())
+		for j, k := range kernelTimesForceStop {
 			r.metricsCollector.Collect(
 				r.GPUDriver.GPUs[i].CommandProcessor.Name(),
-				"kernel_time",
-				float64(c.BusyTime()))
-			kernelTimes := r.KernelTimeCounter.KernelTimes()
-			for j, k := range kernelTimes {
-				r.metricsCollector.Collect(
-					r.GPUDriver.GPUs[i].CommandProcessor.Name(),
-					"kernel_time "+strconv.Itoa(j),
-					float64(k))
-			}
-
-			// Only should be called at Exit()
-			r.KernelTimeCounter.TerminateAllTasks(r.Engine.CurrentTime())
-
-			kernelTimesForceStop := r.KernelTimeCounter.KernelTimesForceStop(r.Engine.CurrentTime())
-			for j, k := range kernelTimesForceStop {
-				r.metricsCollector.Collect(
-					r.GPUDriver.GPUs[i].CommandProcessor.Name(),
-					"kernel_time (force stop) "+strconv.Itoa(j),
-					float64(k))
-			}
+				"kernel_time (force stop) "+strconv.Itoa(j),
+				float64(k))
 		}
 	}
 }
 
 func (r *Runner) reportCacheLatency() {
+	if !r.ReportCacheLatency {
+		return
+	}
+
 	l1vCacheAvgLatency := float64(0)
 	l1vCacheCount := 0
 
@@ -441,17 +361,17 @@ func (r *Runner) reportCacheLatency() {
 	r.metricsCollector.Collect(
 		r.GPUDriver.Name(),
 		"total-l1v-avg-latency",
-		l1vCacheAvgLatency/float64(l1vCacheCount),
+		safeDiv(l1vCacheAvgLatency, float64(l1vCacheCount)),
 	)
 	r.metricsCollector.Collect(
 		r.GPUDriver.Name(),
 		"total-l1s-avg-latency",
-		l1sCacheAvgLatency/float64(l1sCacheCount),
+		safeDiv(l1sCacheAvgLatency, float64(l1sCacheCount)),
 	)
 	r.metricsCollector.Collect(
 		r.GPUDriver.Name(),
 		"total-l2-avg-latency",
-		l2CacheAvgLatency/float64(l2CacheCount),
+		safeDiv(l2CacheAvgLatency, float64(l2CacheCount)),
 	)
 	// for _, tracer := range r.L2PipelineLatencyTracers {
 	// 	if tracer.tracer.AverageTime() == 0 {
@@ -467,6 +387,10 @@ func (r *Runner) reportCacheLatency() {
 }
 
 func (r *Runner) reportTLBLatency() {
+	if !r.ReportTLBLatency {
+		return
+	}
+
 	avgLatency := float64(0)
 	count := 0
 
@@ -478,125 +402,12 @@ func (r *Runner) reportTLBLatency() {
 		latency := float64(tracer.tracer.AverageTime())
 		avgLatency += latency
 		count++
-
-		// r.metricsCollector.Collect(
-		// 	tracer.tlb.Name(),
-		// 	"req_average_latency",
-		// 	latency,
-		// )
 	}
 
 	r.metricsCollector.Collect(
 		r.GPUDriver.Name(),
 		"total-avg-tlb-latency",
-		avgLatency/float64(count))
-	// for _, tracer := range r.DownTLBLatencyTracers {
-	// 	if tracer.tracer.AverageTime() == 0 {
-	// 		continue
-	// 	}
-
-	// 	r.metricsCollector.Collect(
-	// 		tracer.tlb.Name(),
-	// 		"down_req_average_latency",
-	// 		float64(tracer.tracer.AverageTime()),
-	// 	)
-	// }
-
-	// for i, tracer := range r.L2TLBBufLenTracers {
-	// 	if tracer.AverageCount() == 0 {
-	// 		continue
-	// 	}
-	// 	r.metricsCollector.Collect(
-	// 		"L2TLB"+strconv.Itoa(i),
-	// 		"average_buf_len",
-	// 		float64(tracer.AverageCount()),
-	// 	)
-	// }
-	// for i, tracer := range r.L2TLBBufLenG0Tracers {
-	// 	if tracer.AverageCount() == 0 {
-	// 		continue
-	// 	}
-	// 	r.metricsCollector.Collect(
-	// 		"L2TLB"+strconv.Itoa(i),
-	// 		"average_buf_len_g0",
-	// 		float64(tracer.AverageCount()),
-	// 	)
-	// }
-	// for i, tracer := range r.L2TLBCoalesceAddrTracers {
-	// 	if tracer.AverageCount() == 0 {
-	// 		continue
-	// 	}
-	// 	r.metricsCollector.Collect(
-	// 		"L2TLB"+strconv.Itoa(i),
-	// 		"coalesce_addr",
-	// 		float64(tracer.AverageCount()),
-	// 	)
-	// }
-	// for i, tracer := range r.L2TLBCoalesceTracers {
-	// 	if tracer.AverageCount() == 0 {
-	// 		continue
-	// 	}
-	// 	r.metricsCollector.Collect(
-	// 		"L2TLB"+strconv.Itoa(i),
-	// 		"coalesce",
-	// 		float64(tracer.AverageCount()),
-	// 	)
-	// }
-
-	// for _, tracer := range r.TLBPipelineLatencyTracers {
-	// 	if tracer.tracer.AverageTime() == 0 {
-	// 		continue
-	// 	}
-
-	// 	r.metricsCollector.Collect(
-	// 		tracer.pipeline.Name(),
-	// 		"req_average_pipeline_latency",
-	// 		float64(tracer.tracer.AverageTime()),
-	// 	)
-	// }
-
-	// for i, tracer := range r.L2TLBMSHRLenTracers {
-	// 	if tracer.AverageCount() == 0 {
-	// 		continue
-	// 	}
-	// 	r.metricsCollector.Collect(
-	// 		"L2TLB"+strconv.Itoa(i),
-	// 		"average_mshr_len",
-	// 		float64(tracer.AverageCount()),
-	// 	)
-	// }
-	// for i, tracer := range r.L2TLBMSHRLenG0Tracers {
-	// 	if tracer.AverageCount() == 0 {
-	// 		continue
-	// 	}
-	// 	r.metricsCollector.Collect(
-	// 		"L2TLB"+strconv.Itoa(i),
-	// 		"average_mshr_len_g0",
-	// 		float64(tracer.AverageCount()),
-	// 	)
-	// }
-
-	// for i, tracer := range r.L2TLBMSHRUniqLenTracers {
-	// 	if tracer.AverageCount() == 0 {
-	// 		continue
-	// 	}
-	// 	r.metricsCollector.Collect(
-	// 		"L2TLB"+strconv.Itoa(i),
-	// 		"average_mshr_uniq_len",
-	// 		float64(tracer.AverageCount()),
-	// 	)
-	// }
-
-	// for i, tracer := range r.L2TLBMSHRUniqLenG0Tracers {
-	// 	if tracer.AverageCount() == 0 {
-	// 		continue
-	// 	}
-	// 	r.metricsCollector.Collect(
-	// 		"L2TLB"+strconv.Itoa(i),
-	// 		"average_mshr_uniq_len_g0",
-	// 		float64(tracer.AverageCount()),
-	// 	)
-	// }
+		safeDiv(avgLatency, float64(count)))
 }
 
 func (r *Runner) reportTLBConditionalStats() {
@@ -623,6 +434,10 @@ func (r *Runner) reportTLBConditionalStats() {
 }
 
 func (r *Runner) reportPageWalkLatency() {
+	if !r.ReportPageWalkLatency {
+		return
+	}
+
 	total_avg_latency := float64(0)
 	count := 0
 
@@ -644,7 +459,7 @@ func (r *Runner) reportPageWalkLatency() {
 	r.metricsCollector.Collect(
 		r.GPUDriver.Name(),
 		"total_page_walk_average_latency",
-		total_avg_latency/float64(count),
+		safeDiv(total_avg_latency, float64(count)),
 	)
 }
 
@@ -699,6 +514,10 @@ func (r *Runner) reportDRAMLatency() {
 }
 
 func (r *Runner) reportCacheHitRate() {
+	if !r.ReportCacheHitRate {
+		return
+	}
+
 	totalTransaction := uint64(0)
 	totalL2Transaction := uint64(0)
 	totalL1ReadHit := uint64(0)
@@ -783,9 +602,9 @@ func (r *Runner) reportCacheHitRate() {
 		r.metricsCollector.Collect(
 			tracer.cache.Name(), "write-mshr-hit", float64(writeMSHRHit))
 		r.metricsCollector.Collect(
-			tracer.cache.Name(), "read-hit-rate", float64(readHit+readMSHRHit)/float64(readHit+readMiss+readMSHRHit))
+			tracer.cache.Name(), "read-hit-rate", safeDiv(float64(readHit+readMSHRHit), float64(readHit+readMiss+readMSHRHit)))
 		r.metricsCollector.Collect(
-			tracer.cache.Name(), "write-hit-rate", float64(writeHit+writeMSHRHit)/float64(writeHit+writeMiss+writeMSHRHit))
+			tracer.cache.Name(), "write-hit-rate", safeDiv(float64(writeHit+writeMSHRHit), float64(writeHit+writeMiss+writeMSHRHit)))
 		r.metricsCollector.Collect(
 			tracer.cache.Name(), "hit-rate", float64(readHit+readMSHRHit+writeHit+writeMSHRHit)/float64(curTotalTransaction))
 	}
@@ -855,13 +674,17 @@ func (r *Runner) reportCacheHitRate() {
 		"GPU1.chiplet_all.Caches", "total-l2-transaction", float64(totalL2Transaction))
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.Caches", "total-l2-hit-rate",
-		float64(totalL2ReadHit+totalL2ReadMSHRHit+totalL2WriteHit+totalL2WriteMSHRHit)/float64(totalL2Transaction))
+		safeDiv(float64(totalL2ReadHit+totalL2ReadMSHRHit+totalL2WriteHit+totalL2WriteMSHRHit), float64(totalL2Transaction)))
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.Caches", "total-l2-miss-rate",
-		float64(totalL2ReadMiss+totalL2WriteMiss)/float64(totalL2Transaction))
+		safeDiv(float64(totalL2ReadMiss+totalL2WriteMiss), float64(totalL2Transaction)))
 }
 
 func (r *Runner) reportTLBHitRate() {
+	if !r.ReportTLBHitRate {
+		return
+	}
+
 	totalTransaction := uint64(0)
 	totalL1VTransaction := uint64(0)
 	totalL1STransaction := uint64(0)
@@ -917,13 +740,6 @@ func (r *Runner) reportTLBHitRate() {
 			totalL2MSHRHit += tlbMSHRHit
 		}
 
-		// tlbName := tracer.tlb.Name()
-		// r.metricsCollector.Collect(
-		// 	tlbName, "tlb-hit", float64(tlbHit))
-		// r.metricsCollector.Collect(
-		// 	tlbName, "tlb-miss", float64(tlbMiss))
-		// r.metricsCollector.Collect(
-		// 	tlbName, "tlb-mshr-hit", float64(tlbMSHRHit))
 	}
 
 	r.metricsCollector.Collect(
@@ -984,22 +800,26 @@ func (r *Runner) reportTLBHitRate() {
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.L1VTLBs",
 		"hit-rate",
-		float64(totalL1VHit+totalL1VMSHRHit)/float64(totalL1VTransaction))
+		safeDiv(float64(totalL1VHit+totalL1VMSHRHit), float64(totalL1VTransaction)))
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.L1STLBs",
 		"hit-rate",
-		float64(totalL1SHit+totalL1SMSHRHit)/float64(totalL1STransaction))
+		safeDiv(float64(totalL1SHit+totalL1SMSHRHit), float64(totalL1STransaction)))
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.L1ITLBs",
 		"hit-rate",
-		float64(totalL1IHit+totalL1IMSHRHit)/float64(totalL1ITransaction))
+		safeDiv(float64(totalL1IHit+totalL1IMSHRHit), float64(totalL1ITransaction)))
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.L2TLBs",
 		"hit-rate",
-		float64(totalL2Hit+totalL2MSHRHit)/float64(totalL2Transaction))
+		safeDiv(float64(totalL2Hit+totalL2MSHRHit), float64(totalL2Transaction)))
 }
 
 func (r *Runner) reportPWCHitRate() {
+	if !r.ReportPWCHitRate {
+		return
+	}
+
 	totalPwcHit0 := uint64(0)
 	totalPwcHit1 := uint64(0)
 	totalPwcHit2 := uint64(0)
@@ -1077,28 +897,6 @@ func (r *Runner) reportPWCHitRate() {
 		totalPageWalkReqLocal += localMemReq
 		totalPageWalkReqRemote += remoteMemReq
 
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pwc-hit-level0", float64(pwcHit0))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pwc-hit-level1", float64(pwcHit1))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pwc-hit-level2", float64(pwcHit2))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pwc-hit-level3", float64(pwcHit3))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pwc-miss-level0", float64(pwcMiss0))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pwc-miss-level1", float64(pwcMiss1))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pwc-miss-level2", float64(pwcMiss2))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pwc-miss-level3", float64(pwcMiss3))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "page_walk_req_local", float64(localMemReq))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "page_walk_req_remote", float64(remoteMemReq))
-		// r.metricsCollector.Collect(
-		// 	tracer.mmu.Name(), "pw-level-3-remote-reqs", float64(lastLevelRemoteMemReq))
 	}
 
 	r.metricsCollector.Collect(
@@ -1351,6 +1149,10 @@ func (r *Runner) reportTranslationReqLatency() {
 }
 
 func (r *Runner) reportAddressTranslatorLatency() {
+	if !r.ReportAddressTranslatorLatency {
+		return
+	}
+
 	l1vReqLatency := float64(0)
 	l1vReqCount := uint64(0)
 	l1vAddrTranslatorLatency := float64(0)
@@ -1383,47 +1185,27 @@ func (r *Runner) reportAddressTranslatorLatency() {
 
 		}
 
-		// r.metricsCollector.Collect(
-		// 	addressTranslator.Name(),
-		// 	"req-latency",
-		// 	float64(reqLatency),
-		// )
-		// r.metricsCollector.Collect(
-		// 	addressTranslator.Name(),
-		// 	"req-num",
-		// 	float64(reqCount),
-		// )
-		// r.metricsCollector.Collect(
-		// 	addressTranslator.Name(),
-		// 	"translation-latency",
-		// 	float64(tracer.AverageTime("translation-latency")),
-		// )
-		// r.metricsCollector.Collect(
-		// 	addressTranslator.Name(),
-		// 	"translation-num",
-		// 	float64(tracer.TotalCount("translation-latency")),
-		// )
 	}
 
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.L1VAddressTranslator",
 		"req-latency",
-		l1vReqLatency/float64(l1vReqCount),
+		safeDiv(l1vReqLatency, float64(l1vReqCount)),
 	)
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.L1VAddressTranslator",
 		"translation-latency",
-		l1vAddrTranslatorLatency/float64(l1vAddrTranslatorCount),
+		safeDiv(l1vAddrTranslatorLatency, float64(l1vAddrTranslatorCount)),
 	)
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.L1SAddressTranslator",
 		"req-latency",
-		l1sReqLatency/float64(l1sReqCount),
+		safeDiv(l1sReqLatency, float64(l1sReqCount)),
 	)
 	r.metricsCollector.Collect(
 		"GPU1.chiplet_all.L1SAddressTranslator",
 		"translation-latency",
-		l1sAddrTranslatorLatency/float64(l1sAddrTranslatorCount),
+		safeDiv(l1sAddrTranslatorLatency, float64(l1sAddrTranslatorCount)),
 	)
 }
 
@@ -1456,66 +1238,6 @@ func (r *Runner) reportL2TLBEntropy() {
 				t.tlb.Name(),
 				"entropy_"+strconv.Itoa(i),
 				float64(t.tracer.ReportEntropy()[i]),
-			)
-		}
-	}
-}
-
-func (r *Runner) reportTLBSetMissTracing() {
-	for _, t := range r.TLBSetMissTracers {
-		r.metricsCollector.Collect(
-			t.tlb.Name(),
-			"miss_count_",
-			float64(t.tracer.ReturnAverageReferenceCount()),
-		)
-	}
-	for _, t := range r.TLBSetMissTracers {
-		r.metricsCollector.Collect(
-			t.tlb.Name(),
-			"miss_interval_avg_",
-			float64(t.tracer.ReturnAverageReferenceInterval()),
-		)
-	}
-	for _, t := range r.TLBSetMissTracers {
-		t.tracer.CalculateHistogramSummary()
-		for i := 0; i < 64; i++ {
-			r.metricsCollector.Collect(
-				t.tlb.Name(),
-				"miss_histogram_summary_"+strconv.Itoa(i),
-				float64(t.tracer.ReturnHistogramSummary(uint(i))),
-			)
-		}
-	}
-	for _, t := range r.TLBSetMissTracers {
-		for i := 0; i < 32; i++ {
-			r.metricsCollector.Collect(
-				t.tlb.Name(),
-				"miss_count_histogram_summary_"+strconv.Itoa(i),
-				float64(t.tracer.ReturnCountHistogramSummary(uint(i))),
-			)
-		}
-	}
-}
-
-func (r *Runner) reportTLBMSHRStallTracing() {
-	for _, t := range r.TLBMSHRStallTracers {
-		r.metricsCollector.Collect(
-			t.tlb.Name(),
-			"mshr_stall",
-			float64(t.tracer.TotalTime()),
-		)
-	}
-}
-
-func (r *Runner) reportTLBReqStalls() {
-	for _, t := range r.TLBReqStallTracers {
-		tracer := t.tracer
-		tlb := t.tlb
-		for _, stepName := range tracer.GetStepNames() {
-			r.metricsCollector.Collect(
-				tlb.Name(),
-				stepName,
-				float64(tracer.GetStepCount(stepName)),
 			)
 		}
 	}
@@ -1699,61 +1421,6 @@ func percentOf(completed, total int) float64 {
 		return 100.0
 	}
 	return float64(completed) / float64(total) * 100.0
-}
-
-func (r *Runner) reportRemotePtw() {
-	if *pteCaching {
-		return
-	}
-
-	totalNumPerHopTraced := r.RemotePtwTracer.GetNumPerHopTraced()
-	totalNumPerHopRequired := r.RemotePtwTracer.GetNumPerHopRequired()
-	totalAvgLatencyPerHop := r.RemotePtwTracer.GetAvgLatencyPerHopTraced()
-	totalRemotePtwNum := r.RemotePtwTracer.GetTotalRdmaReqs()
-	totalC2CTraced := r.RemotePtwTracer.GetC2CTraced()
-
-	numChiplet := *xDim * *yDim
-
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.ChipRDMA",
-		"total-remote-ptw-num",
-		float64(totalRemotePtwNum))
-
-	for h, n := range totalNumPerHopRequired {
-		r.metricsCollector.Collect(
-			"GPU1.chiplet_all.ChipRDMA",
-			"number-ptw-hop-required-"+strconv.Itoa(h),
-			float64(n))
-	}
-
-	for h, n := range totalNumPerHopTraced {
-		if n == 0 {
-			continue
-		}
-
-		r.metricsCollector.Collect(
-			"GPU1.chiplet_all.ChipRDMA",
-			"number-ptw-hop-traced-"+strconv.Itoa(h),
-			float64(n))
-	}
-	for h, l := range totalAvgLatencyPerHop {
-		r.metricsCollector.Collect(
-			"GPU1.chiplet_all.ChipRDMA",
-			"average-latency-ptw-hop-traced-"+strconv.Itoa(h),
-			l)
-	}
-
-	for srcChip := range numChiplet {
-		for dstChip := range numChiplet {
-			if totalC2CTraced[srcChip][dstChip] == 0 {
-				continue
-			}
-			r.metricsCollector.Collect(
-				"Chip-to-chip-ptw-traced",
-				strconv.Itoa(srcChip)+"-"+strconv.Itoa(dstChip),
-				float64(totalC2CTraced[srcChip][dstChip]))
-		}
-	}
 }
 
 // FIXME: we measure the hop count only for "request", currently.
@@ -2427,76 +2094,9 @@ func (r *Runner) reportSetAccessHistogram() {
 	}
 }
 
-func (r *Runner) reportTLBMSHRWait() {
-	if !r.ReportTLBMSHRWait {
-		return
+func safeDiv(a, b float64) float64 {
+	if b == 0 {
+		return 0
 	}
-
-	totalL1Stall := uint64(0)
-	totalL1HitWaitCount := uint64(0)
-	totalL1HitWaitTime := akita.VTimeInSec(0)
-
-	for _, t := range r.L1TLBMSHRWaitTracers {
-		stall := t.tracer.GetStallCount()
-		hitWaitCount := t.tracer.GetHitWaitCount()
-		hitWaitTime := t.tracer.GetHitWaitTotalTime()
-
-		totalL1Stall += stall
-		totalL1HitWaitCount += hitWaitCount
-		totalL1HitWaitTime += hitWaitTime
-
-		r.metricsCollector.Collect(
-			t.tlb.Name(), "tlb-mshr-stall-count", float64(stall))
-		r.metricsCollector.Collect(
-			t.tlb.Name(), "tlb-mshr-hit-wait-count", float64(hitWaitCount))
-		if hitWaitCount > 0 {
-			r.metricsCollector.Collect(
-				t.tlb.Name(), "tlb-mshr-hit-wait-avg-time",
-				float64(hitWaitTime)/float64(hitWaitCount))
-		}
-	}
-
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.L1TLBs", "tlb-mshr-stall-count", float64(totalL1Stall))
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.L1TLBs", "tlb-mshr-hit-wait-count", float64(totalL1HitWaitCount))
-	if totalL1HitWaitCount > 0 {
-		r.metricsCollector.Collect(
-			"GPU1.chiplet_all.L1TLBs", "tlb-mshr-hit-wait-avg-time",
-			float64(totalL1HitWaitTime)/float64(totalL1HitWaitCount))
-	}
-
-	totalL2Stall := uint64(0)
-	totalL2HitWaitCount := uint64(0)
-	totalL2HitWaitTime := akita.VTimeInSec(0)
-
-	for _, t := range r.L2TLBMSHRWaitTracers {
-		stall := t.tracer.GetStallCount()
-		hitWaitCount := t.tracer.GetHitWaitCount()
-		hitWaitTime := t.tracer.GetHitWaitTotalTime()
-
-		totalL2Stall += stall
-		totalL2HitWaitCount += hitWaitCount
-		totalL2HitWaitTime += hitWaitTime
-
-		r.metricsCollector.Collect(
-			t.tlb.Name(), "tlb-mshr-stall-count", float64(stall))
-		r.metricsCollector.Collect(
-			t.tlb.Name(), "tlb-mshr-hit-wait-count", float64(hitWaitCount))
-		if hitWaitCount > 0 {
-			r.metricsCollector.Collect(
-				t.tlb.Name(), "tlb-mshr-hit-wait-avg-time",
-				float64(hitWaitTime)/float64(hitWaitCount))
-		}
-	}
-
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.L2TLBs", "tlb-mshr-stall-count", float64(totalL2Stall))
-	r.metricsCollector.Collect(
-		"GPU1.chiplet_all.L2TLBs", "tlb-mshr-hit-wait-count", float64(totalL2HitWaitCount))
-	if totalL2HitWaitCount > 0 {
-		r.metricsCollector.Collect(
-			"GPU1.chiplet_all.L2TLBs", "tlb-mshr-hit-wait-avg-time",
-			float64(totalL2HitWaitTime)/float64(totalL2HitWaitCount))
-	}
+	return a / b
 }

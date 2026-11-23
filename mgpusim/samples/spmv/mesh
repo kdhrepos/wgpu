@@ -12,7 +12,6 @@ MAX_INST=23182452
     -dim=$DIM \
     -sparsity=$SPARSITY \
     -max-inst=$MAX_INST \
-    -timing \
     -fast-h2d \
     -verbose \
     -ooo-debug \

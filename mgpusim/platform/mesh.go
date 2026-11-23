@@ -79,9 +79,6 @@ func (b *MeshGPUPlatformBuilder) createGPUBuilder(
 	gpuBuilder.WithPC(b.reqWithPC)
 	gpuBuilder.WithPteCaching(b.pteCaching)
 
-	b.setVisTracer(gpuDriver, gpuBuilder)
-	b.setTLBTracer(gpuBuilder)
-	b.setMemTracer(gpuBuilder)
 	b.setISADebugger(gpuBuilder)
 
 	if b.disableProgressBar {

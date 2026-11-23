@@ -8,7 +8,6 @@ MAX_INST=100000000
 ./syr2k \
     -ni=$NI \
     -nj=$NJ \
-    -timing \
     -fast-h2d \
     -verbose \
     -report-all \

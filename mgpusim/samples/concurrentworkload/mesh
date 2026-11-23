@@ -4,7 +4,6 @@ go build
 NAME=concurrentworkload
 
 ./$NAME \
-    -timing \
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \

@@ -79,9 +79,6 @@ func (b *IdealGPUPlatformBuilder) createGPUBuilder(
 	gpuBuilder.WithPC(b.reqWithPC)
 	gpuBuilder.WithPteCaching(true)
 
-	b.setVisTracer(gpuDriver, gpuBuilder)
-	b.setTLBTracer(gpuBuilder)
-	b.setMemTracer(gpuBuilder)
 	b.setISADebugger(gpuBuilder)
 
 	if b.disableProgressBar {

@@ -6,7 +6,6 @@ NAME=vgg16
 MAX_INST=100000000
 
 ./$NAME \
-    -timing \
     -report-all \
     -max-inst=$MAX_INST \
     -no-progress-bar \

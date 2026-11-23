@@ -1,6 +1,7 @@
 package tlb
 
 import (
+	"gitlab.com/akita/mem/device"
 	"gitlab.com/akita/util/tracing"
 )
 
@@ -33,10 +34,11 @@ func (t *EntropyTracer) StartTask(task tracing.Task) {
 	if !t.filter(task) {
 		return
 	}
-	addr := task.ID
-	for i := 0; i < 12; i++ {
-		addr = addr >> 1
+	req, ok := task.Detail.(*device.TranslationReq)
+	if !ok {
+		return
 	}
+	addr := req.VAddr >> 12
 	for j := 12; j < 64; j++ {
 		bit := addr & 0x1
 		if bit == 0 {

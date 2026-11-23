@@ -17,7 +17,6 @@ MAX_INST=10000000
     -r=$R \
     -q=$Q \
     -p=$P \
-    -timing \
     -report-all \
     -max-inst=$MAX_INST \
     -no-progress-bar \

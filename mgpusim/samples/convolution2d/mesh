@@ -14,7 +14,6 @@ NJ=8192
 ./$NAME \
     -ni=$NI \
     -nj=$NJ \
-    -timing \
     -verbose \
     -report-all \
     -no-progress-bar \

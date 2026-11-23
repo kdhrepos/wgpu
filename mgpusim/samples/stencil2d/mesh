@@ -7,7 +7,6 @@ COL=2048
 ./stencil2d \
     -row=$ROW \
     -col=$COL \
-    -timing \
     -report-all \
     -verify \
     -no-progress-bar \

@@ -13,7 +13,6 @@ MAX_INST=100000000
     -gridpoints=$GRIDPOINTS \
     -lookups=$LOOKUPS \
     -grid-type=$GRID_TYPE \
-    -timing \
     -max-inst=$MAX_INST \
     -report-all \
     -fast-h2d \

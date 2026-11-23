@@ -7,7 +7,6 @@ MAX_INST=10000000
 
 ./mvt \
     -n=$N \
-    -timing \
     -report-all \
     -no-progress-bar \
     -platform-type=mesh \
