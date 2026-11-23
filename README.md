@@ -1,16 +1,13 @@
 # wgpu — Wafer-Scale GPU Simulator
 
-Cycle-level simulator for a **mesh-based wafer-scale GPU**: an `xDim × yDim`
+Cycle-level simulator for a **wafer-scale GPU**: an `xDim × yDim`
 mesh of GPU chiplets, extending [MGPUSim](https://github.com/sarchlab/mgpusim)
-on the [Akita](https://gitlab.com/akita) discrete-event framework.
+on the [Akita](https://gitlab.com/akita) engine.
 
 Platforms (`-platform-type`):
 
-- `mesh` (default) — chiplets connected by a 2D-mesh network-on-chip.
-- `ideal` — same chiplets on a contention-free network (upper-bound reference).
-
-Defaults: chiplet-interleaved memory allocation, chiplet-aware workgroup
-scheduling.
+- `mesh` (default): chiplets connected by a 2D-mesh network-on-chip.
+- `ideal`: same chiplets on a point to point network (ideal network).
 
 ## Layout
 
@@ -18,7 +15,7 @@ Each top-level directory is a Go module, wired together by `go.work`.
 
 | dir | contents |
 |---|---|
-| `akita/` | discrete-event simulation framework |
+| `akita/` | event-based simulation engine |
 | `mem/` | L2 cache, DRAM, TLB/MMU, page table, allocators |
 | `noc/` | network-on-chip: mesh/ideal chiplet networks, switches, routing |
 | `protocol/` | memory/translation message types |
