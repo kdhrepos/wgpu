@@ -55,6 +55,10 @@ Metrics go to `<benchmark>_<platform>_<X>x<Y>.csv` (override with
 `-metric-file-name`); `-verbose` prints debug output. All flags:
 `mgpusim/runner/runner.go`.
 
+## Limitation
+
+Currently, multi-tenant execution is not supported. We only support single workload execution.
+
 ## License
 
 `akita/`, `mem/`, `noc/`, `util/` and `mgpusim/` keep their upstream MIT
